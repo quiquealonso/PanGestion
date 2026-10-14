@@ -1,0 +1,92 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Personas</p>
+      <h2>Clientes</h2>
+      <p>Particulares y clientes de empresa, con su contacto e historial de pedidos.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo cliente</button>
+    }
+  </header>
+
+  <form class="panel toolbar" (ngSubmit)="load()">
+    <input type="search" name="search" placeholder="Buscar por nombre, email o empresa" [(ngModel)]="search" />
+    <button type="submit" class="btn">Buscar</button>
+  </form>
+
+  <div class="layout">
+    <article class="panel">
+      <div class="panel-head"><h3>Listado</h3><span>{{ customers().length }} clientes</span></div>
+      <div class="list">
+        @for (customer of customers(); track customer.id) {
+          <button type="button" class="list-item" [class.is-selected]="selectedId() === customer.id" (click)="select(customer)">
+            <div>
+              <strong>{{ customer.name }}</strong>
+              <p>{{ customer.email }} · {{ customer.phone || 'sin teléfono' }}</p>
+            </div>
+            <span class="tone" [class.tone--pendiente]="customer.companyName">{{ customer.companyName || 'Particular' }}</span>
+          </button>
+        } @empty {
+          <p class="empty">No hay clientes.</p>
+        }
+      </div>
+    </article>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h3>{{ selected() ? 'Ficha del cliente' : 'Nuevo cliente' }}</h3>
+        @if (selected(); as c) {
+          <span>Alta {{ c.createdAt | date: 'dd/MM/yyyy' }}</span>
+        }
+      </div>
+      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+        <label class="full"><span>Nombre</span><input formControlName="name" /></label>
+        <label><span>Email</span><input type="email" formControlName="email" /></label>
+        <label><span>Teléfono</span><input formControlName="phone" /></label>
+        <label class="full">
+          <span>Empresa</span>
+          <select formControlName="companyId">
+            <option [ngValue]="null">Particular</option>
+            @for (company of companies(); track company.id) {
+              <option [ngValue]="company.id">{{ company.name }}</option>
+            }
+          </select>
+        </label>
+        @if (auth.canEdit()) {
+          <div class="form-actions full">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            @if (selected()) {
+              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+            }
+          </div>
+        }
+      </form>
+
+      @if (selected()) {
+        <div class="history">
+          <div class="panel-head">
+            <h3>Pedidos</h3>
+            <span>{{ orders().length }} · {{ totalSpent() | currency: 'EUR' }}</span>
+          </div>
+          <div class="list">
+            @for (order of orders(); track order.id) {
+              <a class="list-item" [routerLink]="['/orders', order.id]">
+                <div>
+                  <strong>#{{ order.id }}</strong>
+                  <p>{{ order.pickupDate | date: 'dd/MM/yyyy' }} · {{ order.storeName }}</p>
+                </div>
+                <div class="meta">
+                  <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
+                  <strong>{{ order.total | currency: 'EUR' }}</strong>
+                </div>
+              </a>
+            } @empty {
+              <p class="empty">Sin pedidos.</p>
+            }
+          </div>
+        </div>
+      }
+    </aside>
+  </div>
+</section>

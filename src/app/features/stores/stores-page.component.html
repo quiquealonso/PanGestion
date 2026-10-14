@@ -1,0 +1,53 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Sistema</p>
+      <h2>Tiendas</h2>
+      <p>Puntos de recogida con su horario, duración de franja y pedidos máximos por franja.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nueva tienda</button>
+    }
+  </header>
+
+  <div class="layout">
+    <article class="panel">
+      <div class="list">
+        @for (store of stores(); track store.id) {
+          <button type="button" class="list-item" [class.is-selected]="selectedId() === store.id" (click)="select(store)">
+            <div>
+              <strong>{{ store.name }}</strong>
+              <p>{{ store.address }} · {{ store.phone || 'sin teléfono' }}</p>
+              <p>{{ store.openingTime }}–{{ store.closingTime }} · franjas de {{ store.slotMinutes }} min · {{ store.ordersPerSlot }} pedidos/franja</p>
+            </div>
+            <span class="tone" [class.tone--ok]="store.active">{{ store.active ? 'Abierta' : 'Cerrada' }}</span>
+          </button>
+        } @empty {
+          <p class="empty">No hay tiendas.</p>
+        }
+      </div>
+    </article>
+
+    <aside class="panel">
+      <div class="panel-head"><h3>{{ selected() ? 'Editar tienda' : 'Nueva tienda' }}</h3></div>
+      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+        <label class="full"><span>Nombre</span><input formControlName="name" /></label>
+        <label class="full"><span>Dirección</span><input formControlName="address" /></label>
+        <label><span>Teléfono</span><input formControlName="phone" /></label>
+        <label class="check"><input type="checkbox" formControlName="active" /> Acepta pedidos</label>
+        <label><span>Apertura</span><input type="time" formControlName="openingTime" /></label>
+        <label><span>Cierre</span><input type="time" formControlName="closingTime" /></label>
+        <label><span>Minutos por franja</span><input type="number" min="10" max="240" formControlName="slotMinutes" /></label>
+        <label><span>Pedidos por franja</span><input type="number" min="1" max="100" formControlName="ordersPerSlot" /></label>
+        @if (auth.canEdit()) {
+          <div class="form-actions full">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            @if (selected()) {
+              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+            }
+          </div>
+        }
+      </form>
+    </aside>
+  </div>
+</section>

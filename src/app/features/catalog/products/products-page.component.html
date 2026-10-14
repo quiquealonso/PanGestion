@@ -1,0 +1,113 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Catálogo</p>
+      <h2>Productos</h2>
+      <p>Descripción, categoría, precio y receta. Los inactivos no se ofrecen a los clientes.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo producto</button>
+    }
+  </header>
+
+  <form class="panel toolbar" (ngSubmit)="load()">
+    <input type="search" name="search" placeholder="Buscar producto" [(ngModel)]="filters.search" />
+    <select name="category" [(ngModel)]="filters.categoryId" (change)="load()">
+      <option [ngValue]="null">Todas las categorías</option>
+      @for (category of categories(); track category.id) {
+        <option [ngValue]="category.id">{{ category.name }}</option>
+      }
+    </select>
+    <select name="active" [(ngModel)]="filters.active" (change)="load()">
+      <option [ngValue]="null">Activos e inactivos</option>
+      <option [ngValue]="true">Solo activos</option>
+      <option [ngValue]="false">Solo inactivos</option>
+    </select>
+    <button type="submit" class="btn">Buscar</button>
+  </form>
+
+  <div class="layout">
+    <article class="panel">
+      <div class="list">
+        @for (product of products(); track product.id) {
+          <div class="list-item" [class.is-selected]="selectedId() === product.id" (click)="select(product)">
+            <div>
+              <strong><span class="color-dot" [style.background]="product.categoryColor"></span>{{ product.name }}</strong>
+              <p>{{ product.categoryName }} · coste {{ product.cost | currency: 'EUR' }} · {{ product.description }}</p>
+            </div>
+            <div class="meta">
+              @if (auth.canEdit()) {
+                <button type="button" class="tone" [class.tone--ok]="product.active" [class.tone--off]="!product.active"
+                        title="Activar / desactivar" (click)="$event.stopPropagation(); toggleActive(product)">
+                  {{ product.active ? 'Activo' : 'Inactivo' }}
+                </button>
+              } @else {
+                <span class="tone" [class.tone--ok]="product.active">{{ product.active ? 'Activo' : 'Inactivo' }}</span>
+              }
+              <strong>{{ product.price | currency: 'EUR' }}</strong>
+            </div>
+          </div>
+        } @empty {
+          <p class="empty">No hay productos con estos filtros.</p>
+        }
+      </div>
+    </article>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h3>{{ selected() ? 'Editar producto' : 'Nuevo producto' }}</h3>
+      </div>
+      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+        <label class="full"><span>Nombre</span><input formControlName="name" /></label>
+        <label>
+          <span>Categoría</span>
+          <select formControlName="categoryId">
+            @for (category of categories(); track category.id) {
+              <option [ngValue]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+        <label><span>Precio (€)</span><input type="number" step="0.01" min="0" formControlName="price" /></label>
+        <label class="full check"><input type="checkbox" formControlName="active" /> Activo (se ofrece a los clientes)</label>
+        <label class="full"><span>Descripción</span><textarea rows="3" formControlName="description"></textarea></label>
+
+        <div class="full field" formArrayName="ingredients">
+          <span>Receta (cantidad por unidad de producto)</span>
+          @for (line of recipe.controls; track line; let i = $index) {
+            <div class="recipe-row" [formGroupName]="i">
+              <select formControlName="ingredientId">
+                <option [ngValue]="0" disabled>Ingrediente…</option>
+                @for (ingredient of ingredients(); track ingredient.id) {
+                  <option [ngValue]="ingredient.id">{{ ingredient.name }} ({{ ingredient.unit }})</option>
+                }
+              </select>
+              <input type="number" step="0.001" min="0" formControlName="quantity" />
+              @if (auth.canEdit()) {
+                <button type="button" class="btn btn--small" (click)="removeRecipeLine(i)">✕</button>
+              }
+            </div>
+          } @empty {
+            <p class="muted">Sin ingredientes.</p>
+          }
+          @if (auth.canEdit()) {
+            <button type="button" class="btn btn--small" (click)="addRecipeLine()">+ Añadir ingrediente</button>
+          }
+        </div>
+
+        <p class="full muted">
+          Coste estimado: <strong>{{ recipeCost() | currency: 'EUR' }}</strong> · Margen:
+          <strong [class.text-danger]="margin() < 0.3">{{ margin() | percent: '1.0-0' }}</strong>
+        </p>
+
+        @if (auth.canEdit()) {
+          <div class="form-actions full">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            @if (selected()) {
+              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+            }
+          </div>
+        }
+      </form>
+    </aside>
+  </div>
+</section>

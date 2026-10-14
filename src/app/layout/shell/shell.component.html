@@ -1,0 +1,67 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand__mark">P</span>
+      <div>
+        <p>PanGestión</p>
+        <span>Pedidos y gestión de la panadería</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav__group">
+        <span class="nav__label">Operaciones</span>
+        <a routerLink="/dashboard" routerLinkActive="is-active">Inicio</a>
+        <a routerLink="/orders" routerLinkActive="is-active">Pedidos</a>
+        @if (auth.canEdit()) {
+          <a routerLink="/orders/new" routerLinkActive="is-active">Nuevo pedido</a>
+        }
+      </div>
+
+      <div class="nav__group">
+        <span class="nav__label">Personas</span>
+        <a routerLink="/customers" routerLinkActive="is-active">Clientes</a>
+        <a routerLink="/companies" routerLinkActive="is-active">Empresas</a>
+      </div>
+
+      <div class="nav__group">
+        <span class="nav__label">Catálogo</span>
+        <a routerLink="/catalog/products" routerLinkActive="is-active">Productos</a>
+        <a routerLink="/catalog/ingredients" routerLinkActive="is-active">Ingredientes</a>
+        <a routerLink="/catalog/categories" routerLinkActive="is-active">Categorías</a>
+      </div>
+
+      <div class="nav__group">
+        <span class="nav__label">Sistema</span>
+        <a routerLink="/stores" routerLinkActive="is-active">Tiendas</a>
+        @if (auth.isAdmin()) {
+          <a routerLink="/users" routerLinkActive="is-active">Usuarios</a>
+        }
+        <a href="/pedido" target="_blank" rel="noopener">Web de pedidos ↗</a>
+      </div>
+    </nav>
+
+    @if (auth.user(); as user) {
+      <section class="support-card">
+        <p class="eyebrow">{{ roleLabels[user.role] }}</p>
+        <h2>{{ user.name }}</h2>
+        <p>{{ user.email }}</p>
+        <button type="button" class="btn btn--small logout" (click)="auth.logout()">Cerrar sesión</button>
+      </section>
+    }
+  </aside>
+
+  <main class="workspace">
+    <section class="content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>
+
+<div class="toasts" aria-live="polite">
+  @for (toast of notifications.toasts(); track toast.id) {
+    <button type="button" class="toast" [class.toast--error]="toast.type === 'error'" (click)="notifications.dismiss(toast.id)">
+      {{ toast.text }}
+    </button>
+  }
+</div>

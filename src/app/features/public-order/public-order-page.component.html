@@ -1,0 +1,119 @@
+<div class="public">
+  <header class="public-head">
+    <div class="brand"><span class="brand__mark">P</span><strong>PanGestión</strong></div>
+    <p>Haz tu pedido y recógelo en tienda a la hora que prefieras.</p>
+  </header>
+
+  @if (confirmed(); as order) {
+    <section class="panel done">
+      <p class="eyebrow">¡Pedido recibido!</p>
+      <h2>Pedido nº {{ order.id }}</h2>
+      <p>
+        Te esperamos en <strong>{{ order.storeName }}</strong> el
+        <strong>{{ order.pickupDate | date: 'EEEE d MMMM' }}</strong> a las <strong>{{ order.pickupTime }}</strong>.
+      </p>
+      <p>Total a pagar en tienda: <strong>{{ order.total | currency: 'EUR' }}</strong></p>
+      <button type="button" class="btn btn--primary" (click)="newOrder()">Hacer otro pedido</button>
+    </section>
+  } @else {
+    <div class="public-layout">
+      <main class="steps">
+        <section class="panel">
+          <p class="eyebrow">1 · Cuándo y dónde</p>
+          <div class="chips">
+            @for (store of stores(); track store.id) {
+              <button type="button" class="chip" [class.is-active]="storeId() === store.id" (click)="selectStore(store.id)">
+                {{ store.name }}<small>{{ store.address }}</small>
+              </button>
+            }
+          </div>
+          <div class="chips">
+            @for (day of days; track day) {
+              <button type="button" class="chip day" [class.is-active]="date() === day" (click)="selectDate(day)">
+                {{ day | date: 'EEE' }}<small>{{ day | date: 'd MMM' }}</small>
+              </button>
+            }
+          </div>
+          <div class="slots">
+            @for (slot of slots(); track slot.time) {
+              <button type="button" class="slot" [class.is-active]="time() === slot.time" [disabled]="!slot.available" (click)="time.set(slot.time)">
+                {{ slot.time }}
+              </button>
+            } @empty {
+              <p class="muted">No hay franjas para este día.</p>
+            }
+          </div>
+        </section>
+
+        <section class="panel">
+          <p class="eyebrow">2 · Añade productos</p>
+          <div class="chips">
+            <button type="button" class="chip" [class.is-active]="categoryFilter() === null" (click)="categoryFilter.set(null)">Todo</button>
+            @for (category of categories(); track category.id) {
+              <button type="button" class="chip" [class.is-active]="categoryFilter() === category.id" (click)="categoryFilter.set(category.id)">
+                <span class="color-dot" [style.background]="category.color"></span>{{ category.name }}
+              </button>
+            }
+          </div>
+          <div class="catalog">
+            @for (product of visibleProducts(); track product.id) {
+              <article class="product">
+                <div>
+                  <strong>{{ product.name }}</strong>
+                  <p>{{ product.description }}</p>
+                  @if (product.allergens.length) {
+                    <small>Alérgenos: {{ product.allergens.join(', ') }}</small>
+                  }
+                </div>
+                <div class="product__foot">
+                  <strong>{{ product.price | currency: 'EUR' }}</strong>
+                  <div class="qty">
+                    <button type="button" (click)="change(product.id, -1)" [disabled]="!quantities()[product.id]">−</button>
+                    <span>{{ quantities()[product.id] ?? 0 }}</span>
+                    <button type="button" (click)="change(product.id, 1)">+</button>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+
+        <section class="panel">
+          <p class="eyebrow">3 · Tus datos</p>
+          <div class="form-grid">
+            <label><span>Nombre</span><input [(ngModel)]="customer.name" autocomplete="name" /></label>
+            <label><span>Teléfono</span><input [(ngModel)]="customer.phone" autocomplete="tel" /></label>
+            <label class="full"><span>Email</span><input type="email" [(ngModel)]="customer.email" autocomplete="email" /></label>
+          </div>
+        </section>
+      </main>
+
+      <aside class="panel summary">
+        <p class="eyebrow">Tu pedido</p>
+        <p class="when">
+          {{ store()?.name }}<br />
+          {{ date() | date: 'EEEE d MMMM' }} · {{ time() ?? 'elige una hora' }}
+        </p>
+        @for (line of lines(); track line.product.id) {
+          <div class="line"><span>{{ line.quantity }} × {{ line.product.name }}</span><strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong></div>
+        } @empty {
+          <p class="muted">Aún no has añadido productos.</p>
+        }
+        <div class="line total"><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
+        <label class="field">
+          <span>Notas e instrucciones especiales</span>
+          <textarea rows="3" [(ngModel)]="notes" maxlength="500"></textarea>
+        </label>
+        @if (error(); as message) {
+          <p class="error-box">{{ message }}</p>
+        }
+        <button type="button" class="btn btn--primary confirm" [disabled]="!canConfirm() || sending()" (click)="confirm()">
+          {{ sending() ? 'Enviando…' : 'Confirmar pedido' }}
+        </button>
+        @if (!time()) {
+          <small class="muted">Elige una hora de recogida para poder confirmar.</small>
+        }
+      </aside>
+    </div>
+  }
+</div>

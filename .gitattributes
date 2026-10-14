@@ -1,0 +1,13 @@
+# Finales de linea iguales en Windows, Linux y macOS: LF en el repositorio y en la copia de trabajo.
+* text=auto eol=lf
+
+# Scripts de Windows con CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binarios
+*.pdf binary
+*.ico binary
+*.png binary
+*.jpg binary
+*.jar binary

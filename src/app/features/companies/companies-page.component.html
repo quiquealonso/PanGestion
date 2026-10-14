@@ -1,0 +1,50 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Personas</p>
+      <h2>Empresas</h2>
+      <p>Cafeterías, hoteles y restaurantes con sus datos fiscales y de contacto.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nueva empresa</button>
+    }
+  </header>
+
+  <div class="layout">
+    <article class="panel">
+      <div class="panel-head"><h3>Listado</h3><span>{{ companies().length }} empresas</span></div>
+      <div class="list">
+        @for (company of companies(); track company.id) {
+          <button type="button" class="list-item" [class.is-selected]="selectedId() === company.id" (click)="select(company)">
+            <div>
+              <strong>{{ company.name }}</strong>
+              <p>{{ company.taxId }} · {{ company.email || 'sin email' }} · {{ company.phone || 'sin teléfono' }}</p>
+            </div>
+            <span class="tone">{{ company.customerCount }} clientes</span>
+          </button>
+        } @empty {
+          <p class="empty">No hay empresas.</p>
+        }
+      </div>
+    </article>
+
+    <aside class="panel">
+      <div class="panel-head"><h3>{{ selected() ? 'Editar empresa' : 'Nueva empresa' }}</h3></div>
+      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+        <label class="full"><span>Razón social</span><input formControlName="name" /></label>
+        <label><span>CIF / NIF</span><input formControlName="taxId" /></label>
+        <label><span>Teléfono</span><input formControlName="phone" /></label>
+        <label class="full"><span>Email</span><input type="email" formControlName="email" /></label>
+        <label class="full"><span>Dirección fiscal</span><input formControlName="address" /></label>
+        @if (auth.canEdit()) {
+          <div class="form-actions full">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            @if (selected()) {
+              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+            }
+          </div>
+        }
+      </form>
+    </aside>
+  </div>
+</section>

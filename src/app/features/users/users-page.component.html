@@ -1,0 +1,56 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Sistema</p>
+      <h2>Usuarios</h2>
+      <p>Quién entra en el panel y con qué rol. El acceso se puede desactivar en cualquier momento.</p>
+    </div>
+    <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo usuario</button>
+  </header>
+
+  <div class="layout">
+    <article class="panel">
+      <div class="list">
+        @for (user of users(); track user.id) {
+          <button type="button" class="list-item" [class.is-selected]="selectedId() === user.id" (click)="select(user)">
+            <div>
+              <strong>{{ user.name }}</strong>
+              <p>{{ user.email }} · último acceso {{ user.lastLogin ? (user.lastLogin | date: 'dd/MM/yyyy HH:mm') : 'nunca' }}</p>
+            </div>
+            <div class="meta">
+              <span class="tone tone--pendiente">{{ roleLabels[user.role] }}</span>
+              <span class="tone" [class.tone--ok]="user.active" [class.tone--danger]="!user.active">{{ user.active ? 'Activo' : 'Desactivado' }}</span>
+            </div>
+          </button>
+        }
+      </div>
+    </article>
+
+    <aside class="panel">
+      <div class="panel-head"><h3>{{ selected() ? 'Editar usuario' : 'Nuevo usuario' }}</h3></div>
+      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+        <label class="full"><span>Nombre</span><input formControlName="name" /></label>
+        <label class="full"><span>Email</span><input type="email" formControlName="email" autocomplete="off" /></label>
+        <label class="full">
+          <span>{{ selected() ? 'Nueva contraseña (vacía = no cambiar)' : 'Contraseña' }}</span>
+          <input type="password" formControlName="password" autocomplete="new-password" />
+        </label>
+        <label>
+          <span>Rol</span>
+          <select formControlName="role">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ roleLabels[role] }}</option>
+            }
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" formControlName="active" /> Acceso activo</label>
+        <div class="form-actions full">
+          <button type="submit" class="btn btn--primary">Guardar</button>
+          @if (selected()) {
+            <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+          }
+        </div>
+      </form>
+    </aside>
+  </div>
+</section>

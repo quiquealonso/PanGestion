@@ -1,0 +1,16 @@
+# Lee DB_USER y DB_PASSWORD del fichero .env de esta carpeta (ver .env.example)
+services:
+  postgres:
+    image: postgres:17
+    container_name: pangestion-db
+    environment:
+      POSTGRES_DB: pangestion
+      POSTGRES_USER: ${DB_USER:?Falta DB_USER en .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pangestion-data:/var/lib/postgresql/data
+
+volumes:
+  pangestion-data:

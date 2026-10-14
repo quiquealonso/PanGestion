@@ -1,0 +1,150 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Pedidos</p>
+      <h2>{{ isEdit() ? 'Editar pedido #' + id() : 'Nuevo pedido' }}</h2>
+      <p>Tienda y franja, productos, cliente y confirmación.</p>
+    </div>
+    <a class="btn" routerLink="/orders">Volver al listado</a>
+  </header>
+
+  <nav class="wizard-nav" aria-label="Pasos del pedido">
+    <button type="button" [class.is-active]="step() === 1" (click)="goTo(1)">1. Tienda y hora</button>
+    <button type="button" [class.is-active]="step() === 2" [disabled]="!canGoTo(2)" (click)="goTo(2)">2. Productos</button>
+    <button type="button" [class.is-active]="step() === 3" [disabled]="!canGoTo(3)" (click)="goTo(3)">3. Cliente</button>
+    <button type="button" [class.is-active]="step() === 4" [disabled]="!canGoTo(4)" (click)="goTo(4)">4. Confirmar</button>
+  </nav>
+
+  <div class="wizard">
+    <section class="panel">
+      @switch (step()) {
+        @case (1) {
+          <h3>¿Dónde y cuándo se recoge?</h3>
+          <div class="form-grid">
+            <label>
+              <span>Tienda</span>
+              <select [ngModel]="storeId()" (ngModelChange)="selectStore($event)">
+                @for (store of stores(); track store.id) {
+                  <option [ngValue]="store.id">{{ store.name }} · {{ store.address }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Día de recogida</span>
+              <input type="date" [min]="isEdit() ? '' : today" [ngModel]="date()" (ngModelChange)="selectDate($event)" />
+            </label>
+          </div>
+
+          <p class="eyebrow slots-title">Franjas disponibles</p>
+          <div class="slots">
+            @for (slot of slots(); track slot.time) {
+              <button type="button" class="slot" [class.is-active]="time() === slot.time" [disabled]="!isSlotSelectable(slot)"
+                      [title]="slot.available ? slot.remaining + ' huecos libres' : 'No disponible'" (click)="time.set(slot.time)">
+                {{ slot.time }}
+              </button>
+            } @empty {
+              <p class="muted">Elige tienda y día para ver las franjas.</p>
+            }
+          </div>
+        }
+
+        @case (2) {
+          <h3>Añade los productos</h3>
+          @for (category of categories(); track category.name) {
+            <p class="category-title"><span class="color-dot" [style.background]="category.color"></span>{{ category.name }}</p>
+            <div class="products-grid">
+              @for (product of category.products; track product.id) {
+                @if (isVisible(product)) {
+                  <article class="product-card" [class.has-qty]="(quantities()[product.id] ?? 0) > 0">
+                    <div>
+                      <strong>{{ product.name }}</strong>
+                      <p>{{ product.price | currency: 'EUR' }}</p>
+                    </div>
+                    <div class="qty">
+                      <button type="button" class="btn btn--small" (click)="changeQuantity(product.id, -1)">−</button>
+                      <input type="number" min="0" [ngModel]="quantities()[product.id] ?? 0" (ngModelChange)="setQuantity(product.id, $event)" />
+                      <button type="button" class="btn btn--small" (click)="changeQuantity(product.id, 1)">+</button>
+                    </div>
+                  </article>
+                }
+              }
+            </div>
+          }
+        }
+
+        @case (3) {
+          <h3>¿Para qué cliente?</h3>
+          <form class="toolbar" (ngSubmit)="searchCustomers()">
+            <input type="search" name="customerSearch" placeholder="Buscar por nombre, email o empresa" [(ngModel)]="customerSearch" />
+            <button type="submit" class="btn">Buscar</button>
+            <button type="button" class="btn" (click)="showNewCustomer.set(!showNewCustomer())">+ Cliente nuevo</button>
+          </form>
+
+          @if (showNewCustomer()) {
+            <div class="form-grid new-customer">
+              <label><span>Nombre</span><input [(ngModel)]="newCustomer.name" /></label>
+              <label><span>Email</span><input type="email" [(ngModel)]="newCustomer.email" /></label>
+              <label><span>Teléfono</span><input [(ngModel)]="newCustomer.phone" /></label>
+              <div class="form-actions"><button type="button" class="btn btn--primary" (click)="createCustomer()">Crear y seleccionar</button></div>
+            </div>
+          }
+
+          <div class="list customers">
+            @for (customer of customers(); track customer.id) {
+              <button type="button" class="list-item" [class.is-selected]="customerId() === customer.id" (click)="customerId.set(customer.id)">
+                <div>
+                  <strong>{{ customer.name }}</strong>
+                  <p>{{ customer.email }} · {{ customer.phone || 'sin teléfono' }}</p>
+                </div>
+                <span class="tone">{{ customer.companyName || 'Particular' }}</span>
+              </button>
+            } @empty {
+              <p class="empty">No hay clientes con esa búsqueda.</p>
+            }
+          </div>
+        }
+
+        @case (4) {
+          <h3>Revisa y confirma</h3>
+          <div class="summary-grid">
+            <article><span>Recogida</span><strong>{{ date() | date: 'EEEE d MMM' }}</strong><p>{{ time() }} · {{ selectedStore()?.name }}</p></article>
+            <article><span>Cliente</span><strong>{{ selectedCustomer()?.name }}</strong><p>{{ selectedCustomer()?.email }}</p></article>
+            <article><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong><p>{{ selectedLines().length }} productos distintos</p></article>
+          </div>
+          <label class="field">
+            <span>Notas e instrucciones especiales</span>
+            <textarea rows="3" [(ngModel)]="notes" maxlength="500"></textarea>
+          </label>
+        }
+      }
+
+      @if (error(); as message) {
+        <p class="error-box">{{ message }}</p>
+      }
+    </section>
+
+    <aside class="panel summary">
+      <p class="eyebrow">Resumen</p>
+      @for (line of selectedLines(); track line.product.id) {
+        <div class="summary-line">
+          <span>{{ line.quantity }} × {{ line.product.name }}</span>
+          <strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
+        </div>
+      } @empty {
+        <p class="muted">Sin productos todavía.</p>
+      }
+      <div class="summary-line summary-total"><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
+
+      <div class="form-actions">
+        <button type="button" class="btn" [disabled]="step() === 1" (click)="step.set(step() - 1)">Atrás</button>
+        @if (step() < 4) {
+          <button type="button" class="btn btn--primary" [disabled]="!canGoTo(step() + 1)" (click)="goTo(step() + 1)">Continuar</button>
+        } @else {
+          <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="save()">
+            {{ isEdit() ? 'Guardar cambios' : 'Confirmar pedido' }}
+          </button>
+        }
+      </div>
+    </aside>
+  </div>
+</section>

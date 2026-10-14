@@ -1,0 +1,43 @@
+<section class="auth">
+  <article class="panel intro">
+    <p class="eyebrow">PanGestión</p>
+    <h2>Panel de gestión de la panadería</h2>
+    <p>
+      Pedidos, clientes, productos, ingredientes y empresas en un único lugar. Cada persona accede
+      solo a lo que le corresponde según su rol.
+    </p>
+
+    <ul>
+      <li><strong>Administrador:</strong> acceso total, incluida la gestión de usuarios.</li>
+      <li><strong>Gestor:</strong> gestiona pedidos, catálogo, clientes y empresas.</li>
+      <li><strong>Visor:</strong> solo consulta.</li>
+    </ul>
+
+    <p class="public-link">¿Eres cliente? <a routerLink="/pedido">Haz tu pedido aquí →</a></p>
+  </article>
+
+  <article class="panel form-card">
+    <div class="section-head">
+      <p class="eyebrow">Entrar</p>
+      <h3>Acceso al panel</h3>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+      <label>
+        <span>Email</span>
+        <input type="email" formControlName="email" autocomplete="username" />
+      </label>
+
+      <label>
+        <span>Contraseña</span>
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
+
+      <button type="submit" [disabled]="loading()">{{ loading() ? 'Entrando…' : 'Entrar' }}</button>
+    </form>
+
+    @if (error(); as message) {
+      <p class="error-box">{{ message }}</p>
+    }
+  </article>
+</section>

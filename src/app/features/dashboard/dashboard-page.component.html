@@ -1,0 +1,122 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">{{ today | date: 'EEEE d MMMM' }}</p>
+      <h2>Hola, {{ auth.user()?.name }}</h2>
+      <p>La actividad de la panadería de un vistazo.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <a class="btn btn--primary" routerLink="/orders/new">+ Nuevo pedido</a>
+    }
+  </header>
+
+  @if (error(); as message) {
+    <p class="error-box">{{ message }}</p>
+  }
+
+  @if (data(); as d) {
+    <section class="stats-grid">
+      <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'PENDIENTE' }">
+        <span>Pendientes</span>
+        <strong>{{ d.pendingOrders }}</strong>
+        <small>Por empezar</small>
+      </a>
+      <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'EN_PROCESO' }">
+        <span>En proceso</span>
+        <strong>{{ d.inProcessOrders }}</strong>
+        <small>Preparándose ahora</small>
+      </a>
+      <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'LISTO' }">
+        <span>Listos</span>
+        <strong>{{ d.readyOrders }}</strong>
+        <small>Esperando recogida</small>
+      </a>
+      <article class="panel stat-card">
+        <span>Recogidas hoy</span>
+        <strong>{{ d.todayOrders }}</strong>
+        <small>Pedidos para hoy</small>
+      </article>
+      <article class="panel stat-card">
+        <span>Facturado este mes</span>
+        <strong>{{ d.monthRevenue | currency: 'EUR' }}</strong>
+        <small>{{ d.monthOrders }} pedidos · ticket medio {{ d.averageTicket | currency: 'EUR' }}</small>
+      </article>
+      <a class="panel stat-card" routerLink="/customers">
+        <span>Clientes</span>
+        <strong>{{ d.customers }}</strong>
+        <small>{{ d.activeProducts }} productos activos</small>
+      </a>
+    </section>
+
+    <section class="board">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Últimos pedidos</p>
+            <h3>Actividad reciente</h3>
+          </div>
+          <a class="btn btn--small" routerLink="/orders">Ver todos</a>
+        </div>
+
+        <div class="list">
+          @for (order of d.latestOrders; track order.id) {
+            <a class="list-item" [routerLink]="['/orders', order.id]">
+              <div>
+                <strong>#{{ order.id }} · {{ order.customerName }}</strong>
+                <p>{{ order.storeName }} · {{ order.pickupDate | date: 'dd/MM' }} {{ order.pickupTime }} · {{ order.itemCount }} uds</p>
+              </div>
+              <div class="meta">
+                <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
+                <strong>{{ order.total | currency: 'EUR' }}</strong>
+              </div>
+            </a>
+          } @empty {
+            <p class="empty">Todavía no hay pedidos.</p>
+          }
+        </div>
+      </article>
+
+      <div class="side">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Ranking</p>
+              <h3>Más vendidos</h3>
+            </div>
+          </div>
+          @for (product of d.topProducts; track product.name) {
+            <div class="bar">
+              <div class="bar__label">
+                <span>{{ product.name }}</span>
+                <strong>{{ product.units }}</strong>
+              </div>
+              <div class="bar__track"><div class="bar__fill" [style.width.%]="barWidth(product.units)"></div></div>
+            </div>
+          } @empty {
+            <p class="empty">Sin ventas todavía.</p>
+          }
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Reponer</p>
+              <h3>Stock bajo</h3>
+            </div>
+            <a class="btn btn--small" routerLink="/catalog/ingredients">Ingredientes</a>
+          </div>
+          <div class="list">
+            @for (ingredient of d.lowStockIngredients; track ingredient.id) {
+              <div class="list-item low">
+                <strong>{{ ingredient.name }}</strong>
+                <span class="text-danger">{{ ingredient.stock }} / {{ ingredient.minStock }} {{ ingredient.unit }}</span>
+              </div>
+            } @empty {
+              <p class="empty">Todo el stock está en orden.</p>
+            }
+          </div>
+        </article>
+      </div>
+    </section>
+  }
+</section>

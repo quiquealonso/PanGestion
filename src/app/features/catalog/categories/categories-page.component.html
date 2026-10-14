@@ -1,0 +1,62 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Catálogo</p>
+      <h2>Categorías</h2>
+      <p>Organizan los productos del catálogo; cada una con su color.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nueva categoría</button>
+    }
+  </header>
+
+  <div class="layout">
+    <article class="panel">
+      <div class="panel-head">
+        <h3>Listado</h3>
+        <span>{{ categories().length }} categorías</span>
+      </div>
+      <div class="list">
+        @for (category of categories(); track category.id) {
+          <button type="button" class="list-item" [class.is-selected]="selectedId() === category.id" (click)="select(category)">
+            <div>
+              <strong><span class="color-dot" [style.background]="category.color"></span>{{ category.name }}</strong>
+              <p>{{ category.description || 'Sin descripción' }}</p>
+            </div>
+            <span class="tone">{{ category.productCount }} productos</span>
+          </button>
+        } @empty {
+          <p class="empty">No hay categorías.</p>
+        }
+      </div>
+    </article>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <h3>{{ selected() ? 'Editar categoría' : 'Nueva categoría' }}</h3>
+      </div>
+      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+        <label>
+          <span>Nombre</span>
+          <input formControlName="name" />
+        </label>
+        <label>
+          <span>Color</span>
+          <input type="color" formControlName="color" />
+        </label>
+        <label class="full">
+          <span>Descripción</span>
+          <textarea rows="3" formControlName="description"></textarea>
+        </label>
+        @if (auth.canEdit()) {
+          <div class="form-actions full">
+            <button type="submit" class="btn btn--primary">Guardar</button>
+            @if (selected()) {
+              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+            }
+          </div>
+        }
+      </form>
+    </aside>
+  </div>
+</section>
