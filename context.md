@@ -12,9 +12,9 @@
 
 ## Comandos
 - Backend: `cd backend && ./mvnw spring-boot:run` (puerto 8080). Tests: `./mvnw test`.
-- Frontend: `npm install --no-bin-links`, `npm start` (puerto 4200, proxy `/api` → 8080), `npm run build`.
+- Frontend: `npm ci`, `npm start` (puerto 4200, proxy `/api` → 8080), `npm run build`.
 - Angular CLI 22 exige Node >= 24.15 (en Windows: Node LTS 24.20 instalado con winget).
-- El proyecto vive en un SSD portátil **exFAT** (sin symlinks ni permisos de ejecución): instalar con `npm ci --no-bin-links`. `node_modules` es específico del SO; al cambiar de sistema, borrar y reinstalar. Ver README.
+- Copia de trabajo en Windows: `C:\Users\quiqu\Proyectos\PanGestion` (NTFS). Se sincroniza con GitHub (`quiquealonso/PanGestion`); en cada sistema operativo se clona e instala por separado (`node_modules` es específico del SO). En discos exFAT hay que usar `npm ci --no-bin-links` (ver README).
 
 ## Backend (`backend/src/main/java/com/pangestion`)
 - `model/`: entidades `Category`, `Ingredient`, `Product`, `ProductIngredient` (receta), `Company`, `Customer`, `Store`, `Order` (tabla `orders`), `OrderLine`, `User`; enums `OrderStatus`, `Role`.
