@@ -17,7 +17,7 @@ import java.time.LocalTime;
 /**
  * Carga datos de ejemplo la primera vez que arranca la aplicacion (si no hay usuarios).
  * Usuarios de prueba (solo desarrollo):
- *   admin@pangestion.local / admin123   (ADMIN)
+ *   admin@pangestion.local / admin1234  (ADMIN)
  *   gestor@pangestion.local / gestor123 (GESTOR)
  *   visor@pangestion.local / visor123   (VISOR)
  */
@@ -47,7 +47,7 @@ public class DataInitializer implements CommandLineRunner {
         }
         log.info("Base de datos vacia: cargando datos de ejemplo");
 
-        user("Ana Admin", "admin@pangestion.local", "admin123", Role.ADMIN);
+        user("Ana Admin", "admin@pangestion.local", "admin1234", Role.ADMIN);
         user("Gema Gestora", "gestor@pangestion.local", "gestor123", Role.GESTOR);
         user("Victor Visor", "visor@pangestion.local", "visor123", Role.VISOR);
 
