@@ -51,3 +51,5 @@ Thumbs.db
 backend/data/
 backend/uploads/
 backend/target/
+
+# backups/ SI se sube: el repo es privado y asi se puede restaurar la BD de pruebas al clonar

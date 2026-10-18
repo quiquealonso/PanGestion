@@ -73,6 +73,11 @@ nunca en el build de producción). **Quitar antes de publicar.**
 - **Empresa 2 (bar El Mosset, Alberic):** carta completa (7 categorías, 85 productos, 74 ingredientes con alérgenos) en `backend/src/main/resources/seed/el-mosset.json`, que `DataInitializer` lee al crear la BD.
 - Los alérgenos solo se pusieron donde eran evidentes: hay que revisarlos con cada negocio.
 
+### Pedidos de demostración y copias de la BD
+
+- La panadería (empresa 1) tiene ~310 pedidos generados del 12 al 24 de octubre de 2026 (12–17 entregados, 19–24 pendientes) con `config/DemoOrdersGenerator` (ver `backend/README.md`).
+- Copias de la BD (H2 + `uploads/`) en `backups/` (se sube a Git: el repo es privado; ver README "Empezar en otro ordenador") y en el SSD: `D:\2DAW\DesarrolloServidor\PanGestion-backups\`. Para restaurar: parar el backend y copiar `data/` y `uploads/` del zip dentro de `backend/`.
+
 ## Funcionalidades
 
 ### Panel de gestión

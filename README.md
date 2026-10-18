@@ -35,6 +35,44 @@ El contexto del proyecto y las decisiones tomadas, en [`context.md`](context.md)
 - **Node.js 24.15** o superior (lo exige Angular CLI 22).
 - PostgreSQL solo si se quiere usar en lugar de H2 (hay un `backend/docker-compose.yml`).
 
+## Empezar en otro ordenador (por ejemplo, en clase)
+
+Requisitos: Git, Java 21+ y Node 24.15+ (ver [Requisitos](#requisitos)).
+
+**1. Clonar e instalar**
+
+```bash
+git clone https://github.com/quiquealonso/PanGestion.git
+cd PanGestion
+npm ci
+```
+
+**2. Restaurar la base de datos de pruebas** (opcional pero recomendado: trae los ~310 pedidos de ejemplo, la
+panadería con fotos y el bar El Mosset). Sin este paso, el backend crea los datos de ejemplo básicos al arrancar.
+
+```bash
+# Linux / macOS
+unzip backups/pangestion-backup-2026-10-18.zip -x LEEME.txt -d backend
+```
+
+```powershell
+# Windows (PowerShell)
+Expand-Archive backups\pangestion-backup-2026-10-18.zip -DestinationPath backend\restore-tmp
+Move-Item backend\restore-tmp\data, backend\restore-tmp\uploads backend\
+Remove-Item -Recurse backend\restore-tmp
+```
+
+Debe quedar `backend/data/pangestion.mv.db` y `backend/uploads/1/products/...`.
+
+**3. Arrancar** (dos terminales):
+
+```bash
+cd backend && ./mvnw spring-boot:run      # Windows: mvnw.cmd spring-boot:run   (puerto 8080)
+npm start                                 # en la raíz (puerto 4200)
+```
+
+Abre http://localhost:4200 y entra con un usuario de prueba (botón **Usar** en el login).
+
 ## Arrancar en local
 
 1. **Backend** (puerto 8080). La primera vez crea la base de datos H2 en `backend/data/` con datos de ejemplo:
@@ -124,4 +162,4 @@ npm ci                      # en un disco exFAT/FAT: npm ci --no-bin-links
 - **Discos exFAT** (SSD portátil): no admiten enlaces simbólicos ni permisos de ejecución. Se instala con `--no-bin-links` (los scripts de `package.json` llaman al CLI de Angular con `node` directamente) y `mvnw` se lanza con `sh mvnw ...`. Git además pedirá `git config --global --add safe.directory <ruta>`.
 - **`mvnw` en Linux:** está marcado como ejecutable en Git; si aun así falla, `chmod +x backend/mvnw`.
 - **Finales de línea:** `.gitattributes` y `.editorconfig` fuerzan LF (CRLF solo para `.cmd`).
-- **Datos e imágenes:** la base de datos H2 y las fotos subidas no viajan con Git; en otra máquina se regeneran los datos de ejemplo.
+- **Datos e imágenes:** la base de datos H2 y las fotos subidas no se sincronizan solas. Para llevarlas a otra máquina hay una copia en `backups/` (ver [Empezar en otro ordenador](#empezar-en-otro-ordenador-por-ejemplo-en-clase)); si no se restaura, se generan los datos de ejemplo básicos.

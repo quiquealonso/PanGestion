@@ -14,6 +14,18 @@ API REST del proyecto PanGestión. Java 21 · Spring Boot 4.1 · Spring Data JPA
 - Hibernate crea/actualiza las tablas a partir de las entidades (`ddl-auto=update`).
 - Con H2, la primera vez se cargan datos de ejemplo (`config/DataInitializer`): un SUPERADMIN y dos empresas con sus usuarios: "Panadería Demo" (catálogo de Oberta) y el bar "El Mosset" (carta completa en `src/main/resources/seed/el-mosset.json`). Las credenciales están en ese fichero. Para empezar de cero, borra la carpeta `data/`.
 
+### Generar pedidos de demostración
+
+`config/DemoOrdersGenerator` crea pedidos de prueba (lunes a sábado, dentro del horario y del aforo de cada franja)
+para una empresa y un rango de fechas. Solo se ejecuta si se pasan los parámetros:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--app.demo-orders.company-id=1 --app.demo-orders.from=2026-10-12 --app.demo-orders.to=2026-10-24"
+```
+
+Los días pasados quedan como entregados (con algún cancelado) y los de hoy en adelante como pendientes. Siempre
+genera los mismos datos (semilla fija) y se salta los días que ya tienen pedidos.
+
 ## Estructura
 
 ```
