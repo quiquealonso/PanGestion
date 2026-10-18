@@ -1,6 +1,7 @@
 package com.pangestion.controller;
 
 import com.pangestion.dto.CategoryDto;
+import com.pangestion.dto.SortRequest;
 import com.pangestion.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,12 @@ public class CategoryController {
     @PutMapping("/{id}")
     public CategoryDto.Response update(@PathVariable Long id, @Valid @RequestBody CategoryDto.Request request) {
         return categoryService.update(id, request);
+    }
+
+    /** Body: {"ids": [3, 1, 2]} con las categorias en el orden deseado. */
+    @PutMapping("/order")
+    public List<CategoryDto.Response> reorder(@Valid @RequestBody SortRequest request) {
+        return categoryService.reorder(request.ids());
     }
 
     @DeleteMapping("/{id}")

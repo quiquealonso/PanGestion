@@ -3,7 +3,9 @@ export interface Category {
   name: string;
   color: string;
   description: string | null;
+  /** Posicion en el catalogo. */
+  sortOrder: number;
   productCount: number;
 }
 
-export type CategoryRequest = Omit<Category, 'id' | 'productCount'>;
+export type CategoryRequest = Omit<Category, 'id' | 'productCount' | 'sortOrder'>;

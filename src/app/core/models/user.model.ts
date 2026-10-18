@@ -1,6 +1,7 @@
-export type Role = 'ADMIN' | 'GESTOR' | 'VISOR';
+export type Role = 'SUPERADMIN' | 'ADMIN' | 'GESTOR' | 'VISOR';
 
 export const ROLE_LABELS: Record<Role, string> = {
+  SUPERADMIN: 'Superadministrador',
   ADMIN: 'Administrador',
   GESTOR: 'Gestor',
   VISOR: 'Visor',
@@ -13,6 +14,9 @@ export interface User {
   role: Role;
   active: boolean;
   lastLogin: string | null;
+  /** Empresa del usuario; null solo para SUPERADMIN. */
+  companyId: number | null;
+  companyName: string | null;
 }
 
 export interface UserRequest {
@@ -22,6 +26,8 @@ export interface UserRequest {
   password: string | null;
   role: Role;
   active: boolean;
+  /** Solo lo usa el SUPERADMIN; un ADMIN siempre crea usuarios de su empresa. */
+  companyId: number | null;
 }
 
 export interface LoginResponse {

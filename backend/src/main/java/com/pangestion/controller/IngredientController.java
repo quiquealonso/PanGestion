@@ -17,8 +17,8 @@ public class IngredientController {
     private final IngredientService ingredientService;
 
     @GetMapping
-    public List<IngredientDto.Response> findAll(@RequestParam(defaultValue = "false") boolean lowStock) {
-        return ingredientService.findAll(lowStock);
+    public List<IngredientDto.Response> findAll() {
+        return ingredientService.findAll();
     }
 
     @GetMapping("/{id}")
@@ -35,13 +35,6 @@ public class IngredientController {
     @PutMapping("/{id}")
     public IngredientDto.Response update(@PathVariable Long id, @Valid @RequestBody IngredientDto.Request request) {
         return ingredientService.update(id, request);
-    }
-
-    /** Entrada o salida de stock (reposicion, merma...). */
-    @PatchMapping("/{id}/stock")
-    public IngredientDto.Response adjustStock(@PathVariable Long id,
-                                              @Valid @RequestBody IngredientDto.StockAdjustment request) {
-        return ingredientService.adjustStock(id, request.amount());
     }
 
     @DeleteMapping("/{id}")

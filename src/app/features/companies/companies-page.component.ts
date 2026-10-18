@@ -1,36 +1,30 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Company } from '../../core/models/company.model';
-import { AuthService } from '../../core/services/auth.service';
+import { BUSINESS_TYPE_LABELS, Company, CompanyRequest } from '../../core/models/company.model';
 import { CompaniesService } from '../../core/services/companies.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
+import { CompanyFormComponent } from '../../shared/company-form/company-form.component';
+import { ModalComponent } from '../../shared/modal/modal.component';
 
+/** Alta y gestion de empresas (panaderias). Solo SUPERADMIN. */
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [CompanyFormComponent, ModalComponent],
   selector: 'app-companies-page',
   templateUrl: './companies-page.component.html',
 })
 export class CompaniesPageComponent implements OnInit {
-  private readonly fb = inject(FormBuilder);
   private readonly companiesService = inject(CompaniesService);
   private readonly notify = inject(NotificationService);
-  protected readonly auth = inject(AuthService);
+  private readonly confirmService = inject(ConfirmService);
 
+  readonly typeLabels = BUSINESS_TYPE_LABELS;
   readonly companies = signal<Company[]>([]);
   readonly selectedId = signal<number | null>(null);
+  readonly dialogOpen = signal(false);
   readonly selected = computed(() => this.companies().find((c) => c.id === this.selectedId()) ?? null);
 
-  readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.maxLength(120)]],
-    taxId: ['', [Validators.required, Validators.maxLength(20)]],
-    email: ['', Validators.email],
-    phone: [''],
-    address: [''],
-  });
-
   ngOnInit(): void {
-    if (!this.auth.canEdit()) this.form.disable();
     this.load();
   }
 
@@ -43,46 +37,44 @@ export class CompaniesPageComponent implements OnInit {
 
   select(company: Company): void {
     this.selectedId.set(company.id);
-    this.form.reset({
-      name: company.name,
-      taxId: company.taxId,
-      email: company.email ?? '',
-      phone: company.phone ?? '',
-      address: company.address ?? '',
-    });
+    this.dialogOpen.set(true);
   }
 
   startCreate(): void {
     this.selectedId.set(null);
-    this.form.reset({ name: '', taxId: '', email: '', phone: '', address: '' });
+    this.dialogOpen.set(true);
   }
 
-  save(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const value = this.form.getRawValue();
-    const body = { ...value, email: value.email || null, phone: value.phone || null, address: value.address || null };
+  closeDialog(): void {
+    this.dialogOpen.set(false);
+    this.selectedId.set(null);
+  }
+
+  save(body: CompanyRequest): void {
     const id = this.selectedId();
     const request = id ? this.companiesService.update(id, body) : this.companiesService.create(body);
     request.subscribe({
       next: (saved) => {
-        this.notify.success(`Empresa "${saved.name}" guardada`);
-        this.selectedId.set(saved.id);
+        this.notify.success(id ? `Empresa "${saved.name}" guardada` : `Empresa "${saved.name}" creada. Ahora crea su administrador en Usuarios.`);
+        this.closeDialog();
         this.load();
       },
       error: (err) => this.notify.error(apiErrorMessage(err)),
     });
   }
 
-  remove(): void {
+  async remove(): Promise<void> {
     const company = this.selected();
-    if (!company || !confirm(`¿Eliminar la empresa "${company.name}"?`)) return;
+    if (!company) return;
+    const accepted = await this.confirmService.ask({
+      title: 'Eliminar empresa',
+      message: `¿Seguro que quieres eliminar "${company.name}"? Solo se puede si no tiene usuarios ni pedidos.`,
+    });
+    if (!accepted) return;
     this.companiesService.remove(company.id).subscribe({
       next: () => {
         this.notify.success('Empresa eliminada');
-        this.startCreate();
+        this.closeDialog();
         this.load();
       },
       error: (err) => this.notify.error(apiErrorMessage(err)),

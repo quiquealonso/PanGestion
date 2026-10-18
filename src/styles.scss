@@ -403,3 +403,265 @@ textarea.ng-invalid.ng-touched {
 		justify-items: start;
 	}
 }
+
+/* Botones para reordenar (▲▼) */
+.meta--row {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+.sort-buttons {
+	display: inline-flex;
+	gap: 0.25rem;
+}
+
+.sort-buttons .btn {
+	padding: 0.25rem 0.5rem;
+}
+
+/* Botones dentro de un bloque de formulario: a su tamano, no a todo el ancho */
+.field > .btn {
+	justify-self: start;
+}
+
+/* ===== Rejilla de tarjetas compactas (catalogo) ===== */
+
+.card-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 0.75rem;
+}
+
+.card {
+	display: grid;
+	align-content: space-between;
+	gap: 0.6rem;
+	padding: 0.85rem 0.95rem;
+	border-radius: 1rem;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	background: rgba(255, 255, 255, 0.03);
+	cursor: pointer;
+	transition: 160ms ease;
+}
+
+.card:hover {
+	border-color: rgba(125, 211, 252, 0.3);
+	background: rgba(125, 211, 252, 0.06);
+}
+
+.card--muted {
+	opacity: 0.55;
+}
+
+.card__top {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.6rem;
+}
+
+.card__title {
+	margin: 0;
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: 0.98rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.card__sub {
+	margin: 0.15rem 0 0;
+	color: var(--muted);
+	font-size: 0.82rem;
+}
+
+.card__price {
+	color: var(--primary);
+	font-family: 'Space Grotesk', sans-serif;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.card__foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+/* Bloque de un grupo (por ejemplo, una categoria con sus productos) */
+.group {
+	padding: 0;
+	overflow: hidden;
+}
+
+.group__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.9rem 1.1rem;
+	border-bottom: 1px solid var(--border);
+}
+
+.group__title {
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
+}
+
+.group__title h3 {
+	margin: 0;
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: 1.05rem;
+}
+
+.group__title p {
+	margin: 0;
+	color: var(--muted);
+	font-size: 0.8rem;
+}
+
+.group__body {
+	padding: 0.9rem 1.1rem 1.1rem;
+}
+
+/* Inicial con el color de la categoria */
+.badge {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 0.6rem;
+	color: #09111f;
+	font-family: 'Space Grotesk', sans-serif;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.abbr {
+	padding: 0.05rem 0.4rem;
+	border-radius: 0.4rem;
+	background: rgba(255, 255, 255, 0.08);
+	font-family: monospace;
+	font-size: 0.8rem;
+}
+
+/* Buscador pequeno en la cabecera de un grupo */
+.group__head .search {
+	width: auto;
+	max-width: 240px;
+	padding: 0.5rem 0.8rem;
+}
+
+/* El buscador de la barra de filtros tiene prioridad de ancho */
+.toolbar input[type='search'] {
+	flex: 2 1 240px;
+}
+
+.toolbar input[type='date'] {
+	flex: 0 1 160px;
+	min-width: 140px;
+}
+
+/* ===== Asistentes por pasos y franjas de recogida ===== */
+.wizard-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
+.wizard-nav button {
+  padding: 0.7rem; border-radius: 0.95rem; border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03); color: var(--muted); cursor: pointer;
+}
+.wizard-nav button.is-active { color: var(--text); border-color: rgba(125, 211, 252, 0.4); background: rgba(125, 211, 252, 0.12); }
+.wizard-nav button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.slots { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.slot {
+  min-width: 4.6rem; padding: 0.6rem; border-radius: 0.8rem; border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04); color: var(--text); cursor: pointer;
+}
+.slot.is-active {
+  border-color: transparent; color: #09111f; font-weight: 700;
+  background: linear-gradient(135deg, rgba(125, 211, 252, 0.96), rgba(251, 191, 36, 0.9));
+}
+.slot:disabled { text-decoration: line-through; opacity: 0.4; cursor: not-allowed; }
+
+@media (max-width: 900px) {
+  .wizard-nav { grid-template-columns: 1fr; }
+}
+
+/* Miniatura de producto en las tarjetas del catalogo */
+.thumb {
+	width: 52px;
+	height: 52px;
+	flex-shrink: 0;
+	border-radius: 0.7rem;
+	object-fit: cover;
+}
+
+.card__main {
+	flex: 1;
+	min-width: 0;
+}
+
+/* ===== Personalizar productos (quitar ingredientes) ===== */
+.removed {
+	display: block;
+	color: var(--warning);
+	font-size: 0.82rem;
+}
+
+.link {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--primary);
+	font-size: 0.82rem;
+	cursor: pointer;
+}
+
+.link:hover {
+	text-decoration: underline;
+}
+
+.line-actions {
+	display: flex;
+	gap: 0.9rem;
+	margin-top: 0.15rem;
+}
+
+.ingredient-list {
+	display: grid;
+	gap: 0.4rem;
+	margin: 0.8rem 0 1rem;
+}
+
+.ingredient {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.55rem 0.8rem;
+	border-radius: 0.8rem;
+	border: 1px solid var(--border);
+	background: rgba(255, 255, 255, 0.03);
+	cursor: pointer;
+}
+
+.ingredient input {
+	width: auto;
+}
+
+.ingredient small {
+	margin-left: auto;
+	color: var(--warning);
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.ingredient.is-removed span {
+	color: var(--muted);
+	text-decoration: line-through;
+}
+
+.customize-foot {
+	justify-content: space-between;
+}

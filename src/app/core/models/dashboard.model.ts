@@ -1,6 +1,3 @@
-import { Ingredient } from './ingredient.model';
-import { Order } from './order.model';
-
 export interface Dashboard {
   pendingOrders: number;
   inProcessOrders: number;
@@ -11,7 +8,13 @@ export interface Dashboard {
   monthRevenue: number;
   monthOrders: number;
   averageTicket: number;
-  latestOrders: Order[];
   topProducts: { name: string; units: number }[];
-  lowStockIngredients: Ingredient[];
+}
+
+/** Unidades vendidas por dia (lunes a domingo) de una semana y de la anterior. */
+export interface WeeklySales {
+  /** Lunes de la semana (yyyy-MM-dd). */
+  weekStart: string;
+  current: number[];
+  previous: number[];
 }

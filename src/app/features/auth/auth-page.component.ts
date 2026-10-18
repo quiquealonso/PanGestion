@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
+import { environment } from '../../../environments/environment';
 
 @Component({
   imports: [ReactiveFormsModule, RouterLink],
@@ -17,6 +18,9 @@ export class AuthPageComponent {
 
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
+  /** Usuarios de prueba (solo en desarrollo, ver environment.ts). */
+  protected readonly testUsers = environment.testUsers;
+  protected readonly copied = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -25,7 +29,22 @@ export class AuthPageComponent {
 
   constructor() {
     if (this.auth.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([this.auth.isSuperAdmin() ? '/companies' : '/dashboard']);
+    }
+  }
+
+  /** Rellena el formulario con un usuario de prueba. */
+  useTestUser(user: { email: string; password: string }): void {
+    this.form.setValue({ email: user.email, password: user.password });
+  }
+
+  async copy(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copied.set(text);
+      setTimeout(() => this.copied.set(null), 1500);
+    } catch {
+      // Sin permiso de portapapeles: no pasa nada, se puede usar el boton "Usar"
     }
   }
 
@@ -38,7 +57,7 @@ export class AuthPageComponent {
     this.loading.set(true);
     this.error.set(null);
     this.auth.login(email, password).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => this.router.navigate([this.auth.isSuperAdmin() ? '/companies' : '/dashboard']),
       error: (err) => {
         this.error.set(apiErrorMessage(err));
         this.loading.set(false);

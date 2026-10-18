@@ -1,9 +1,11 @@
 package com.pangestion.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.pangestion.model.BusinessType;
 import com.pangestion.model.Company;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
+
+import java.time.LocalTime;
 
 public final class CompanyDto {
 
@@ -12,18 +14,33 @@ public final class CompanyDto {
 
     public record Request(
             @NotBlank @Size(max = 120) String name,
+            /** Solo lo cambia el SUPERADMIN; desde "Mi empresa" se ignora. */
+            @NotNull BusinessType type,
             @NotBlank @Size(max = 20) String taxId,
             @Email @Size(max = 120) String email,
             @Size(max = 20) String phone,
-            @Size(max = 200) String address) {
+            @NotBlank @Size(max = 200) String address,
+            @NotNull @JsonFormat(pattern = "HH:mm") LocalTime openingTime,
+            @NotNull @JsonFormat(pattern = "HH:mm") LocalTime closingTime,
+            @Min(10) @Max(240) int slotMinutes,
+            @Min(1) @Max(100) int ordersPerSlot,
+            boolean active) {
     }
 
-    public record Response(Long id, String name, String taxId, String email, String phone, String address,
-                           long customerCount) {
+    public record Response(Long id, String name, BusinessType type, String taxId, String email, String phone, String address,
+                           @JsonFormat(pattern = "HH:mm") LocalTime openingTime,
+                           @JsonFormat(pattern = "HH:mm") LocalTime closingTime,
+                           int slotMinutes, int ordersPerSlot, boolean active,
+                           long userCount, long customerCount) {
 
-        public static Response from(Company company, long customerCount) {
-            return new Response(company.getId(), company.getName(), company.getTaxId(), company.getEmail(),
-                    company.getPhone(), company.getAddress(), customerCount);
+        public static Response from(Company company, long userCount, long customerCount) {
+            return new Response(company.getId(), company.getName(), company.getType(), company.getTaxId(), company.getEmail(),
+                    company.getPhone(), company.getAddress(), company.getOpeningTime(), company.getClosingTime(),
+                    company.getSlotMinutes(), company.getOrdersPerSlot(), company.isActive(), userCount, customerCount);
         }
+    }
+
+    /** Franja de recogida de un dia. */
+    public record Slot(@JsonFormat(pattern = "HH:mm") LocalTime time, boolean available, int remaining) {
     }
 }

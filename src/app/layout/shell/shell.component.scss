@@ -9,7 +9,12 @@
   min-height: 100vh;
 }
 
+/* El sidebar se queda fijo mientras el contenido hace scroll; si no cabe, hace scroll por dentro. */
 .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -191,6 +196,9 @@
   }
 
   .sidebar {
+    position: static;
+    height: auto;
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid var(--border);
   }

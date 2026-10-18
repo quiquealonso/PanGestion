@@ -5,13 +5,11 @@ import com.pangestion.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Gestion de usuarios. Solo ADMIN (ver SecurityConfig). */
+/** Gestion de usuarios: SUPERADMIN (todos) y ADMIN (los de su empresa). Ver SecurityConfig. */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -36,14 +34,13 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public UserDto.Response update(@PathVariable Long id, @Valid @RequestBody UserDto.Request request,
-                                   @AuthenticationPrincipal Jwt jwt) {
-        return userService.update(id, request, jwt.getSubject());
+    public UserDto.Response update(@PathVariable Long id, @Valid @RequestBody UserDto.Request request) {
+        return userService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        userService.delete(id, jwt.getSubject());
+    public void delete(@PathVariable Long id) {
+        userService.delete(id);
     }
 }

@@ -7,7 +7,7 @@ import lombok.Setter;
 
 /** Categoria del catalogo (panes, bolleria, dulces...). */
 @Entity
-@Table(name = "categories")
+@Table(name = "categories", uniqueConstraints = @UniqueConstraint(columnNames = {"company_id", "name"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,7 +17,12 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 80)
+    /** Empresa (panaderia) a la que pertenece. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @Column(nullable = false, length = 80)
     private String name;
 
     /** Color en formato hexadecimal, por ejemplo #F59E0B. */
@@ -26,4 +31,8 @@ public class Category {
 
     @Column(length = 255)
     private String description;
+
+    /** Posicion en el catalogo (0 = primera). */
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
 }

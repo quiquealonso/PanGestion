@@ -26,16 +26,19 @@ public class TokenService {
 
     public String generateToken(User user) {
         Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
                 .issuer("pangestion")
                 .issuedAt(now)
                 .expiresAt(now.plus(expirationMinutes, ChronoUnit.MINUTES))
                 .subject(user.getEmail())
                 .claim("name", user.getName())
-                .claim("role", user.getRole().name())
-                .build();
+                .claim("role", user.getRole().name());
+        if (user.getCompany() != null) {
+            // La empresa del usuario viaja en el token: todas las consultas se filtran por ella
+            claims.claim("companyId", user.getCompany().getId());
+        }
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
-        return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        return encoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
     }
 
     public long getExpirationMinutes() {

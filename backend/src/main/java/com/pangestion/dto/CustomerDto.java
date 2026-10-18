@@ -12,23 +12,21 @@ public final class CustomerDto {
     private CustomerDto() {
     }
 
-    /** companyId nulo = cliente particular. */
+    /** businessName/taxId solo si el cliente es un negocio; nulos = particular. */
     public record Request(
             @NotBlank @Size(max = 120) String name,
             @NotBlank @Email @Size(max = 120) String email,
             @Size(max = 20) String phone,
-            Long companyId) {
+            @Size(max = 120) String businessName,
+            @Size(max = 20) String taxId) {
     }
 
     public record Response(Long id, String name, String email, String phone,
-                           Long companyId, String companyName, LocalDateTime createdAt) {
+                           String businessName, String taxId, LocalDateTime createdAt) {
 
         public static Response from(Customer customer) {
-            var company = customer.getCompany();
             return new Response(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhone(),
-                    company == null ? null : company.getId(),
-                    company == null ? null : company.getName(),
-                    customer.getCreatedAt());
+                    customer.getBusinessName(), customer.getTaxId(), customer.getCreatedAt());
         }
     }
 }

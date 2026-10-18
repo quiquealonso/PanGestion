@@ -3,56 +3,62 @@
     <div>
       <p class="eyebrow">Personas</p>
       <h2>Clientes</h2>
-      <p>Particulares y clientes de empresa, con su contacto e historial de pedidos.</p>
+      <p>Particulares y negocios que compran a la panadería, con su contacto e historial de pedidos.</p>
     </div>
     @if (auth.canEdit()) {
       <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo cliente</button>
     }
   </header>
 
-  <form class="panel toolbar" (ngSubmit)="load()">
-    <input type="search" name="search" placeholder="Buscar por nombre, email o empresa" [(ngModel)]="search" />
-    <button type="submit" class="btn">Buscar</button>
-  </form>
+  <section class="stats-grid">
+    <article class="panel stat-card"><span>Clientes</span><strong>{{ customers().length }}</strong></article>
+    <article class="panel stat-card"><span>Negocios</span><strong>{{ businessCount() }}</strong></article>
+    <article class="panel stat-card"><span>Particulares</span><strong>{{ customers().length - businessCount() }}</strong></article>
+  </section>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="panel-head"><h3>Listado</h3><span>{{ customers().length }} clientes</span></div>
-      <div class="list">
+  <article class="panel group">
+    <div class="group__head">
+      <div class="group__title">
+        <span class="badge" style="background: var(--primary)">C</span>
+        <div>
+          <h3>Todos los clientes</h3>
+          <p>{{ customers().length }} clientes</p>
+        </div>
+      </div>
+      <input type="search" class="search" placeholder="Buscar por nombre, email o razón social"
+             [(ngModel)]="search" (ngModelChange)="load()" />
+    </div>
+    <div class="group__body">
+      <div class="card-grid">
         @for (customer of customers(); track customer.id) {
-          <button type="button" class="list-item" [class.is-selected]="selectedId() === customer.id" (click)="select(customer)">
+          <div class="card" (click)="select(customer)">
             <div>
-              <strong>{{ customer.name }}</strong>
-              <p>{{ customer.email }} · {{ customer.phone || 'sin teléfono' }}</p>
+              <p class="card__title">{{ customer.name }}</p>
+              <p class="card__sub">{{ customer.email }}</p>
+              <p class="card__sub">{{ customer.phone || 'Sin teléfono' }}</p>
             </div>
-            <span class="tone" [class.tone--pendiente]="customer.companyName">{{ customer.companyName || 'Particular' }}</span>
-          </button>
+            <div class="card__foot">
+              <span class="tone" [class.tone--pendiente]="customer.businessName">{{ customer.businessName || 'Particular' }}</span>
+            </div>
+          </div>
         } @empty {
-          <p class="empty">No hay clientes.</p>
+          <p class="empty">No hay clientes con esa búsqueda.</p>
         }
       </div>
-    </article>
+    </div>
+  </article>
 
-    <aside class="panel">
-      <div class="panel-head">
-        <h3>{{ selected() ? 'Ficha del cliente' : 'Nuevo cliente' }}</h3>
-        @if (selected(); as c) {
-          <span>Alta {{ c.createdAt | date: 'dd/MM/yyyy' }}</span>
-        }
-      </div>
+  @if (dialogOpen()) {
+    <app-modal [title]="selected() ? selected()!.name : 'Nuevo cliente'" width="620px" (closed)="closeDialog()">
+      @if (selected(); as c) {
+        <p class="muted">Cliente desde el {{ c.createdAt | date: 'd MMM y' }}</p>
+      }
       <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
         <label class="full"><span>Nombre</span><input formControlName="name" /></label>
         <label><span>Email</span><input type="email" formControlName="email" /></label>
         <label><span>Teléfono</span><input formControlName="phone" /></label>
-        <label class="full">
-          <span>Empresa</span>
-          <select formControlName="companyId">
-            <option [ngValue]="null">Particular</option>
-            @for (company of companies(); track company.id) {
-              <option [ngValue]="company.id">{{ company.name }}</option>
-            }
-          </select>
-        </label>
+        <label><span>Razón social (si es un negocio)</span><input formControlName="businessName" placeholder="Vacío = particular" /></label>
+        <label><span>CIF / NIF</span><input formControlName="taxId" /></label>
         @if (auth.canEdit()) {
           <div class="form-actions full">
             <button type="submit" class="btn btn--primary">Guardar</button>
@@ -74,7 +80,7 @@
               <a class="list-item" [routerLink]="['/orders', order.id]">
                 <div>
                   <strong>#{{ order.id }}</strong>
-                  <p>{{ order.pickupDate | date: 'dd/MM/yyyy' }} · {{ order.storeName }}</p>
+                  <p>{{ order.pickupDate | date: 'dd/MM/yyyy' }} · {{ order.pickupTime }} · {{ order.itemCount }} uds</p>
                 </div>
                 <div class="meta">
                   <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
@@ -82,11 +88,11 @@
                 </div>
               </a>
             } @empty {
-              <p class="empty">Sin pedidos.</p>
+              <p class="empty">Sin pedidos todavía.</p>
             }
           </div>
         </div>
       }
-    </aside>
-  </div>
+    </app-modal>
+  }
 </section>

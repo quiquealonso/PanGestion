@@ -14,10 +14,15 @@ public record DashboardDto(
         BigDecimal monthRevenue,
         long monthOrders,
         BigDecimal averageTicket,
-        List<OrderDto.Response> latestOrders,
-        List<TopProduct> topProducts,
-        List<IngredientDto.Response> lowStockIngredients) {
+        List<TopProduct> topProducts) {
 
     public record TopProduct(String name, long units) {
+    }
+
+    /**
+     * Unidades vendidas por dia (lunes a domingo) de una semana y de la anterior, para compararlas.
+     * current[0] = lunes de weekStart ... current[6] = domingo.
+     */
+    public record WeeklySales(java.time.LocalDate weekStart, List<Long> current, List<Long> previous) {
     }
 }

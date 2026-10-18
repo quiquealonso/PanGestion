@@ -18,96 +18,123 @@
         <option [value]="s">{{ s | orderStatus }}</option>
       }
     </select>
-    <select name="store" [(ngModel)]="filters.storeId" (change)="load()">
-      <option [ngValue]="null">Todas las tiendas</option>
-      @for (store of stores(); track store.id) {
-        <option [ngValue]="store.id">{{ store.name }}</option>
-      }
-    </select>
-    <input type="date" name="from" title="Recogida desde" [(ngModel)]="filters.from" (change)="load()" />
-    <input type="date" name="to" title="Recogida hasta" [(ngModel)]="filters.to" (change)="load()" />
     <button type="submit" class="btn">Buscar</button>
     <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
   </form>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="list">
-        @for (order of orders(); track order.id) {
-          <button type="button" class="list-item" [class.is-selected]="selectedId() === order.id" (click)="selectedId.set(order.id)">
-            <div>
-              <strong>#{{ order.id }} · {{ order.customerName }}</strong>
-              <p>{{ order.pickupDate | date: 'EEE dd/MM/yyyy' }} · {{ order.pickupTime }} · {{ order.storeName }}</p>
-              <p>{{ order.itemCount }} productos</p>
-            </div>
-            <div class="meta">
-              <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
-              <strong>{{ order.total | currency: 'EUR' }}</strong>
-            </div>
+  <div class="panel day-bar">
+    <div class="day-bar__picker">
+      <button type="button" class="btn btn--small" (click)="moveDay(-1)" aria-label="Día anterior">◀</button>
+      <input type="date" aria-label="Día de recogida" [ngModel]="day()" (ngModelChange)="setDay($event ?? '')" />
+      <button type="button" class="btn btn--small" (click)="moveDay(1)" aria-label="Día siguiente">▶</button>
+      <button type="button" class="btn btn--small" [disabled]="day() === today" (click)="setDay(today)">Hoy</button>
+      <button type="button" class="btn btn--small" [disabled]="!day()" (click)="setDay('')">Todos los días</button>
+    </div>
+    @if (day()) {
+      <div class="day-bar__actions">
+        <button type="button" class="btn" (click)="downloadDay()" title="Archivo con producto: cantidad de todo el día">⬇ Descargar pedidos</button>
+        @if (auth.canEdit()) {
+          <button type="button" class="btn btn--primary" [disabled]="pendingOfDay() === 0" (click)="startDay()"
+                  [title]="pendingOfDay() === 0 ? 'No hay pedidos pendientes este día' : ''">
+            ▶ Pasar a en proceso ({{ pendingOfDay() }})
           </button>
-        } @empty {
-          <p class="empty">{{ loading() ? 'Cargando…' : 'No hay pedidos con estos filtros.' }}</p>
         }
       </div>
-    </article>
+    }
+  </div>
 
-    <aside class="panel detail">
-      @if (selectedOrder(); as order) {
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">Pedido #{{ order.id }}</p>
-            <h3>{{ order.customerName }}</h3>
+  <div class="groups">
+    @for (group of groups(); track group.date) {
+      <article class="panel group">
+        <div class="group__head">
+          <div class="group__title">
+            <span class="badge" [class.badge--today]="group.label === 'Hoy'">{{ group.date | date: 'dd' }}</span>
+            <div>
+              <h3>{{ group.label ? group.label + ' · ' : '' }}{{ group.date | date: 'EEEE d MMMM' }}</h3>
+              <p>{{ group.orders.length }} {{ group.orders.length === 1 ? 'pedido' : 'pedidos' }} · {{ group.total | currency: 'EUR' }}</p>
+            </div>
           </div>
-          <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
+        </div>
+        <div class="group__body">
+          <div class="card-grid">
+            @for (order of group.orders; track order.id) {
+              <div class="card" [class.card--muted]="order.status === 'CANCELADO'" (click)="openDetail(order)">
+                <div class="card__top">
+                  <div>
+                    <p class="card__title">#{{ order.id }} · {{ order.customerName }}</p>
+                    <p class="card__sub">Recogida a las {{ order.pickupTime }}</p>
+                    <p class="card__sub">{{ order.itemCount }} {{ order.itemCount === 1 ? 'unidad' : 'unidades' }}</p>
+                  </div>
+                  <span class="card__price">{{ order.total | currency: 'EUR' }}</span>
+                </div>
+                <div class="card__foot">
+                  <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
+                  @if (order.notes) {
+                    <span class="card__sub" [title]="order.notes">📝 Notas</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <article class="panel"><p class="empty">{{ loading() ? 'Cargando…' : 'No hay pedidos con estos filtros.' }}</p></article>
+    }
+  </div>
+
+  @if (selectedOrder(); as order) {
+    <app-modal [title]="'Pedido #' + order.id + ' · ' + order.customerName" width="640px" (closed)="closeDetail()">
+      <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
+
+      <dl class="details">
+        <div><dt>Recogida</dt><dd>{{ order.pickupDate | date: 'EEEE d MMM' }} · {{ order.pickupTime }}</dd></div>
+        <div><dt>Email</dt><dd>{{ order.customerEmail }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ order.customerPhone || '—' }}</dd></div>
+        <div class="full"><dt>Notas</dt><dd>{{ order.notes || 'Sin notas' }}</dd></div>
+      </dl>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Producto</th><th class="num">Uds</th><th class="num">Precio</th><th class="num">Subtotal</th></tr>
+        </thead>
+        <tbody>
+          @for (line of order.lines; track $index) {
+            <tr>
+              <td>
+                {{ line.productName }}
+                @for (name of line.removedIngredients; track name) {
+                  <span class="removed">sin {{ name.toLowerCase() }}</span>
+                }
+              </td>
+              <td class="num">{{ line.quantity }}</td>
+              <td class="num">{{ line.unitPrice | currency: 'EUR' }}</td>
+              <td class="num">{{ line.subtotal | currency: 'EUR' }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr><th colspan="3">Total</th><th class="num">{{ order.total | currency: 'EUR' }}</th></tr>
+        </tfoot>
+      </table>
+
+      @if (auth.canEdit()) {
+        <p class="eyebrow status-title">Cambiar estado</p>
+        <div class="status-actions">
+          @for (s of statuses; track s) {
+            <button type="button" class="btn btn--small" [disabled]="order.status === s" (click)="changeStatus(order, s)">
+              {{ s | orderStatus }}
+            </button>
+          }
         </div>
 
-        <dl class="details">
-          <div><dt>Recogida</dt><dd>{{ order.pickupDate | date: 'EEEE d MMM' }} · {{ order.pickupTime }}</dd></div>
-          <div><dt>Tienda</dt><dd>{{ order.storeName }}</dd></div>
-          <div><dt>Email</dt><dd>{{ order.customerEmail }}</dd></div>
-          <div><dt>Teléfono</dt><dd>{{ order.customerPhone || '—' }}</dd></div>
-          <div class="full"><dt>Notas</dt><dd>{{ order.notes || 'Sin notas' }}</dd></div>
-        </dl>
-
-        <table class="data-table">
-          <thead>
-            <tr><th>Producto</th><th class="num">Uds</th><th class="num">Precio</th><th class="num">Subtotal</th></tr>
-          </thead>
-          <tbody>
-            @for (line of order.lines; track line.productId) {
-              <tr>
-                <td>{{ line.productName }}</td>
-                <td class="num">{{ line.quantity }}</td>
-                <td class="num">{{ line.unitPrice | currency: 'EUR' }}</td>
-                <td class="num">{{ line.subtotal | currency: 'EUR' }}</td>
-              </tr>
-            }
-          </tbody>
-          <tfoot>
-            <tr><th colspan="3">Total</th><th class="num">{{ order.total | currency: 'EUR' }}</th></tr>
-          </tfoot>
-        </table>
-
-        @if (auth.canEdit()) {
-          <p class="eyebrow status-title">Cambiar estado</p>
-          <div class="status-actions">
-            @for (s of statuses; track s) {
-              <button type="button" class="btn btn--small" [disabled]="order.status === s" (click)="changeStatus(order, s)">
-                {{ s | orderStatus }}
-              </button>
-            }
-          </div>
-
-          <footer class="form-actions">
-            @if (isEditable(order)) {
-              <a class="btn" [routerLink]="['/orders', order.id, 'edit']">Editar pedido</a>
-            }
-            <button type="button" class="btn btn--danger" (click)="remove(order)">Eliminar</button>
-          </footer>
-        }
-      } @else {
-        <p class="empty">Selecciona un pedido para ver el detalle.</p>
+        <footer class="form-actions">
+          @if (isEditable(order)) {
+            <a class="btn btn--primary" [routerLink]="['/orders', order.id, 'edit']">Editar pedido</a>
+          }
+          <button type="button" class="btn btn--danger" (click)="remove(order)">Eliminar</button>
+        </footer>
       }
-    </aside>
-  </div>
+    </app-modal>
+  }
 </section>

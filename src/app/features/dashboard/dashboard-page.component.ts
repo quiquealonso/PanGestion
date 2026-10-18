@@ -5,10 +5,10 @@ import { Dashboard } from '../../core/models/dashboard.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
-import { OrderStatusPipe } from '../../shared/order-status.pipe';
+import { WeeklySalesChartComponent } from './weekly-sales-chart.component';
 
 @Component({
-  imports: [CurrencyPipe, DatePipe, RouterLink, OrderStatusPipe],
+  imports: [CurrencyPipe, DatePipe, RouterLink, WeeklySalesChartComponent],
   selector: 'app-dashboard-page',
   styleUrl: './dashboard-page.component.scss',
   templateUrl: './dashboard-page.component.html',

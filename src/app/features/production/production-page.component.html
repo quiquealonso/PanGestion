@@ -1,0 +1,101 @@
+<section class="page production" #screen>
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Obrador</p>
+      <h2>Producción del día</h2>
+      <p class="day-title">{{ day() | date: 'EEEE d MMMM y' }}</p>
+    </div>
+    <div class="live">
+      <span class="live__dot"></span> En vivo
+      @if (updatedAt(); as at) {
+        <small>· actualizado {{ at | date: 'HH:mm:ss' }}</small>
+      }
+      <button type="button" class="btn btn--small" (click)="fullscreen(screen)" title="Pantalla completa">⛶</button>
+    </div>
+  </header>
+
+  <div class="panel controls">
+    <div class="controls__group">
+      <button type="button" class="btn btn--small" (click)="moveDay(-1)" aria-label="Día anterior">◀</button>
+      <input type="date" aria-label="Día" [ngModel]="day()" (ngModelChange)="setDay($event)" />
+      <button type="button" class="btn btn--small" (click)="moveDay(1)" aria-label="Día siguiente">▶</button>
+      <button type="button" class="btn btn--small" [disabled]="day() === today" (click)="setDay(today)">Hoy</button>
+    </div>
+    <div class="controls__group">
+      <label>Franjas
+        <select [ngModel]="slotHours()" (ngModelChange)="slotHours.set(+$event)">
+          <option [ngValue]="1">1 h</option>
+          <option [ngValue]="2">2 h</option>
+          <option [ngValue]="3">3 h</option>
+          <option [ngValue]="4">4 h</option>
+        </select>
+      </label>
+      <label class="check-inline"><input type="checkbox" [ngModel]="showEmptySlots()" (ngModelChange)="showEmptySlots.set($event)" /> Franjas vacías</label>
+      <div class="segmented" role="group" aria-label="Qué pedidos contar">
+        <button type="button" [class.is-active]="onlyPending()" (click)="setOnlyPending(true)">Por entregar</button>
+        <button type="button" [class.is-active]="!onlyPending()" (click)="setOnlyPending(false)">Todo el día</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="stats-grid">
+    <article class="panel stat-card"><span>{{ onlyPending() ? 'Unidades por entregar' : 'Unidades del día' }}</span><strong>{{ grandTotal() }}</strong></article>
+    <article class="panel stat-card"><span>Productos distintos</span><strong>{{ matrix().length }}</strong></article>
+    @if (nextUnits() !== null) {
+      <article class="panel stat-card stat-card--now"><span>Franja actual + siguiente</span><strong>{{ nextUnits() }}</strong><small>{{ slots()[currentSlot()]?.label }}</small></article>
+    }
+  </section>
+
+  <article class="panel table-panel">
+    @if (matrix().length) {
+      <div class="scroll">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th class="product-col">Producto</th>
+              @for (i of visibleSlots(); track i) {
+                <th class="num" [class.now]="i === currentSlot()">{{ slots()[i].label }}</th>
+              }
+              <th class="num total-col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of matrix(); track row.key) {
+              @if (row.startsCategory) {
+                <tr class="category-row">
+                  <th [attr.colspan]="visibleSlots().length + 2"><span class="color-dot" [style.background]="row.categoryColor"></span>{{ row.category }}</th>
+                </tr>
+              }
+              <tr>
+                <th class="product-col">
+                  {{ row.name }}
+                  @if (row.removed.length) {
+                    <span class="removed">{{ row.removed.map(nameWithout).join(', ') }}</span>
+                  }
+                </th>
+                @for (i of visibleSlots(); track i) {
+                  <td class="num cell" [class.now]="i === currentSlot()" [class.empty]="row.cells[i] === 0"
+                      [style.background]="row.cells[i] ? 'rgba(57, 135, 229, ' + cellAlpha(row.cells[i]) + ')' : null">
+                    {{ row.cells[i] || '·' }}
+                  </td>
+                }
+                <td class="num total-col">{{ row.total }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <th class="product-col">Total</th>
+              @for (i of visibleSlots(); track i) {
+                <td class="num" [class.now]="i === currentSlot()">{{ columnTotals()[i] || '·' }}</td>
+              }
+              <td class="num total-col">{{ grandTotal() }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    } @else {
+      <p class="empty">{{ onlyPending() ? 'No queda nada por entregar este día.' : 'No hay pedidos este día.' }}</p>
+    }
+  </article>
+</section>

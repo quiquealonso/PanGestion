@@ -19,15 +19,14 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    /** Filtros opcionales: ?search=lola&status=PENDIENTE&storeId=1&from=2026-10-01&to=2026-10-31 */
+    /** Filtros opcionales: ?search=lola&status=PENDIENTE&from=2026-10-01&to=2026-10-31 */
     @GetMapping
     public List<OrderDto.Response> search(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) Long storeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return orderService.search(search, status, storeId, from, to);
+        return orderService.search(search, status, from, to);
     }
 
     @GetMapping("/{id}")
@@ -49,6 +48,24 @@ public class OrderController {
     @PatchMapping("/{id}/status")
     public OrderDto.Response changeStatus(@PathVariable Long id, @Valid @RequestBody OrderDto.StatusRequest request) {
         return orderService.changeStatus(id, request.status());
+    }
+
+    /**
+     * Hoja de produccion de un dia: unidades por producto y hora de recogida.
+     * pending=true (por defecto) deja fuera los pedidos ya entregados.
+     */
+    @GetMapping("/production")
+    public List<OrderDto.ProductionRow> production(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(defaultValue = "true") boolean pending) {
+        return orderService.production(date, pending);
+    }
+
+    /** Pasa a EN_PROCESO todos los pedidos pendientes que se recogen ese dia. Devuelve {"updated": n}. */
+    @PostMapping("/start-day")
+    public java.util.Map<String, Integer> startDay(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return java.util.Map.of("updated", orderService.startDay(date));
     }
 
     @DeleteMapping("/{id}")

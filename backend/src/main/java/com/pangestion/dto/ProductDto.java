@@ -1,12 +1,10 @@
 package com.pangestion.dto;
 
+import com.pangestion.model.Ingredient;
 import com.pangestion.model.Product;
-import com.pangestion.model.ProductIngredient;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 public final class ProductDto {
@@ -16,54 +14,54 @@ public final class ProductDto {
 
     public record Request(
             @NotBlank @Size(max = 120) String name,
+            @Size(max = 20) String abbreviation,
             @Size(max = 500) String description,
+            @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "debe ser un color hexadecimal, por ejemplo #F59E0B") String color,
             @NotNull @DecimalMin("0.00") BigDecimal price,
             boolean active,
             @NotNull Long categoryId,
-            @Valid List<IngredientLine> ingredients) {
+            /** Ingredientes que lleva (ids). */
+            List<Long> ingredientIds) {
     }
 
-    public record IngredientLine(@NotNull Long ingredientId, @NotNull @Positive BigDecimal quantity) {
-    }
+    public record IngredientRef(Long id, String name, String allergen) {
 
-    public record IngredientLineResponse(Long ingredientId, String name, String unit, BigDecimal quantity) {
-
-        static IngredientLineResponse from(ProductIngredient line) {
-            return new IngredientLineResponse(line.getIngredient().getId(), line.getIngredient().getName(),
-                    line.getIngredient().getUnit(), line.getQuantity());
+        static IngredientRef from(Ingredient ingredient) {
+            return new IngredientRef(ingredient.getId(), ingredient.getName(), ingredient.getAllergen());
         }
     }
 
-    /** cost = coste de ingredientes de una unidad (para conocer el margen). */
-    public record Response(Long id, String name, String description, BigDecimal price, boolean active,
+    /** color = color propio (puede ser nulo); displayColor = el que se pinta (propio o el de la categoria). */
+    public record Response(Long id, String name, String abbreviation, String description, BigDecimal price,
+                           boolean active, String color, String displayColor, int sortOrder,
                            Long categoryId, String categoryName, String categoryColor,
-                           BigDecimal cost, List<IngredientLineResponse> ingredients) {
+                           String imageUrl, List<IngredientRef> ingredients) {
 
-        public static Response from(Product product) {
-            BigDecimal cost = product.getIngredients().stream()
-                    .map(line -> line.getQuantity().multiply(line.getIngredient().getUnitCost()))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .setScale(2, RoundingMode.HALF_UP);
-            return new Response(product.getId(), product.getName(), product.getDescription(),
-                    product.getPrice(), product.isActive(),
+        /** imageUrl la calcula el servicio con ImageStorage (depende de donde se guarden las imagenes). */
+        public static Response from(Product product, String imageUrl) {
+            return new Response(product.getId(), product.getName(), product.getAbbreviation(),
+                    product.getDescription(), product.getPrice(), product.isActive(),
+                    product.getColor(), product.getDisplayColor(), product.getSortOrder(),
                     product.getCategory().getId(), product.getCategory().getName(), product.getCategory().getColor(),
-                    cost, product.getIngredients().stream().map(IngredientLineResponse::from).toList());
+                    imageUrl, product.getIngredients().stream().map(IngredientRef::from).toList());
         }
     }
 
-    /** Version para la parte publica: sin coste ni receta, pero con los alergenos. */
-    public record PublicResponse(Long id, String name, String description, BigDecimal price,
-                                 Long categoryId, String categoryName, String categoryColor, List<String> allergens) {
+    /** Version para la parte publica: con los ingredientes y alergenos para informar al cliente. */
+    public record PublicResponse(Long id, String name, String description, BigDecimal price, String color, String imageUrl,
+                                 Long categoryId, String categoryName, String categoryColor,
+                                 List<String> ingredients, List<String> allergens) {
 
-        public static PublicResponse from(Product product) {
+        public static PublicResponse from(Product product, String imageUrl) {
             List<String> allergens = product.getIngredients().stream()
-                    .map(line -> line.getIngredient().getAllergen())
-                    .filter(allergen -> allergen != null && !allergen.isBlank() && !allergen.equalsIgnoreCase("Ninguno"))
+                    .map(Ingredient::getAllergen)
+                    .filter(allergen -> allergen != null && !allergen.isBlank())
                     .distinct()
                     .toList();
             return new PublicResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice(),
+                    product.getDisplayColor(), imageUrl,
                     product.getCategory().getId(), product.getCategory().getName(), product.getCategory().getColor(),
-                    allergens);
+                    product.getIngredients().stream().map(Ingredient::getName).toList(), allergens);
         }
     }
 }

@@ -3,39 +3,40 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Category } from '../models/category.model';
+import { Company, TimeSlot } from '../models/company.model';
 import { Order } from '../models/order.model';
 import { PublicProduct } from '../models/product.model';
-import { Store, TimeSlot } from '../models/store.model';
 
 export interface PublicOrderRequest {
-  storeId: number;
+  companyId: number;
   pickupDate: string;
   pickupTime: string;
-  customer: { name: string; email: string; phone: string | null; companyId: null };
+  customer: { name: string; email: string; phone: string | null; businessName: null; taxId: null };
   notes: string | null;
   lines: { productId: number; quantity: number }[];
 }
 
-/** Endpoints sin login usados por la pantalla publica de Nuevo pedido. */
+/** Endpoints sin login de la web publica: el cliente elige la panaderia y pide a ella. */
 @Injectable({ providedIn: 'root' })
 export class PublicApiService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/public`;
 
-  stores(): Observable<Store[]> {
-    return this.http.get<Store[]>(`${this.url}/stores`);
+  /** Panaderias que aceptan pedidos. */
+  companies(): Observable<Company[]> {
+    return this.http.get<Company[]>(`${this.url}/companies`);
   }
 
-  slots(storeId: number, date: string): Observable<TimeSlot[]> {
-    return this.http.get<TimeSlot[]>(`${this.url}/stores/${storeId}/slots`, { params: { date } });
+  slots(companyId: number, date: string): Observable<TimeSlot[]> {
+    return this.http.get<TimeSlot[]>(`${this.url}/companies/${companyId}/slots`, { params: { date } });
   }
 
-  categories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.url}/categories`);
+  categories(companyId: number): Observable<Category[]> {
+    return this.http.get<Category[]>(`${this.url}/companies/${companyId}/categories`);
   }
 
-  products(): Observable<PublicProduct[]> {
-    return this.http.get<PublicProduct[]>(`${this.url}/products`);
+  products(companyId: number): Observable<PublicProduct[]> {
+    return this.http.get<PublicProduct[]>(`${this.url}/companies/${companyId}/products`);
   }
 
   createOrder(body: PublicOrderRequest): Observable<Order> {

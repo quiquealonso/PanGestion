@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 import { Category } from '../../core/models/category.model';
 import { Order } from '../../core/models/order.model';
 import { PublicProduct } from '../../core/models/product.model';
-import { Store, TimeSlot } from '../../core/models/store.model';
+import { BUSINESS_TYPE_LABELS, Company, TimeSlot } from '../../core/models/company.model';
 import { PublicApiService } from '../../core/services/public-api.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
 import { addDays, toIsoDate } from '../../core/utils/dates';
@@ -20,14 +20,16 @@ import { addDays, toIsoDate } from '../../core/utils/dates';
 export class PublicOrderPageComponent implements OnInit {
   private readonly api = inject(PublicApiService);
 
-  readonly stores = signal<Store[]>([]);
+  readonly typeLabels = BUSINESS_TYPE_LABELS;
+  readonly companies = signal<Company[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly products = signal<PublicProduct[]>([]);
   readonly slots = signal<TimeSlot[]>([]);
   /** Proximos 7 dias para elegir con un clic. */
   readonly days = Array.from({ length: 7 }, (_, i) => addDays(i));
 
-  readonly storeId = signal<number | null>(null);
+  /** Panaderia elegida por el cliente. */
+  readonly companyId = signal<number | null>(null);
   readonly date = signal(toIsoDate());
   readonly time = signal<string | null>(null);
   readonly categoryFilter = signal<number | null>(null);
@@ -49,22 +51,31 @@ export class PublicOrderPageComponent implements OnInit {
       .map((product) => ({ product, quantity: this.quantities()[product.id] })),
   );
   readonly total = computed(() => this.lines().reduce((sum, l) => sum + l.product.price * l.quantity, 0));
-  readonly store = computed(() => this.stores().find((s) => s.id === this.storeId()) ?? null);
+  readonly company = computed(() => this.companies().find((c) => c.id === this.companyId()) ?? null);
 
   ngOnInit(): void {
-    forkJoin({ stores: this.api.stores(), categories: this.api.categories(), products: this.api.products() }).subscribe({
-      next: ({ stores, categories, products }) => {
-        this.stores.set(stores);
-        this.categories.set(categories.filter((c) => products.some((p) => p.categoryId === c.id)));
-        this.products.set(products);
-        if (stores.length > 0) this.selectStore(stores[0].id);
+    this.api.companies().subscribe({
+      next: (companies) => {
+        this.companies.set(companies);
+        if (companies.length > 0) this.selectCompany(companies[0].id);
       },
       error: (err) => this.error.set(apiErrorMessage(err)),
     });
   }
 
-  selectStore(id: number): void {
-    this.storeId.set(id);
+  /** Al cambiar de panaderia se carga su catalogo y se vacia el carrito. */
+  selectCompany(id: number): void {
+    if (this.companyId() === id) return;
+    this.companyId.set(id);
+    this.quantities.set({});
+    this.categoryFilter.set(null);
+    forkJoin({ categories: this.api.categories(id), products: this.api.products(id) }).subscribe({
+      next: ({ categories, products }) => {
+        this.categories.set(categories.filter((c) => products.some((p) => p.categoryId === c.id)));
+        this.products.set(products);
+      },
+      error: (err) => this.error.set(apiErrorMessage(err)),
+    });
     this.loadSlots();
   }
 
@@ -75,9 +86,9 @@ export class PublicOrderPageComponent implements OnInit {
 
   private loadSlots(): void {
     this.time.set(null);
-    const storeId = this.storeId();
-    if (storeId) {
-      this.api.slots(storeId, this.date()).subscribe((slots) => this.slots.set(slots));
+    const companyId = this.companyId();
+    if (companyId) {
+      this.api.slots(companyId, this.date()).subscribe((slots) => this.slots.set(slots));
     }
   }
 
@@ -95,10 +106,10 @@ export class PublicOrderPageComponent implements OnInit {
     this.error.set(null);
     this.api
       .createOrder({
-        storeId: this.storeId()!,
+        companyId: this.companyId()!,
         pickupDate: this.date(),
         pickupTime: this.time()!,
-        customer: { name: this.customer.name, email: this.customer.email, phone: this.customer.phone || null, companyId: null },
+        customer: { name: this.customer.name, email: this.customer.email, phone: this.customer.phone || null, businessName: null, taxId: null },
         notes: this.notes || null,
         lines: this.lines().map((l) => ({ productId: l.product.id, quantity: l.quantity })),
       })

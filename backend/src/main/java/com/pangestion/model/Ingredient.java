@@ -5,11 +5,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
-/** Materia prima con control de existencias y coste. */
+/**
+ * Ingrediente que forma parte de los productos (nueces, chocolate blanco, arroz, pollo...).
+ * Sirve para saber de que esta hecho cada producto y mostrar sus alergenos; no controla stock.
+ */
 @Entity
-@Table(name = "ingredients")
+@Table(name = "ingredients", uniqueConstraints = @UniqueConstraint(columnNames = {"company_id", "name"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,28 +20,15 @@ public class Ingredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    /** Empresa (panaderia) a la que pertenece. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
+    @Column(nullable = false, length = 100)
     private String name;
 
-    /** Unidad de medida: kg, g, l, ud... */
-    @Column(nullable = false, length = 10)
-    private String unit;
-
-    @Column(nullable = false, precision = 10, scale = 3)
-    private BigDecimal stock = BigDecimal.ZERO;
-
-    /** Por debajo de este valor el ingrediente se considera bajo stock. */
-    @Column(name = "min_stock", nullable = false, precision = 10, scale = 3)
-    private BigDecimal minStock = BigDecimal.ZERO;
-
-    /** Coste por unidad de medida. */
-    @Column(name = "unit_cost", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitCost = BigDecimal.ZERO;
-
+    /** Alergeno que aporta (Gluten, Lacteos, Frutos de cascara...). Nulo si no tiene. */
     @Column(length = 100)
     private String allergen;
-
-    public boolean isLowStock() {
-        return stock.compareTo(minStock) <= 0;
-    }
 }

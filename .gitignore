@@ -49,4 +49,5 @@ Thumbs.db
 !.env.example
 *.log
 backend/data/
+backend/uploads/
 backend/target/

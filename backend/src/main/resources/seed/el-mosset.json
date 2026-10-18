@@ -1,0 +1,1254 @@
+{
+  "company": {
+    "name": "El Mosset",
+    "type": "BAR",
+    "taxId": "B00000002",
+    "email": null,
+    "phone": "962440914",
+    "address": "C/ Antonio Lloret 46, Alberic",
+    "openingTime": "08:00",
+    "closingTime": "23:30",
+    "slotMinutes": 30,
+    "ordersPerSlot": 10
+  },
+  "ingredients": [
+    {
+      "name": "Aceitunas",
+      "allergen": null
+    },
+    {
+      "name": "Aceitunas negras",
+      "allergen": null
+    },
+    {
+      "name": "Alcachofa",
+      "allergen": null
+    },
+    {
+      "name": "Anchoas",
+      "allergen": "Pescado"
+    },
+    {
+      "name": "Atún",
+      "allergen": "Pescado"
+    },
+    {
+      "name": "Bacon",
+      "allergen": null
+    },
+    {
+      "name": "Brotes verdes",
+      "allergen": null
+    },
+    {
+      "name": "Carne",
+      "allergen": null
+    },
+    {
+      "name": "Carne a la boloñesa",
+      "allergen": null
+    },
+    {
+      "name": "Carne de kebab",
+      "allergen": null
+    },
+    {
+      "name": "Cebolla",
+      "allergen": null
+    },
+    {
+      "name": "Cebolla crujiente",
+      "allergen": null
+    },
+    {
+      "name": "Cebolla frita",
+      "allergen": null
+    },
+    {
+      "name": "Champiñón",
+      "allergen": null
+    },
+    {
+      "name": "Cheddar",
+      "allergen": "Lácteos"
+    },
+    {
+      "name": "Chipirones",
+      "allergen": "Moluscos"
+    },
+    {
+      "name": "Chorizo",
+      "allergen": null
+    },
+    {
+      "name": "Espárragos",
+      "allergen": null
+    },
+    {
+      "name": "Frutos secos",
+      "allergen": "Frutos de cáscara"
+    },
+    {
+      "name": "Gambas",
+      "allergen": "Crustáceos"
+    },
+    {
+      "name": "Guacamole",
+      "allergen": null
+    },
+    {
+      "name": "Guindilla",
+      "allergen": null
+    },
+    {
+      "name": "Huevo",
+      "allergen": "Huevo"
+    },
+    {
+      "name": "Huevo duro",
+      "allergen": "Huevo"
+    },
+    {
+      "name": "Huevo rallado",
+      "allergen": "Huevo"
+    },
+    {
+      "name": "Jamón serrano",
+      "allergen": null
+    },
+    {
+      "name": "Jamón york",
+      "allergen": null
+    },
+    {
+      "name": "Ketchup",
+      "allergen": null
+    },
+    {
+      "name": "Lechuga",
+      "allergen": null
+    },
+    {
+      "name": "Lomo",
+      "allergen": null
+    },
+    {
+      "name": "Mahonesa",
+      "allergen": "Huevo"
+    },
+    {
+      "name": "Mermelada de tomate",
+      "allergen": null
+    },
+    {
+      "name": "Miel",
+      "allergen": null
+    },
+    {
+      "name": "Mozzarella",
+      "allergen": "Lácteos"
+    },
+    {
+      "name": "Nachos",
+      "allergen": "Gluten"
+    },
+    {
+      "name": "Nata",
+      "allergen": "Lácteos"
+    },
+    {
+      "name": "Orégano",
+      "allergen": null
+    },
+    {
+      "name": "Palitos de mar",
+      "allergen": "Pescado"
+    },
+    {
+      "name": "Pan frito",
+      "allergen": "Gluten"
+    },
+    {
+      "name": "Pan tostado",
+      "allergen": "Gluten"
+    },
+    {
+      "name": "Patatas fritas",
+      "allergen": null
+    },
+    {
+      "name": "Pechuga",
+      "allergen": null
+    },
+    {
+      "name": "Pechuga rebozada",
+      "allergen": "Gluten"
+    },
+    {
+      "name": "Pechuguitas rebozadas",
+      "allergen": "Gluten"
+    },
+    {
+      "name": "Pepinillos",
+      "allergen": null
+    },
+    {
+      "name": "Pepperoni",
+      "allergen": null
+    },
+    {
+      "name": "Pimienta negra",
+      "allergen": null
+    },
+    {
+      "name": "Pimiento rojo",
+      "allergen": null
+    },
+    {
+      "name": "Pimiento verde",
+      "allergen": null
+    },
+    {
+      "name": "Piña",
+      "allergen": null
+    },
+    {
+      "name": "Pollo",
+      "allergen": null
+    },
+    {
+      "name": "Pulled pork",
+      "allergen": null
+    },
+    {
+      "name": "Queso",
+      "allergen": "Lácteos"
+    },
+    {
+      "name": "Queso de cabra",
+      "allergen": "Lácteos"
+    },
+    {
+      "name": "Roquefort",
+      "allergen": "Lácteos"
+    },
+    {
+      "name": "Rúcula",
+      "allergen": null
+    },
+    {
+      "name": "Salchicha frankfurt",
+      "allergen": null
+    },
+    {
+      "name": "Salmón",
+      "allergen": "Pescado"
+    },
+    {
+      "name": "Salmón ahumado",
+      "allergen": "Pescado"
+    },
+    {
+      "name": "Salsa barbacoa",
+      "allergen": null
+    },
+    {
+      "name": "Salsa burger",
+      "allergen": null
+    },
+    {
+      "name": "Salsa césar",
+      "allergen": "Huevo"
+    },
+    {
+      "name": "Salsa kebab",
+      "allergen": null
+    },
+    {
+      "name": "Salsa mexicana",
+      "allergen": null
+    },
+    {
+      "name": "Salsa rosa",
+      "allergen": "Huevo"
+    },
+    {
+      "name": "Salsa verde",
+      "allergen": null
+    },
+    {
+      "name": "Sepia",
+      "allergen": "Moluscos"
+    },
+    {
+      "name": "Sobrasada",
+      "allergen": null
+    },
+    {
+      "name": "Ternera",
+      "allergen": null
+    },
+    {
+      "name": "Tomate",
+      "allergen": null
+    },
+    {
+      "name": "Tomate natural",
+      "allergen": null
+    },
+    {
+      "name": "Tomate rallado",
+      "allergen": null
+    },
+    {
+      "name": "Tomates cherry",
+      "allergen": null
+    },
+    {
+      "name": "Tortilla francesa",
+      "allergen": "Huevo"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Pizzas",
+      "color": "#DC2626",
+      "description": "Base: queso, tomate y orégano.",
+      "products": [
+        {
+          "name": "Vegetal",
+          "price": "8.00",
+          "description": "Base, tomate natural, cebolla, champiñón, pimiento rojo, aceitunas y alcachofa.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Tomate natural",
+            "Cebolla",
+            "Champiñón",
+            "Pimiento rojo",
+            "Aceitunas",
+            "Alcachofa"
+          ]
+        },
+        {
+          "name": "Calzone",
+          "price": "8.00",
+          "description": "Base, jamón york, atún, pimiento rojo y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Atún",
+            "Pimiento rojo",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Napolitana",
+          "price": "8.00",
+          "description": "Base, bacon, cebolla, pimiento rojo y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Bacon",
+            "Cebolla",
+            "Pimiento rojo",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Ojo de buey",
+          "price": "8.00",
+          "description": "Base, jamón york, cebolla y huevo.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Cebolla",
+            "Huevo"
+          ]
+        },
+        {
+          "name": "Marinera",
+          "price": "9.00",
+          "description": "Base, cebolla, atún, gambas y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Cebolla",
+            "Atún",
+            "Gambas",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Cuatro estaciones",
+          "price": "8.50",
+          "description": "Base, jamón york, champiñón, alcachofa, anchoas y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Champiñón",
+            "Alcachofa",
+            "Anchoas",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Blayo",
+          "price": "8.50",
+          "description": "Base, jamón york, champiñón y carne.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Champiñón",
+            "Carne"
+          ]
+        },
+        {
+          "name": "Diabola",
+          "price": "8.00",
+          "description": "Base, chorizo, cebolla y pimienta negra.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Chorizo",
+            "Cebolla",
+            "Pimienta negra"
+          ]
+        },
+        {
+          "name": "Cuatro quesos",
+          "price": "8.50",
+          "description": "Base, cheddar, roquefort y nata.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Cheddar",
+            "Roquefort",
+            "Nata"
+          ]
+        },
+        {
+          "name": "Carbonara",
+          "price": "8.00",
+          "description": "Base, bacon, cebolla y nata.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Bacon",
+            "Cebolla",
+            "Nata"
+          ]
+        },
+        {
+          "name": "Mosset",
+          "price": "8.50",
+          "description": "Base, jamón york, champiñón, sobrasada, atún, pimiento rojo y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Champiñón",
+            "Sobrasada",
+            "Atún",
+            "Pimiento rojo",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Sandra",
+          "price": "8.50",
+          "description": "Base, bacon, cebolla, pimiento rojo y jamón serrano.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Bacon",
+            "Cebolla",
+            "Pimiento rojo",
+            "Jamón serrano"
+          ]
+        },
+        {
+          "name": "Boloñesa",
+          "price": "8.50",
+          "description": "Base y carne a la boloñesa.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Carne a la boloñesa"
+          ]
+        },
+        {
+          "name": "Barbacoa",
+          "price": "8.50",
+          "description": "Salsa barbacoa, mozzarella, bacon, cebolla y pollo.",
+          "ingredients": [
+            "Salsa barbacoa",
+            "Mozzarella",
+            "Bacon",
+            "Cebolla",
+            "Pollo"
+          ]
+        },
+        {
+          "name": "Chus",
+          "price": "9.00",
+          "description": "Base, bacon, champiñón, carne y huevo.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Bacon",
+            "Champiñón",
+            "Carne",
+            "Huevo"
+          ]
+        },
+        {
+          "name": "Argentina",
+          "price": "8.50",
+          "description": "Base, jamón york, bacon, huevo rallado y salsa rosa.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Bacon",
+            "Huevo rallado",
+            "Salsa rosa"
+          ]
+        },
+        {
+          "name": "Campesina",
+          "price": "9.00",
+          "description": "Base, jamón serrano, rúcula, tomates cherry y queso de cabra.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón serrano",
+            "Rúcula",
+            "Tomates cherry",
+            "Queso de cabra"
+          ]
+        },
+        {
+          "name": "Kebab",
+          "price": "9.00",
+          "description": "Base, carne de kebab, cebolla y salsa kebab.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Carne de kebab",
+            "Cebolla",
+            "Salsa kebab"
+          ]
+        },
+        {
+          "name": "Burger",
+          "price": "9.00",
+          "description": "Base, carne, pepinillos y salsa burger.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Carne",
+            "Pepinillos",
+            "Salsa burger"
+          ]
+        },
+        {
+          "name": "Guindilla",
+          "price": "9.00",
+          "description": "Base, pepperoni, pollo, pimiento verde, carne y guindilla.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Pepperoni",
+            "Pollo",
+            "Pimiento verde",
+            "Carne",
+            "Guindilla"
+          ]
+        },
+        {
+          "name": "Vlady",
+          "price": "9.00",
+          "description": "Base, huevo, pimiento rojo, carne y queso de cabra.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Huevo",
+            "Pimiento rojo",
+            "Carne",
+            "Queso de cabra"
+          ]
+        },
+        {
+          "name": "Peto",
+          "price": "9.00",
+          "description": "Base, jamón york, champiñón, pollo, roquefort y nata.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Champiñón",
+            "Pollo",
+            "Roquefort",
+            "Nata"
+          ]
+        },
+        {
+          "name": "Terman",
+          "price": "9.00",
+          "description": "Base, roquefort, bacon, huevo, nata, cheddar y pechuguitas rebozadas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Roquefort",
+            "Bacon",
+            "Huevo",
+            "Nata",
+            "Cheddar",
+            "Pechuguitas rebozadas"
+          ]
+        },
+        {
+          "name": "Tropical",
+          "price": "8.50",
+          "description": "Base, jamón york, piña y nata.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Jamón york",
+            "Piña",
+            "Nata"
+          ]
+        },
+        {
+          "name": "Pulled",
+          "price": "9.00",
+          "description": "Salsa barbacoa, mozzarella, pulled pork, cheddar, bacon y cebolla crujiente.",
+          "ingredients": [
+            "Salsa barbacoa",
+            "Mozzarella",
+            "Pulled pork",
+            "Cheddar",
+            "Bacon",
+            "Cebolla crujiente"
+          ]
+        },
+        {
+          "name": "Frankfurt",
+          "price": "8.50",
+          "description": "Base, cebolla, salchicha frankfurt y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Cebolla",
+            "Salchicha frankfurt",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Salmón",
+          "price": "9.50",
+          "description": "Base, salmón, gambas, nata y aceitunas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Salmón",
+            "Gambas",
+            "Nata",
+            "Aceitunas"
+          ]
+        },
+        {
+          "name": "Sacri",
+          "price": "8.50",
+          "description": "Base, chorizo, huevo, bacon y patatas fritas.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Chorizo",
+            "Huevo",
+            "Bacon",
+            "Patatas fritas"
+          ]
+        },
+        {
+          "name": "Pepperoni",
+          "price": "9.00",
+          "description": "Base, pepperoni y pimiento verde.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Pepperoni",
+            "Pimiento verde"
+          ]
+        },
+        {
+          "name": "La del jefe",
+          "price": "9.00",
+          "description": "Base, chorizo, atún, pimiento verde, queso de cabra y tomates cherry.",
+          "ingredients": [
+            "Queso",
+            "Tomate",
+            "Orégano",
+            "Chorizo",
+            "Atún",
+            "Pimiento verde",
+            "Queso de cabra",
+            "Tomates cherry"
+          ]
+        },
+        {
+          "name": "Cabra",
+          "price": "9.00",
+          "description": "Sobrasada, cebolla crujiente, queso de cabra y miel.",
+          "ingredients": [
+            "Sobrasada",
+            "Cebolla crujiente",
+            "Queso de cabra",
+            "Miel"
+          ]
+        },
+        {
+          "name": "Super barbacoa",
+          "price": "9.00",
+          "description": "Salsa barbacoa, mozzarella, cebolla crujiente, pechuguitas rebozadas, queso de cabra, nata y bacon.",
+          "ingredients": [
+            "Salsa barbacoa",
+            "Mozzarella",
+            "Cebolla crujiente",
+            "Pechuguitas rebozadas",
+            "Queso de cabra",
+            "Nata",
+            "Bacon"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Entrantes",
+      "color": "#F59E0B",
+      "description": null,
+      "products": [
+        {
+          "name": "Tellinas",
+          "price": "8.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Muslitos de cangrejo",
+          "price": "5.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Patatas fritas o bravas",
+          "price": "5.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Patatas al roquefort",
+          "price": "6.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Ensaladilla rusa",
+          "price": "5.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Boquerones en vinagre",
+          "price": "6.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Sepia plancha",
+          "price": "8.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Nuggets",
+          "price": "5.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Calamar rebozado",
+          "price": "7.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Alitas de pollo",
+          "price": "6.00",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Champiñones",
+          "price": "5.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Chipirones",
+          "price": "8.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Revuelto de sepia, ajos tiernos y champiñones",
+          "price": "8.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Croquetas de bacalao",
+          "price": "6.00",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Pechuguitas",
+          "price": "7.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Aros de cebolla",
+          "price": "5.00",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Puntilla",
+          "price": "8.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Fingers de queso",
+          "price": "7.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Jalapeños",
+          "price": "7.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Patatas cheese bacon",
+          "price": "7.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Queso brie",
+          "price": "7.50",
+          "description": null,
+          "ingredients": []
+        },
+        {
+          "name": "Combo 1",
+          "price": "9.50",
+          "description": "Bravas, muslitos de cangrejo, calamares y puntilla.",
+          "ingredients": []
+        },
+        {
+          "name": "Combo 2",
+          "price": "9.50",
+          "description": "Bravas, alitas, pechuguitas y nuggets.",
+          "ingredients": []
+        },
+        {
+          "name": "Combo Mosset",
+          "price": "9.50",
+          "description": "Fingers de queso, pechuguitas, alitas y aros de cebolla.",
+          "ingredients": []
+        }
+      ]
+    },
+    {
+      "name": "Bocadillos",
+      "color": "#D97706",
+      "description": null,
+      "products": [
+        {
+          "name": "Lomo, queso y tomate",
+          "price": "6.00",
+          "description": "Lomo, queso y tomate.",
+          "ingredients": [
+            "Lomo",
+            "Queso",
+            "Tomate"
+          ]
+        },
+        {
+          "name": "Pechuga, queso y cebolla",
+          "price": "6.00",
+          "description": "Pechuga, queso y cebolla.",
+          "ingredients": [
+            "Pechuga",
+            "Queso",
+            "Cebolla"
+          ]
+        },
+        {
+          "name": "Vegetal",
+          "price": "6.00",
+          "description": "Lechuga, tomate, atún, queso y mahonesa.",
+          "ingredients": [
+            "Lechuga",
+            "Tomate",
+            "Atún",
+            "Queso",
+            "Mahonesa"
+          ]
+        },
+        {
+          "name": "Napolitano",
+          "price": "7.00",
+          "description": "Ternera, pimiento rojo, queso y cebolla.",
+          "ingredients": [
+            "Ternera",
+            "Pimiento rojo",
+            "Queso",
+            "Cebolla"
+          ]
+        },
+        {
+          "name": "Sepia plancha",
+          "price": "8.50",
+          "description": "Sepia, salsa verde y mahonesa.",
+          "ingredients": [
+            "Sepia",
+            "Salsa verde",
+            "Mahonesa"
+          ]
+        },
+        {
+          "name": "Chipirones",
+          "price": "8.50",
+          "description": "Chipirones, salsa verde y mahonesa.",
+          "ingredients": [
+            "Chipirones",
+            "Salsa verde",
+            "Mahonesa"
+          ]
+        },
+        {
+          "name": "Mosset",
+          "price": "7.00",
+          "description": "Lomo, lechuga, patatas fritas y salsa verde.",
+          "ingredients": [
+            "Lomo",
+            "Lechuga",
+            "Patatas fritas",
+            "Salsa verde"
+          ]
+        },
+        {
+          "name": "Hispano",
+          "price": "7.00",
+          "description": "Tortilla francesa, queso, jamón serrano y sobrasada.",
+          "ingredients": [
+            "Tortilla francesa",
+            "Queso",
+            "Jamón serrano",
+            "Sobrasada"
+          ]
+        },
+        {
+          "name": "Barbacoa",
+          "price": "7.00",
+          "description": "Pechuga, cebolla, bacon, huevo y salsa barbacoa.",
+          "ingredients": [
+            "Pechuga",
+            "Cebolla",
+            "Bacon",
+            "Huevo",
+            "Salsa barbacoa"
+          ]
+        },
+        {
+          "name": "Chivito",
+          "price": "7.00",
+          "description": "Lomo, lechuga, cebolla frita, huevo y mahonesa.",
+          "ingredients": [
+            "Lomo",
+            "Lechuga",
+            "Cebolla frita",
+            "Huevo",
+            "Mahonesa"
+          ]
+        },
+        {
+          "name": "Brascada",
+          "price": "7.00",
+          "description": "Ternera, tomate rallado, jamón serrano, cebolla frita y salsa verde.",
+          "ingredients": [
+            "Ternera",
+            "Tomate rallado",
+            "Jamón serrano",
+            "Cebolla frita",
+            "Salsa verde"
+          ]
+        },
+        {
+          "name": "Lomo, cebolla y roquefort",
+          "price": "7.00",
+          "description": "Lomo, cebolla y roquefort.",
+          "ingredients": [
+            "Lomo",
+            "Cebolla",
+            "Roquefort"
+          ]
+        },
+        {
+          "name": "Escri",
+          "price": "7.50",
+          "description": "Pechuga, bacon, pulled pork, cebolla frita, cheddar y salsa barbacoa.",
+          "ingredients": [
+            "Pechuga",
+            "Bacon",
+            "Pulled pork",
+            "Cebolla frita",
+            "Cheddar",
+            "Salsa barbacoa"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hamburguesas",
+      "color": "#16A34A",
+      "description": null,
+      "products": [
+        {
+          "name": "Normal",
+          "price": "4.00",
+          "description": "Ketchup, mahonesa y queso.",
+          "ingredients": [
+            "Ketchup",
+            "Mahonesa",
+            "Queso"
+          ]
+        },
+        {
+          "name": "Completa",
+          "price": "6.00",
+          "description": "Lechuga, tomate, cebolla, queso, ketchup, huevo y mahonesa.",
+          "ingredients": [
+            "Lechuga",
+            "Tomate",
+            "Cebolla",
+            "Queso",
+            "Ketchup",
+            "Huevo",
+            "Mahonesa"
+          ]
+        },
+        {
+          "name": "Barbacoa",
+          "price": "6.00",
+          "description": "Cebolla frita, bacon, queso, huevo y salsa barbacoa.",
+          "ingredients": [
+            "Cebolla frita",
+            "Bacon",
+            "Queso",
+            "Huevo",
+            "Salsa barbacoa"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hamburguesas premium",
+      "color": "#7C3AED",
+      "description": "Con patatas fritas de guarnición.",
+      "products": [
+        {
+          "name": "Mexican",
+          "price": "10.00",
+          "description": "Guacamole, queso de cabra, cheddar, salsa mexicana, bacon y nachos, con patatas fritas de guarnición.",
+          "ingredients": [
+            "Guacamole",
+            "Queso de cabra",
+            "Cheddar",
+            "Salsa mexicana",
+            "Bacon",
+            "Nachos",
+            "Patatas fritas"
+          ]
+        },
+        {
+          "name": "Supreme",
+          "price": "10.00",
+          "description": "Pulled pork, cebolla crujiente, huevo, cheddar, bacon y salsa barbacoa, con patatas fritas de guarnición.",
+          "ingredients": [
+            "Pulled pork",
+            "Cebolla crujiente",
+            "Huevo",
+            "Cheddar",
+            "Bacon",
+            "Salsa barbacoa",
+            "Patatas fritas"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ensaladas",
+      "color": "#059669",
+      "description": null,
+      "products": [
+        {
+          "name": "Marinera",
+          "price": "8.00",
+          "description": "Lechuga, palitos de mar, atún, gambas y salsa rosa.",
+          "ingredients": [
+            "Lechuga",
+            "Palitos de mar",
+            "Atún",
+            "Gambas",
+            "Salsa rosa"
+          ]
+        },
+        {
+          "name": "Salmón",
+          "price": "9.00",
+          "description": "Lechuga, tomate, cebolla, salmón ahumado y aceitunas negras.",
+          "ingredients": [
+            "Lechuga",
+            "Tomate",
+            "Cebolla",
+            "Salmón ahumado",
+            "Aceitunas negras"
+          ]
+        },
+        {
+          "name": "Campestre",
+          "price": "8.00",
+          "description": "Lechuga, tomate, cebolla, huevo duro, espárragos, pan frito y jamón serrano.",
+          "ingredients": [
+            "Lechuga",
+            "Tomate",
+            "Cebolla",
+            "Huevo duro",
+            "Espárragos",
+            "Pan frito",
+            "Jamón serrano"
+          ]
+        },
+        {
+          "name": "César",
+          "price": "8.00",
+          "description": "Lechuga, tomate, pechuga rebozada, bacon, pan tostado, queso y salsa césar.",
+          "ingredients": [
+            "Lechuga",
+            "Tomate",
+            "Pechuga rebozada",
+            "Bacon",
+            "Pan tostado",
+            "Queso",
+            "Salsa césar"
+          ]
+        },
+        {
+          "name": "Nati",
+          "price": "8.00",
+          "description": "Brotes verdes, frutos secos, jamón serrano, queso de cabra, cebolla crujiente y mermelada de tomate.",
+          "ingredients": [
+            "Brotes verdes",
+            "Frutos secos",
+            "Jamón serrano",
+            "Queso de cabra",
+            "Cebolla crujiente",
+            "Mermelada de tomate"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Platos combinados",
+      "color": "#2563EB",
+      "description": "Todos con guarnición.",
+      "products": [
+        {
+          "name": "Ternera",
+          "price": "13.00",
+          "description": "Con guarnición.",
+          "ingredients": []
+        },
+        {
+          "name": "Lomo",
+          "price": "11.00",
+          "description": "Con guarnición.",
+          "ingredients": []
+        },
+        {
+          "name": "Hamburguesa",
+          "price": "10.00",
+          "description": "Con guarnición.",
+          "ingredients": []
+        },
+        {
+          "name": "Sepia",
+          "price": "13.00",
+          "description": "Con guarnición.",
+          "ingredients": []
+        },
+        {
+          "name": "Chipirones",
+          "price": "13.00",
+          "description": "Con guarnición.",
+          "ingredients": []
+        },
+        {
+          "name": "Mero",
+          "price": "13.00",
+          "description": "Con guarnición.",
+          "ingredients": []
+        }
+      ]
+    }
+  ]
+}

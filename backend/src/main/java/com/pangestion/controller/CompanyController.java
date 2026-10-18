@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Alta y gestion de empresas (panaderias). Solo SUPERADMIN (ver SecurityConfig). */
 @RestController
 @RequestMapping("/api/companies")
 @RequiredArgsConstructor

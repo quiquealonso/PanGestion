@@ -30,9 +30,11 @@ import java.util.List;
 /**
  * Seguridad de la API:
  * - /api/auth/login y /api/public/** son publicos (login y pedidos de clientes).
- * - Lectura (GET) para cualquier usuario autenticado (ADMIN, GESTOR, VISOR).
- * - Escritura para ADMIN y GESTOR.
- * - Gestion de usuarios solo para ADMIN.
+ * - /api/companies (alta de panaderias): solo SUPERADMIN.
+ * - /api/users: SUPERADMIN (todos) y ADMIN (los de su empresa).
+ * - Datos de la propia empresa (PUT /api/company): solo ADMIN.
+ * - Lectura (GET) para cualquier usuario autenticado; escritura para ADMIN y GESTOR.
+ * Cada usuario solo ve los datos de su empresa: los servicios filtran por el companyId del token.
  */
 @Configuration
 public class SecurityConfig {
@@ -52,8 +54,10 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // consola H2
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/public/**", "/h2-console/**", "/error").permitAll()
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/login", "/api/public/**", "/uploads/**", "/h2-console/**", "/error").permitAll()
+                        .requestMatchers("/api/companies/**").hasRole("SUPERADMIN")
+                        .requestMatchers("/api/users/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/company").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "GESTOR")
                         .anyRequest().authenticated())

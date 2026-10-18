@@ -19,6 +19,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Empresa a la que pertenece. Nulo solo para SUPERADMIN, que no pertenece a ninguna. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
     @Column(nullable = false, length = 120)
     private String name;
 

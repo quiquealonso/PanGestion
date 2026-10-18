@@ -18,7 +18,12 @@ export class AuthService {
 
   readonly user = this.userSignal.asReadonly();
   readonly isLoggedIn = computed(() => this.userSignal() !== null);
+  /** Gestiona las empresas; no pertenece a ninguna. */
+  readonly isSuperAdmin = computed(() => this.userSignal()?.role === 'SUPERADMIN');
+  /** Administrador de su empresa. */
   readonly isAdmin = computed(() => this.userSignal()?.role === 'ADMIN');
+  /** Puede gestionar usuarios (SUPERADMIN todos, ADMIN los de su empresa). */
+  readonly canManageUsers = computed(() => this.isSuperAdmin() || this.isAdmin());
   /** ADMIN y GESTOR pueden crear, editar y borrar; VISOR solo consulta. */
   readonly canEdit = computed(() => {
     const role = this.userSignal()?.role;

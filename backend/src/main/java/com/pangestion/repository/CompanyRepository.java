@@ -9,6 +9,9 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     List<Company> findAllByOrderByNameAsc();
 
+    /** Empresas que aceptan pedidos (web publica). */
+    List<Company> findByActiveTrueOrderByNameAsc();
+
     boolean existsByTaxIdIgnoreCase(String taxId);
 
     boolean existsByTaxIdIgnoreCaseAndIdNot(String taxId, Long id);

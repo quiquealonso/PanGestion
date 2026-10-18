@@ -1,11 +1,14 @@
 package com.pangestion.controller;
 
 import com.pangestion.dto.ProductDto;
+import com.pangestion.dto.SortRequest;
 import com.pangestion.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,24 @@ public class ProductController {
     @PatchMapping("/{id}/active")
     public ProductDto.Response setActive(@PathVariable Long id, @RequestBody Map<String, Boolean> body) {
         return productService.setActive(id, Boolean.TRUE.equals(body.get("active")));
+    }
+
+    /** Body: {"ids": [7, 5, 6]} con los productos de una categoria en el orden deseado. */
+    @PutMapping("/order")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reorder(@Valid @RequestBody SortRequest request) {
+        productService.reorder(request.ids());
+    }
+
+    /** Sube o sustituye la imagen (multipart, campo "file"). JPG, PNG o WEBP de hasta 2 MB. */
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ProductDto.Response uploadImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return productService.uploadImage(id, file);
+    }
+
+    @DeleteMapping("/{id}/image")
+    public ProductDto.Response removeImage(@PathVariable Long id) {
+        return productService.removeImage(id);
     }
 
     @DeleteMapping("/{id}")

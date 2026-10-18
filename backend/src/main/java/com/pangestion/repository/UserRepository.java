@@ -9,7 +9,13 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    /** Todos los usuarios (para SUPERADMIN). */
     List<User> findAllByOrderByNameAsc();
+
+    /** Usuarios de una empresa (para su ADMIN). */
+    List<User> findAllByCompanyIdOrderByNameAsc(Long companyId);
+
+    Optional<User> findByIdAndCompanyId(Long id, Long companyId);
 
     Optional<User> findByEmailIgnoreCase(String email);
 
@@ -17,5 +23,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 
+    long countByCompanyIdAndRoleAndActiveTrue(Long companyId, Role role);
+
     long countByRoleAndActiveTrue(Role role);
+
+    long countByCompanyId(Long companyId);
 }

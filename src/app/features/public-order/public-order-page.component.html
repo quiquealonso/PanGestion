@@ -9,7 +9,7 @@
       <p class="eyebrow">¡Pedido recibido!</p>
       <h2>Pedido nº {{ order.id }}</h2>
       <p>
-        Te esperamos en <strong>{{ order.storeName }}</strong> el
+        Te esperamos en <strong>{{ order.companyName }}</strong> el
         <strong>{{ order.pickupDate | date: 'EEEE d MMMM' }}</strong> a las <strong>{{ order.pickupTime }}</strong>.
       </p>
       <p>Total a pagar en tienda: <strong>{{ order.total | currency: 'EUR' }}</strong></p>
@@ -19,12 +19,14 @@
     <div class="public-layout">
       <main class="steps">
         <section class="panel">
-          <p class="eyebrow">1 · Cuándo y dónde</p>
+          <p class="eyebrow">1 · Establecimiento, día y hora</p>
           <div class="chips">
-            @for (store of stores(); track store.id) {
-              <button type="button" class="chip" [class.is-active]="storeId() === store.id" (click)="selectStore(store.id)">
-                {{ store.name }}<small>{{ store.address }}</small>
+            @for (company of companies(); track company.id) {
+              <button type="button" class="chip" [class.is-active]="companyId() === company.id" (click)="selectCompany(company.id)">
+                {{ company.name }}<small>{{ typeLabels[company.type] }} · {{ company.address }} · {{ company.openingTime }}–{{ company.closingTime }}</small>
               </button>
+            } @empty {
+              <p class="muted">Ahora mismo no hay panaderías aceptando pedidos.</p>
             }
           </div>
           <div class="chips">
@@ -58,9 +60,17 @@
           <div class="catalog">
             @for (product of visibleProducts(); track product.id) {
               <article class="product">
+                @if (product.imageUrl) {
+                  <img class="product__photo" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                }
                 <div>
-                  <strong>{{ product.name }}</strong>
-                  <p>{{ product.description }}</p>
+                  <strong><span class="color-dot" [style.background]="product.color"></span>{{ product.name }}</strong>
+                  @if (product.description) {
+                    <p>{{ product.description }}</p>
+                  }
+                  @if (product.ingredients.length) {
+                    <p class="ingredients">Lleva: {{ product.ingredients.join(', ') }}</p>
+                  }
                   @if (product.allergens.length) {
                     <small>Alérgenos: {{ product.allergens.join(', ') }}</small>
                   }
@@ -91,7 +101,7 @@
       <aside class="panel summary">
         <p class="eyebrow">Tu pedido</p>
         <p class="when">
-          {{ store()?.name }}<br />
+          {{ company()?.name }}<br />
           {{ date() | date: 'EEEE d MMMM' }} · {{ time() ?? 'elige una hora' }}
         </p>
         @for (line of lines(); track line.product.id) {

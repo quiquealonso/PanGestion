@@ -7,23 +7,35 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    /** Busqueda con filtros opcionales: texto (nombre), categoria y estado activo. */
+    /** Productos de una empresa con filtros opcionales: texto (nombre), categoria y estado activo. */
     @EntityGraph(attributePaths = "category")
     @Query("""
             select p from Product p
-            where lower(p.name) like :search
+            where p.company.id = :companyId
+              and lower(p.name) like :search
               and (:categoryId is null or p.category.id = :categoryId)
               and (:active is null or p.active = :active)
-            order by p.name
+            order by p.category.sortOrder, p.category.name, p.sortOrder, p.name
             """)
-    List<Product> search(@Param("search") String search,
+    List<Product> search(@Param("companyId") Long companyId,
+                         @Param("search") String search,
                          @Param("categoryId") Long categoryId,
                          @Param("active") Boolean active);
 
-    long countByActiveTrue();
+    Optional<Product> findByIdAndCompanyId(Long id, Long companyId);
+
+    /** Siguiente posicion libre dentro de una categoria. */
+    @Query("select coalesce(max(p.sortOrder) + 1, 0) from Product p where p.category.id = :categoryId")
+    int nextSortOrder(@Param("categoryId") Long categoryId);
+
+    long countByCompanyIdAndActiveTrue(Long companyId);
 
     long countByCategoryId(Long categoryId);
+
+    /** Productos que llevan un ingrediente. */
+    long countByIngredientsId(Long ingredientId);
 }

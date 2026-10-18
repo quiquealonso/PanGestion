@@ -1,36 +1,59 @@
 <section class="page">
   <header class="page-head">
     <div>
-      <p class="eyebrow">Sistema</p>
+      <p class="eyebrow">{{ auth.isSuperAdmin() ? 'Plataforma' : 'Empresa' }}</p>
       <h2>Usuarios</h2>
-      <p>Quién entra en el panel y con qué rol. El acceso se puede desactivar en cualquier momento.</p>
+      <p>
+        @if (auth.isSuperAdmin()) {
+          Usuarios de todas las empresas. Al dar de alta una empresa, crea aquí su administrador.
+        } @else {
+          Quién entra en el panel de {{ auth.user()?.companyName }} y con qué rol.
+        }
+      </p>
     </div>
     <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo usuario</button>
   </header>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="list">
-        @for (user of users(); track user.id) {
-          <button type="button" class="list-item" [class.is-selected]="selectedId() === user.id" (click)="select(user)">
+  <div class="groups">
+    @for (group of groups(); track group.name) {
+      <article class="panel group">
+        <div class="group__head">
+          <div class="group__title">
+            <span class="badge" style="background: var(--primary)">{{ group.name.charAt(0) }}</span>
             <div>
-              <strong>{{ user.name }}</strong>
-              <p>{{ user.email }} · último acceso {{ user.lastLogin ? (user.lastLogin | date: 'dd/MM/yyyy HH:mm') : 'nunca' }}</p>
+              <h3>{{ group.name }}</h3>
+              <p>{{ group.users.length }} usuarios</p>
             </div>
-            <div class="meta">
-              <span class="tone tone--pendiente">{{ roleLabels[user.role] }}</span>
-              <span class="tone" [class.tone--ok]="user.active" [class.tone--danger]="!user.active">{{ user.active ? 'Activo' : 'Desactivado' }}</span>
-            </div>
-          </button>
-        }
-      </div>
-    </article>
+          </div>
+        </div>
+        <div class="group__body">
+          <div class="card-grid">
+            @for (user of group.users; track user.id) {
+              <div class="card" [class.card--muted]="!user.active" (click)="select(user)">
+                <div>
+                  <p class="card__title">{{ user.name }}</p>
+                  <p class="card__sub">{{ user.email }}</p>
+                  <p class="card__sub">Último acceso: {{ user.lastLogin ? (user.lastLogin | date: 'dd/MM/yyyy HH:mm') : 'nunca' }}</p>
+                </div>
+                <div class="card__foot">
+                  <span class="tone tone--pendiente">{{ roleLabels[user.role] }}</span>
+                  @if (!user.active) {
+                    <span class="tone tone--danger">Desactivado</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </article>
+    }
+  </div>
 
-    <aside class="panel">
-      <div class="panel-head"><h3>{{ selected() ? 'Editar usuario' : 'Nuevo usuario' }}</h3></div>
+  @if (dialogOpen()) {
+    <app-modal [title]="selected() ? 'Editar usuario' : 'Nuevo usuario'" (closed)="closeDialog()">
       <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
         <label class="full"><span>Nombre</span><input formControlName="name" /></label>
-        <label class="full"><span>Email</span><input type="email" formControlName="email" autocomplete="off" /></label>
+        <label class="full"><span>Email (para entrar)</span><input type="email" formControlName="email" autocomplete="off" /></label>
         <label class="full">
           <span>{{ selected() ? 'Nueva contraseña (vacía = no cambiar)' : 'Contraseña' }}</span>
           <input type="password" formControlName="password" autocomplete="new-password" />
@@ -38,12 +61,22 @@
         <label>
           <span>Rol</span>
           <select formControlName="role">
-            @for (role of roles; track role) {
+            @for (role of roles(); track role) {
               <option [value]="role">{{ roleLabels[role] }}</option>
             }
           </select>
         </label>
-        <label class="check"><input type="checkbox" formControlName="active" /> Acceso activo</label>
+        @if (auth.isSuperAdmin() && form.controls.role.value !== 'SUPERADMIN') {
+          <label>
+            <span>Empresa</span>
+            <select formControlName="companyId">
+              @for (company of companies(); track company.id) {
+                <option [ngValue]="company.id">{{ company.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        <label class="full check"><input type="checkbox" formControlName="active" /> Acceso activo</label>
         <div class="form-actions full">
           <button type="submit" class="btn btn--primary">Guardar</button>
           @if (selected()) {
@@ -51,6 +84,6 @@
           }
         </div>
       </form>
-    </aside>
-  </div>
+    </app-modal>
+  }
 </section>

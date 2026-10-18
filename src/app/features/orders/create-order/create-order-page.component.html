@@ -3,38 +3,157 @@
     <div>
       <p class="eyebrow">Pedidos</p>
       <h2>{{ isEdit() ? 'Editar pedido #' + id() : 'Nuevo pedido' }}</h2>
-      <p>Tienda y franja, productos, cliente y confirmación.</p>
+      <p>Añade productos, revisa el carrito, elige el cliente y la hora de recogida.</p>
     </div>
     <a class="btn" routerLink="/orders">Volver al listado</a>
   </header>
 
   <nav class="wizard-nav" aria-label="Pasos del pedido">
-    <button type="button" [class.is-active]="step() === 1" (click)="goTo(1)">1. Tienda y hora</button>
-    <button type="button" [class.is-active]="step() === 2" [disabled]="!canGoTo(2)" (click)="goTo(2)">2. Productos</button>
+    <button type="button" [class.is-active]="step() === 1" (click)="goTo(1)">1. Productos</button>
+    <button type="button" [class.is-active]="step() === 2" [disabled]="!canGoTo(2)" (click)="goTo(2)">2. Resumen</button>
     <button type="button" [class.is-active]="step() === 3" [disabled]="!canGoTo(3)" (click)="goTo(3)">3. Cliente</button>
-    <button type="button" [class.is-active]="step() === 4" [disabled]="!canGoTo(4)" (click)="goTo(4)">4. Confirmar</button>
+    <button type="button" [class.is-active]="step() === 4" [disabled]="!canGoTo(4)" (click)="goTo(4)">4. Fecha y hora</button>
   </nav>
 
-  <div class="wizard">
-    <section class="panel">
-      @switch (step()) {
-        @case (1) {
-          <h3>¿Dónde y cuándo se recoge?</h3>
-          <div class="form-grid">
-            <label>
-              <span>Tienda</span>
-              <select [ngModel]="storeId()" (ngModelChange)="selectStore($event)">
-                @for (store of stores(); track store.id) {
-                  <option [ngValue]="store.id">{{ store.name }} · {{ store.address }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              <span>Día de recogida</span>
-              <input type="date" [min]="isEdit() ? '' : today" [ngModel]="date()" (ngModelChange)="selectDate($event)" />
-            </label>
+  @switch (step()) {
+    <!-- 1 · Productos: pestanas por categoria y tarjetas con + -->
+    @case (1) {
+      <article class="panel group">
+        <div class="tabs">
+          @for (category of categories(); track category.name) {
+            <button type="button" class="tab" [class.is-active]="(activeCategory() ?? categories()[0]?.name) === category.name"
+                    (click)="activeCategory.set(category.name)">
+              <span class="color-dot" [style.background]="category.color"></span>{{ category.name }}
+            </button>
+          }
+        </div>
+        <div class="group__body">
+          <div class="product-grid">
+            @for (product of visibleProducts(); track product.id) {
+              <article class="product" [class.in-cart]="quantityOf(product.id) > 0">
+                <div class="product__img" [style.background]="product.displayColor">
+                  @if (product.imageUrl) {
+                    <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                  } @else {
+                    {{ product.abbreviation || product.name.charAt(0) }}
+                  }
+                  @if (quantityOf(product.id) > 0) {
+                    <span class="product__badge">{{ quantityOf(product.id) }}</span>
+                  }
+                </div>
+                <div class="product__body">
+                  <strong>{{ product.name }}</strong>
+                  <div class="product__foot">
+                    <span class="card__price">{{ product.price | currency: 'EUR' }}</span>
+                    @if (quantityOf(product.id) > 0) {
+                      <span class="stepper">
+                        <button type="button" (click)="changeQuantity(product.id, -1)" aria-label="Quitar uno">−</button>
+                        <span>{{ quantityOf(product.id) }}</span>
+                        <button type="button" (click)="changeQuantity(product.id, 1)" aria-label="Añadir uno">+</button>
+                      </span>
+                    } @else {
+                      <button type="button" class="add" (click)="changeQuantity(product.id, 1)" [attr.aria-label]="'Añadir ' + product.name">+</button>
+                    }
+                  </div>
+                </div>
+              </article>
+            } @empty {
+              <p class="empty">No hay productos en esta categoría.</p>
+            }
           </div>
+        </div>
+      </article>
+    }
 
+    <!-- 2 · Resumen del carrito (editable) -->
+    @case (2) {
+      <article class="panel narrow">
+        <h3>Resumen del pedido</h3>
+        @for (line of selectedLines(); track line.key) {
+          <div class="cart-line">
+            <span class="color-dot" [style.background]="line.product.displayColor"></span>
+            <div class="cart-line__name">
+              <strong>{{ line.product.name }}</strong>
+              @if (line.removed.length) {
+                <span class="removed">{{ removedLabel(line) }}</span>
+              }
+              <small>{{ line.product.price | currency: 'EUR' }} / ud</small>
+              @if (line.product.ingredients.length) {
+                <span class="line-actions">
+                  <button type="button" class="link" (click)="customize(line)">✎ Personalizar</button>
+                  <button type="button" class="link" (click)="addVariant(line)">+ Otra variante</button>
+                </span>
+              }
+            </div>
+            <span class="stepper">
+              <button type="button" (click)="changeLine(line, -1)" aria-label="Quitar uno">−</button>
+              <span>{{ line.quantity }}</span>
+              <button type="button" (click)="changeLine(line, 1)" aria-label="Añadir uno">+</button>
+            </span>
+            <strong class="cart-line__total">{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
+            <button type="button" class="btn btn--small" title="Quitar del pedido" (click)="removeLine(line)">✕</button>
+          </div>
+        } @empty {
+          <p class="empty">El carrito está vacío.</p>
+        }
+        <div class="cart-total"><span>Total ({{ itemCount() }} uds)</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
+        <label class="field">
+          <span>Notas e instrucciones especiales</span>
+          <textarea rows="3" [(ngModel)]="notes" maxlength="500"></textarea>
+        </label>
+        <div class="form-actions">
+          <button type="button" class="btn" (click)="step.set(1)">← Seguir añadiendo</button>
+          <button type="button" class="btn btn--primary" [disabled]="!canGoTo(3)" (click)="goTo(3)">Continuar: cliente</button>
+        </div>
+      </article>
+    }
+
+    <!-- 3 · Cliente -->
+    @case (3) {
+      <article class="panel narrow">
+        <h3>¿Para qué cliente?</h3>
+        <form class="toolbar" (ngSubmit)="searchCustomers()">
+          <input type="search" name="customerSearch" placeholder="Buscar por nombre, email o razón social" [(ngModel)]="customerSearch" />
+          <button type="submit" class="btn">Buscar</button>
+          <button type="button" class="btn" (click)="showNewCustomer.set(!showNewCustomer())">+ Cliente nuevo</button>
+        </form>
+
+        @if (showNewCustomer()) {
+          <div class="form-grid new-customer">
+            <label><span>Nombre</span><input [(ngModel)]="newCustomer.name" /></label>
+            <label><span>Email</span><input type="email" [(ngModel)]="newCustomer.email" /></label>
+            <label><span>Teléfono</span><input [(ngModel)]="newCustomer.phone" /></label>
+            <div class="form-actions"><button type="button" class="btn btn--primary" (click)="createCustomer()">Crear y seleccionar</button></div>
+          </div>
+        }
+
+        <div class="customer-grid">
+          @for (customer of customers(); track customer.id) {
+            <div class="card" [class.is-picked]="customerId() === customer.id" (click)="customerId.set(customer.id)">
+              <p class="card__title">{{ customerId() === customer.id ? '✓ ' : '' }}{{ customer.name }}</p>
+              <p class="card__sub">{{ customer.email }}</p>
+              <p class="card__sub">{{ customer.businessName || 'Particular' }}</p>
+            </div>
+          } @empty {
+            <p class="empty">No hay clientes con esa búsqueda.</p>
+          }
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" (click)="step.set(2)">← Resumen</button>
+          <button type="button" class="btn btn--primary" [disabled]="!canGoTo(4)" (click)="goTo(4)">Continuar: fecha y hora</button>
+        </div>
+      </article>
+    }
+
+    <!-- 4 · Fecha y franja de recogida + confirmacion -->
+    @case (4) {
+      <div class="final">
+        <article class="panel">
+          <h3>¿Cuándo se recoge?</h3>
+          <label class="field date-field">
+            <span>Día de recogida</span>
+            <input type="date" [min]="isEdit() ? '' : today" [ngModel]="date()" (ngModelChange)="selectDate($event)" />
+          </label>
           <p class="eyebrow slots-title">Franjas disponibles</p>
           <div class="slots">
             @for (slot of slots(); track slot.time) {
@@ -43,108 +162,80 @@
                 {{ slot.time }}
               </button>
             } @empty {
-              <p class="muted">Elige tienda y día para ver las franjas.</p>
+              <p class="muted">Elige el día para ver las franjas.</p>
             }
           </div>
-        }
+        </article>
 
-        @case (2) {
-          <h3>Añade los productos</h3>
-          @for (category of categories(); track category.name) {
-            <p class="category-title"><span class="color-dot" [style.background]="category.color"></span>{{ category.name }}</p>
-            <div class="products-grid">
-              @for (product of category.products; track product.id) {
-                @if (isVisible(product)) {
-                  <article class="product-card" [class.has-qty]="(quantities()[product.id] ?? 0) > 0">
-                    <div>
-                      <strong>{{ product.name }}</strong>
-                      <p>{{ product.price | currency: 'EUR' }}</p>
-                    </div>
-                    <div class="qty">
-                      <button type="button" class="btn btn--small" (click)="changeQuantity(product.id, -1)">−</button>
-                      <input type="number" min="0" [ngModel]="quantities()[product.id] ?? 0" (ngModelChange)="setQuantity(product.id, $event)" />
-                      <button type="button" class="btn btn--small" (click)="changeQuantity(product.id, 1)">+</button>
-                    </div>
-                  </article>
+        <aside class="panel summary">
+          <p class="eyebrow">Confirmación</p>
+          <p class="summary__who"><strong>{{ selectedCustomer()?.name }}</strong><br /><small>{{ selectedCustomer()?.email }}</small></p>
+          <p class="summary__when">{{ date() | date: 'EEEE d MMMM' }} · {{ time() ?? 'elige una hora' }}</p>
+          @for (line of selectedLines(); track line.key) {
+            <div class="summary-line">
+              <span>
+                {{ line.quantity }} × {{ line.product.name }}
+                @if (line.removed.length) {
+                  <span class="removed">{{ removedLabel(line) }}</span>
                 }
-              }
+              </span>
+              <strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
             </div>
           }
-        }
-
-        @case (3) {
-          <h3>¿Para qué cliente?</h3>
-          <form class="toolbar" (ngSubmit)="searchCustomers()">
-            <input type="search" name="customerSearch" placeholder="Buscar por nombre, email o empresa" [(ngModel)]="customerSearch" />
-            <button type="submit" class="btn">Buscar</button>
-            <button type="button" class="btn" (click)="showNewCustomer.set(!showNewCustomer())">+ Cliente nuevo</button>
-          </form>
-
-          @if (showNewCustomer()) {
-            <div class="form-grid new-customer">
-              <label><span>Nombre</span><input [(ngModel)]="newCustomer.name" /></label>
-              <label><span>Email</span><input type="email" [(ngModel)]="newCustomer.email" /></label>
-              <label><span>Teléfono</span><input [(ngModel)]="newCustomer.phone" /></label>
-              <div class="form-actions"><button type="button" class="btn btn--primary" (click)="createCustomer()">Crear y seleccionar</button></div>
-            </div>
+          <div class="summary-line summary-total"><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
+          @if (notes) {
+            <p class="muted">📝 {{ notes }}</p>
           }
-
-          <div class="list customers">
-            @for (customer of customers(); track customer.id) {
-              <button type="button" class="list-item" [class.is-selected]="customerId() === customer.id" (click)="customerId.set(customer.id)">
-                <div>
-                  <strong>{{ customer.name }}</strong>
-                  <p>{{ customer.email }} · {{ customer.phone || 'sin teléfono' }}</p>
-                </div>
-                <span class="tone">{{ customer.companyName || 'Particular' }}</span>
-              </button>
-            } @empty {
-              <p class="empty">No hay clientes con esa búsqueda.</p>
-            }
-          </div>
-        }
-
-        @case (4) {
-          <h3>Revisa y confirma</h3>
-          <div class="summary-grid">
-            <article><span>Recogida</span><strong>{{ date() | date: 'EEEE d MMM' }}</strong><p>{{ time() }} · {{ selectedStore()?.name }}</p></article>
-            <article><span>Cliente</span><strong>{{ selectedCustomer()?.name }}</strong><p>{{ selectedCustomer()?.email }}</p></article>
-            <article><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong><p>{{ selectedLines().length }} productos distintos</p></article>
-          </div>
-          <label class="field">
-            <span>Notas e instrucciones especiales</span>
-            <textarea rows="3" [(ngModel)]="notes" maxlength="500"></textarea>
-          </label>
-        }
-      }
-
-      @if (error(); as message) {
-        <p class="error-box">{{ message }}</p>
-      }
-    </section>
-
-    <aside class="panel summary">
-      <p class="eyebrow">Resumen</p>
-      @for (line of selectedLines(); track line.product.id) {
-        <div class="summary-line">
-          <span>{{ line.quantity }} × {{ line.product.name }}</span>
-          <strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
-        </div>
-      } @empty {
-        <p class="muted">Sin productos todavía.</p>
-      }
-      <div class="summary-line summary-total"><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
-
-      <div class="form-actions">
-        <button type="button" class="btn" [disabled]="step() === 1" (click)="step.set(step() - 1)">Atrás</button>
-        @if (step() < 4) {
-          <button type="button" class="btn btn--primary" [disabled]="!canGoTo(step() + 1)" (click)="goTo(step() + 1)">Continuar</button>
-        } @else {
-          <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="save()">
+          @if (error(); as message) {
+            <p class="error-box">{{ message }}</p>
+          }
+          <button type="button" class="btn btn--primary confirm" [disabled]="!canSave() || saving()" (click)="save()">
             {{ isEdit() ? 'Guardar cambios' : 'Confirmar pedido' }}
           </button>
+        </aside>
+      </div>
+    }
+  }
+
+  <!-- Personalizar una linea: marcar los ingredientes que se quitan -->
+  @if (customizing(); as c) {
+    <app-modal [title]="(c.key === null ? 'Nueva variante · ' : 'Personalizar · ') + c.product.name" width="480px" (closed)="customizing.set(null)">
+      <p class="muted">Desmarca lo que el cliente no quiere. El precio no cambia.</p>
+      <div class="ingredient-list">
+        @for (ingredient of c.product.ingredients; track ingredient.id) {
+          <label class="ingredient" [class.is-removed]="c.removed.includes(ingredient.id)">
+            <input type="checkbox" [checked]="!c.removed.includes(ingredient.id)" (change)="toggleRemoved(ingredient.id)" />
+            <span>{{ ingredient.name }}</span>
+            @if (c.removed.includes(ingredient.id)) {
+              <small>sin</small>
+            }
+          </label>
         }
       </div>
-    </aside>
-  </div>
+      <div class="form-actions customize-foot">
+        <span class="stepper">
+          <button type="button" (click)="changeCustomizeQuantity(-1)" aria-label="Una menos">−</button>
+          <span>{{ c.quantity }}</span>
+          <button type="button" (click)="changeCustomizeQuantity(1)" aria-label="Una más">+</button>
+        </span>
+        <button type="button" class="btn btn--primary" (click)="applyCustomize()">
+          {{ c.key === null ? 'Añadir al pedido' : 'Guardar' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+
+  <!-- Carrito flotante: siempre a mano en el paso de productos, lleva al resumen -->
+  @if (step() === 1) {
+    <button type="button" class="cart-fab" [disabled]="itemCount() === 0" (click)="goTo(2)">
+      <span class="cart-fab__icon">🛒</span>
+      <span class="cart-fab__text">
+        <small>{{ itemCount() }} {{ itemCount() === 1 ? 'producto' : 'productos' }}</small>
+        <strong>{{ total() | currency: 'EUR' }}</strong>
+      </span>
+      @if (itemCount() > 0) {
+        <span class="cart-fab__go">Ver pedido →</span>
+      }
+    </button>
+  }
 </section>

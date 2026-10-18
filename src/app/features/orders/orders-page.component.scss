@@ -1,13 +1,29 @@
-.detail {
-  position: sticky;
-  top: 1rem;
+.groups {
+  display: grid;
+  gap: 1rem;
+}
+
+.badge {
+  background: var(--muted);
+}
+
+.badge--today {
+  background: var(--primary);
+}
+
+.group__title h3 {
+  text-transform: capitalize;
 }
 
 .details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
-  margin: 0 0 1rem;
+  margin: 1rem 0;
+}
+
+.details .full {
+  grid-column: 1 / -1;
 }
 
 .details dt {
@@ -24,6 +40,33 @@
 }
 
 .status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.day-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.8rem 1.1rem;
+}
+
+.day-bar__picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.day-bar__picker input {
+  width: auto;
+  padding: 0.45rem 0.7rem;
+}
+
+.day-bar__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;

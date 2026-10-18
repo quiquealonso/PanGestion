@@ -3,60 +3,111 @@
     <div>
       <p class="eyebrow">Catálogo</p>
       <h2>Categorías</h2>
-      <p>Organizan los productos del catálogo; cada una con su color.</p>
+      <p>Organizan los productos del catálogo; cada una con su color. Usa ◀ ▶ para cambiar el orden en que se muestran.</p>
     </div>
     @if (auth.canEdit()) {
       <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nueva categoría</button>
     }
   </header>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="panel-head">
-        <h3>Listado</h3>
-        <span>{{ categories().length }} categorías</span>
+  <article class="panel group">
+    <div class="group__head">
+      <div class="group__title">
+        <span class="badge" style="background: var(--primary)">C</span>
+        <div>
+          <h3>Todas las categorías</h3>
+          <p>{{ categories().length }} categorías</p>
+        </div>
       </div>
-      <div class="list">
-        @for (category of categories(); track category.id) {
-          <button type="button" class="list-item" [class.is-selected]="selectedId() === category.id" (click)="select(category)">
-            <div>
-              <strong><span class="color-dot" [style.background]="category.color"></span>{{ category.name }}</strong>
-              <p>{{ category.description || 'Sin descripción' }}</p>
+    </div>
+    <div class="group__body">
+      <div class="card-grid">
+        @for (category of categories(); track category.id; let i = $index, first = $first, last = $last) {
+          <div class="card" (click)="select(category)">
+            <div class="card__top">
+              <div class="group__title">
+                <span class="badge" [style.background]="category.color">{{ category.name.charAt(0) }}</span>
+                <div>
+                  <p class="card__title">{{ category.name }}</p>
+                  <p class="card__sub">{{ category.productCount }} productos</p>
+                </div>
+              </div>
             </div>
-            <span class="tone">{{ category.productCount }} productos</span>
-          </button>
+            @if (category.description) {
+              <p class="card__sub">{{ category.description }}</p>
+            }
+            @if (auth.canEdit()) {
+              <div class="card__foot">
+                <span class="card__sub">Posición {{ i + 1 }}</span>
+                <span class="sort-buttons" (click)="$event.stopPropagation()">
+                  <button type="button" class="btn btn--small" title="Subir" [disabled]="first" (click)="move(i, -1)">◀</button>
+                  <button type="button" class="btn btn--small" title="Bajar" [disabled]="last" (click)="move(i, 1)">▶</button>
+                </span>
+              </div>
+            }
+          </div>
         } @empty {
           <p class="empty">No hay categorías.</p>
         }
       </div>
-    </article>
+    </div>
+  </article>
 
-    <aside class="panel">
-      <div class="panel-head">
-        <h3>{{ selected() ? 'Editar categoría' : 'Nueva categoría' }}</h3>
-      </div>
-      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
-        <label>
-          <span>Nombre</span>
-          <input formControlName="name" />
-        </label>
-        <label>
-          <span>Color</span>
-          <input type="color" formControlName="color" />
-        </label>
-        <label class="full">
-          <span>Descripción</span>
-          <textarea rows="3" formControlName="description"></textarea>
-        </label>
+  @if (dialogOpen()) {
+    <app-modal [title]="!selected() ? 'Nueva categoría' : mode() === 'edit' ? 'Editar categoría' : selected()!.name" (closed)="closeDialog()">
+      @if (mode() === 'view' && selected(); as category) {
+        <p class="card__sub">{{ category.description || 'Sin descripción' }}</p>
+        <div class="field">
+          <span>Productos de esta categoría</span>
+          @if (categoryProducts(); as products) {
+            <div>
+              @for (product of products; track product.id) {
+                <div class="product-row">
+                  <span>
+                    <span class="color-dot" [style.background]="product.displayColor"></span>{{ product.name }}
+                    @if (product.abbreviation) { <span class="abbr">{{ product.abbreviation }}</span> }
+                    @if (!product.active) { <span class="tone tone--off">Inactivo</span> }
+                  </span>
+                  <span class="card__price">{{ product.price | currency: 'EUR' }}</span>
+                </div>
+              } @empty {
+                <p class="card__sub">Esta categoría no tiene productos.</p>
+              }
+            </div>
+          } @else {
+            <p class="card__sub">Cargando…</p>
+          }
+        </div>
         @if (auth.canEdit()) {
-          <div class="form-actions full">
-            <button type="submit" class="btn btn--primary">Guardar</button>
-            @if (selected()) {
-              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
-            }
+          <div class="form-actions">
+            <button type="button" class="btn btn--primary" (click)="edit()">Editar categoría</button>
           </div>
         }
-      </form>
-    </aside>
-  </div>
+      } @else {
+        <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
+          <label>
+            <span>Nombre</span>
+            <input formControlName="name" />
+          </label>
+          <label>
+            <span>Color</span>
+            <input type="color" formControlName="color" />
+          </label>
+          <label class="full">
+            <span>Descripción</span>
+            <textarea rows="3" formControlName="description"></textarea>
+          </label>
+          @if (auth.canEdit()) {
+            <div class="form-actions full">
+              <button type="submit" class="btn btn--primary">Guardar</button>
+              @if (selected()) {
+                <button type="button" class="btn" (click)="mode.set('view')">Volver</button>
+                <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
+              }
+            </div>
+          }
+        </form>
+      }
+    </app-modal>
+  }
 </section>

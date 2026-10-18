@@ -4,41 +4,46 @@
       <span class="brand__mark">P</span>
       <div>
         <p>PanGestión</p>
-        <span>Pedidos y gestión de la panadería</span>
+        <span>{{ auth.user()?.companyName ?? 'Administración de empresas' }}</span>
       </div>
     </div>
 
     <nav class="nav">
-      <div class="nav__group">
-        <span class="nav__label">Operaciones</span>
-        <a routerLink="/dashboard" routerLinkActive="is-active">Inicio</a>
-        <a routerLink="/orders" routerLinkActive="is-active">Pedidos</a>
-        @if (auth.canEdit()) {
-          <a routerLink="/orders/new" routerLinkActive="is-active">Nuevo pedido</a>
-        }
-      </div>
-
-      <div class="nav__group">
-        <span class="nav__label">Personas</span>
-        <a routerLink="/customers" routerLinkActive="is-active">Clientes</a>
-        <a routerLink="/companies" routerLinkActive="is-active">Empresas</a>
-      </div>
-
-      <div class="nav__group">
-        <span class="nav__label">Catálogo</span>
-        <a routerLink="/catalog/products" routerLinkActive="is-active">Productos</a>
-        <a routerLink="/catalog/ingredients" routerLinkActive="is-active">Ingredientes</a>
-        <a routerLink="/catalog/categories" routerLinkActive="is-active">Categorías</a>
-      </div>
-
-      <div class="nav__group">
-        <span class="nav__label">Sistema</span>
-        <a routerLink="/stores" routerLinkActive="is-active">Tiendas</a>
-        @if (auth.isAdmin()) {
+      @if (auth.isSuperAdmin()) {
+        <div class="nav__group">
+          <span class="nav__label">Plataforma</span>
+          <a routerLink="/companies" routerLinkActive="is-active">Empresas</a>
           <a routerLink="/users" routerLinkActive="is-active">Usuarios</a>
-        }
-        <a href="/pedido" target="_blank" rel="noopener">Web de pedidos ↗</a>
-      </div>
+          <a href="/pedido" target="_blank" rel="noopener">Web de pedidos ↗</a>
+        </div>
+      } @else {
+        <div class="nav__group">
+          <span class="nav__label">Operaciones</span>
+          <a routerLink="/dashboard" routerLinkActive="is-active">Inicio</a>
+          <a routerLink="/orders" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Pedidos</a>
+          <a routerLink="/production" routerLinkActive="is-active">Producción del día</a>
+          @if (auth.canEdit()) {
+            <a routerLink="/orders/new" routerLinkActive="is-active">Nuevo pedido</a>
+          }
+          <a routerLink="/customers" routerLinkActive="is-active">Clientes</a>
+        </div>
+
+        <div class="nav__group">
+          <span class="nav__label">Catálogo</span>
+          <a routerLink="/catalog/products" routerLinkActive="is-active">Productos</a>
+          <a routerLink="/catalog/categories" routerLinkActive="is-active">Categorías</a>
+          <a routerLink="/catalog/ingredients" routerLinkActive="is-active">Ingredientes</a>
+        </div>
+
+        <div class="nav__group">
+          <span class="nav__label">Empresa</span>
+          <a routerLink="/company" routerLinkActive="is-active">Mi empresa</a>
+          @if (auth.canManageUsers()) {
+            <a routerLink="/users" routerLinkActive="is-active">Usuarios</a>
+          }
+          <a href="/pedido" target="_blank" rel="noopener">Web de pedidos ↗</a>
+        </div>
+      }
     </nav>
 
     @if (auth.user(); as user) {

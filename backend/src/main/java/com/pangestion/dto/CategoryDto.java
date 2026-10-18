@@ -16,11 +16,11 @@ public final class CategoryDto {
             @Size(max = 255) String description) {
     }
 
-    public record Response(Long id, String name, String color, String description, long productCount) {
+    public record Response(Long id, String name, String color, String description, int sortOrder, long productCount) {
 
         public static Response from(Category category, long productCount) {
             return new Response(category.getId(), category.getName(), category.getColor(),
-                    category.getDescription(), productCount);
+                    category.getDescription(), category.getSortOrder(), productCount);
         }
     }
 }

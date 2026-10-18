@@ -1,10 +1,9 @@
 package com.pangestion.service;
 
 import com.pangestion.dto.DashboardDto;
-import com.pangestion.dto.IngredientDto;
-import com.pangestion.dto.OrderDto;
 import com.pangestion.model.OrderStatus;
 import com.pangestion.repository.*;
+import com.pangestion.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -24,32 +23,49 @@ public class DashboardService {
     private final OrderLineRepository orderLineRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
-    private final IngredientRepository ingredientRepository;
+    private final CurrentUser currentUser;
+
+    /** Unidades vendidas cada dia de la semana que empieza el lunes de "anyDay", y de la semana anterior. */
+    public DashboardDto.WeeklySales getWeeklySales(LocalDate anyDay) {
+        Long companyId = currentUser.companyId();
+        LocalDate weekStart = anyDay.with(java.time.DayOfWeek.MONDAY);
+        LocalDate previousStart = weekStart.minusWeeks(1);
+
+        java.util.Map<LocalDate, Long> units = new java.util.HashMap<>();
+        for (Object[] row : orderLineRepository.unitsPerDay(companyId, previousStart, weekStart.plusDays(6))) {
+            units.put((LocalDate) row[0], ((Number) row[1]).longValue());
+        }
+        java.util.List<Long> current = new java.util.ArrayList<>();
+        java.util.List<Long> previous = new java.util.ArrayList<>();
+        for (int day = 0; day < 7; day++) {
+            current.add(units.getOrDefault(weekStart.plusDays(day), 0L));
+            previous.add(units.getOrDefault(previousStart.plusDays(day), 0L));
+        }
+        return new DashboardDto.WeeklySales(weekStart, current, previous);
+    }
 
     public DashboardDto getSummary() {
+        Long companyId = currentUser.companyId();
         LocalDate today = LocalDate.now();
         YearMonth month = YearMonth.from(today);
-        BigDecimal monthRevenue = orderRepository.sumRevenue(month.atDay(1), month.atEndOfMonth());
-        long monthOrders = orderRepository.countBetween(month.atDay(1), month.atEndOfMonth());
+        BigDecimal monthRevenue = orderRepository.sumRevenue(companyId, month.atDay(1), month.atEndOfMonth());
+        long monthOrders = orderRepository.countBetween(companyId, month.atDay(1), month.atEndOfMonth());
         BigDecimal averageTicket = monthOrders == 0
                 ? BigDecimal.ZERO
                 : monthRevenue.divide(BigDecimal.valueOf(monthOrders), 2, RoundingMode.HALF_UP);
 
         return new DashboardDto(
-                orderRepository.countByStatus(OrderStatus.PENDIENTE),
-                orderRepository.countByStatus(OrderStatus.EN_PROCESO),
-                orderRepository.countByStatus(OrderStatus.LISTO),
-                orderRepository.countByPickupDateAndStatusNot(today, OrderStatus.CANCELADO),
-                customerRepository.count(),
-                productRepository.countByActiveTrue(),
+                orderRepository.countByCompanyIdAndStatus(companyId, OrderStatus.PENDIENTE),
+                orderRepository.countByCompanyIdAndStatus(companyId, OrderStatus.EN_PROCESO),
+                orderRepository.countByCompanyIdAndStatus(companyId, OrderStatus.LISTO),
+                orderRepository.countByCompanyIdAndPickupDateAndStatusNot(companyId, today, OrderStatus.CANCELADO),
+                customerRepository.countByCompanyId(companyId),
+                productRepository.countByCompanyIdAndActiveTrue(companyId),
                 monthRevenue,
                 monthOrders,
                 averageTicket,
-                orderRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 6)).stream()
-                        .map(OrderDto.Response::from).toList(),
-                orderLineRepository.findTopProducts(PageRequest.of(0, 5)).stream()
+                orderLineRepository.findTopProducts(companyId, PageRequest.of(0, 5)).stream()
                         .map(row -> new DashboardDto.TopProduct((String) row[0], ((Number) row[1]).longValue()))
-                        .toList(),
-                ingredientRepository.findLowStock().stream().map(IngredientDto.Response::from).toList());
+                        .toList());
     }
 }

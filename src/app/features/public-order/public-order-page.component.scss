@@ -117,10 +117,25 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.product__photo {
+  width: calc(100% + 2rem);
+  height: 120px;
+  margin: -1rem -1rem 0;
+  object-fit: cover;
+}
+
+.product {
+  overflow: hidden;
+}
+
 .product p {
   margin: 0.3rem 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.product .ingredients {
+  font-size: 0.82rem;
 }
 
 .product small {
@@ -159,7 +174,6 @@
 
 .when {
   margin: 0;
-  text-transform: capitalize;
 }
 
 .line {

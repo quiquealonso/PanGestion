@@ -1,16 +1,17 @@
 <section class="auth">
   <article class="panel intro">
     <p class="eyebrow">PanGestión</p>
-    <h2>Panel de gestión de la panadería</h2>
+    <h2>Pedidos y gestión para panaderías, bares y restaurantes</h2>
     <p>
-      Pedidos, clientes, productos, ingredientes y empresas en un único lugar. Cada persona accede
-      solo a lo que le corresponde según su rol.
+      Cada negocio gestiona sus pedidos, clientes y carta en un único lugar, y sus clientes piden desde la web
+      eligiendo día y hora de recogida. Cada persona accede solo a lo que le corresponde según su rol.
     </p>
 
     <ul>
-      <li><strong>Administrador:</strong> acceso total, incluida la gestión de usuarios.</li>
-      <li><strong>Gestor:</strong> gestiona pedidos, catálogo, clientes y empresas.</li>
-      <li><strong>Visor:</strong> solo consulta.</li>
+      <li><strong>Superadministrador:</strong> da de alta los negocios y sus usuarios.</li>
+      <li><strong>Administrador:</strong> acceso total a su negocio, incluidos sus usuarios y sus datos.</li>
+      <li><strong>Gestor:</strong> gestiona pedidos, producción, catálogo y clientes.</li>
+      <li><strong>Visor:</strong> solo consulta (por ejemplo, la pantalla de producción).</li>
     </ul>
 
     <p class="public-link">¿Eres cliente? <a routerLink="/pedido">Haz tu pedido aquí →</a></p>
@@ -38,6 +39,30 @@
 
     @if (error(); as message) {
       <p class="error-box">{{ message }}</p>
+    }
+
+    @if (testUsers.length) {
+      <div class="test-users">
+        <p class="eyebrow">Usuarios de prueba</p>
+        @for (user of testUsers; track user.email) {
+          <div class="test-user">
+            <div class="test-user__info">
+              <strong>{{ user.label }}</strong>
+              <small>{{ user.detail }}</small>
+              <span class="test-user__creds">
+                <button type="button" class="copy" (click)="copy(user.email)" title="Copiar email">
+                  {{ copied() === user.email ? '✓ copiado' : user.email }}
+                </button>
+                ·
+                <button type="button" class="copy" (click)="copy(user.password)" title="Copiar contraseña">
+                  {{ copied() === user.password ? '✓ copiado' : user.password }}
+                </button>
+              </span>
+            </div>
+            <button type="button" class="use" (click)="useTestUser(user)">Usar</button>
+          </div>
+        }
+      </div>
     }
   </article>
 </section>

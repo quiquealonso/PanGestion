@@ -3,7 +3,7 @@
     <div>
       <p class="eyebrow">Catálogo</p>
       <h2>Ingredientes</h2>
-      <p>Existencias, unidad y coste. El stock bajo se marca en rojo para reponerlo a tiempo.</p>
+      <p>De qué está hecho cada producto. Los alérgenos se muestran a los clientes al hacer su pedido.</p>
     </div>
     @if (auth.canEdit()) {
       <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo ingrediente</button>
@@ -12,47 +12,49 @@
 
   <section class="stats-grid">
     <article class="panel stat-card"><span>Ingredientes</span><strong>{{ ingredients().length }}</strong></article>
-    <article class="panel stat-card" [class.stat-card--alert]="lowStockCount() > 0"><span>Stock bajo</span><strong>{{ lowStockCount() }}</strong></article>
-    <article class="panel stat-card"><span>Valor del inventario</span><strong>{{ inventoryValue() | currency: 'EUR' }}</strong></article>
+    <article class="panel stat-card"><span>Con alérgeno</span><strong>{{ withAllergen() }}</strong></article>
+    <article class="panel stat-card"><span>Sin usar en productos</span><strong>{{ unused() }}</strong></article>
   </section>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="panel-head">
-        <h3>Listado</h3>
-        <label class="check"><input type="checkbox" [ngModel]="onlyLowStock()" (ngModelChange)="onlyLowStock.set($event)" /> Solo stock bajo</label>
+  <article class="panel group">
+    <div class="group__head">
+      <div class="group__title">
+        <span class="badge" style="background: var(--primary)">I</span>
+        <div>
+          <h3>Todos los ingredientes</h3>
+          <p>{{ visible().length }} de {{ ingredients().length }}</p>
+        </div>
       </div>
-      <div class="list">
+      <input type="search" class="search" placeholder="Buscar ingrediente" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    </div>
+    <div class="group__body">
+      <div class="card-grid">
         @for (ingredient of visible(); track ingredient.id) {
-          <button type="button" class="list-item" [class.is-selected]="selectedId() === ingredient.id" (click)="select(ingredient)">
+          <div class="card" (click)="select(ingredient)">
             <div>
-              <strong>{{ ingredient.name }}</strong>
-              <p>{{ ingredient.unitCost | currency: 'EUR' }}/{{ ingredient.unit }} · Alérgeno: {{ ingredient.allergen || 'ninguno' }}</p>
+              <p class="card__title">{{ ingredient.name }}</p>
+              <p class="card__sub">En {{ ingredient.productCount }} {{ ingredient.productCount === 1 ? 'producto' : 'productos' }}</p>
             </div>
-            <div class="meta">
-              <span class="tone" [class.tone--danger]="ingredient.lowStock" [class.tone--ok]="!ingredient.lowStock">
-                {{ ingredient.lowStock ? 'Stock bajo' : 'Disponible' }}
-              </span>
-              <strong [class.text-danger]="ingredient.lowStock">{{ ingredient.stock | number: '1.0-3' }} {{ ingredient.unit }}</strong>
+            <div class="card__foot">
+              @if (ingredient.allergen) {
+                <span class="tone tone--en_proceso">⚠ {{ ingredient.allergen }}</span>
+              } @else {
+                <span class="card__sub">Sin alérgenos</span>
+              }
             </div>
-          </button>
+          </div>
         } @empty {
           <p class="empty">No hay ingredientes.</p>
         }
       </div>
-    </article>
+    </div>
+  </article>
 
-    <aside class="panel">
-      <div class="panel-head">
-        <h3>{{ selected() ? 'Editar ingrediente' : 'Nuevo ingrediente' }}</h3>
-      </div>
+  @if (dialogOpen()) {
+    <app-modal [title]="selected() ? 'Editar ingrediente' : 'Nuevo ingrediente'" (closed)="closeDialog()">
       <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
-        <label class="full"><span>Nombre</span><input formControlName="name" /></label>
-        <label><span>Unidad</span><input formControlName="unit" placeholder="kg, g, l, ud" /></label>
-        <label><span>Coste por unidad (€)</span><input type="number" step="0.01" min="0" formControlName="unitCost" /></label>
-        <label><span>Stock actual</span><input type="number" step="0.001" min="0" formControlName="stock" /></label>
-        <label><span>Stock mínimo</span><input type="number" step="0.001" min="0" formControlName="minStock" /></label>
-        <label class="full"><span>Alérgeno</span><input formControlName="allergen" placeholder="Gluten, Lácteos, Huevo…" /></label>
+        <label><span>Nombre</span><input formControlName="name" /></label>
+        <label><span>Alérgeno (opcional)</span><input formControlName="allergen" placeholder="Gluten, Lácteos, Frutos de cáscara…" /></label>
         @if (auth.canEdit()) {
           <div class="form-actions full">
             <button type="submit" class="btn btn--primary">Guardar</button>
@@ -63,16 +65,18 @@
         }
       </form>
 
-      @if (selected() && auth.canEdit()) {
-        <div class="field stock-adjust">
-          <span>Movimiento de stock ({{ selected()?.unit }})</span>
-          <div class="toolbar">
-            <input type="number" min="0" step="0.001" [(ngModel)]="stockAmount" />
-            <button type="button" class="btn" (click)="adjustStock(1)">+ Entrada</button>
-            <button type="button" class="btn" (click)="adjustStock(-1)">− Salida</button>
+      @if (selected()) {
+        <div class="field used-in">
+          <span>Lo llevan</span>
+          <div class="chips">
+            @for (product of usedIn(); track product.id) {
+              <span class="tone"><span class="color-dot" [style.background]="product.displayColor"></span>{{ product.name }}</span>
+            } @empty {
+              <span class="card__sub">Ningún producto todavía.</span>
+            }
           </div>
         </div>
       }
-    </aside>
-  </div>
+    </app-modal>
+  }
 </section>

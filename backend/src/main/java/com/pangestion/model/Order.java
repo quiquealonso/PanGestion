@@ -12,7 +12,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Pedido de un cliente para recoger en una tienda, un dia y a una hora. */
+/** Pedido de un cliente para recoger en su panaderia un dia y a una hora. */
 @Entity
 @Table(name = "orders") // ORDER es palabra reservada en SQL
 @Getter
@@ -28,9 +28,10 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    /** Panaderia a la que se hace el pedido (y donde se recoge). */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "store_id", nullable = false)
-    private Store store;
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @Column(name = "pickup_date", nullable = false)
     private LocalDate pickupDate;
@@ -61,7 +62,12 @@ public class Order {
 
     /** Anade una linea copiando el precio actual del producto y recalcula el total. */
     public void addLine(Product product, int quantity) {
-        lines.add(new OrderLine(this, product, quantity, product.getPrice()));
+        addLine(product, quantity, List.of());
+    }
+
+    /** Linea personalizada: el mismo producto quitandole algunos ingredientes (el precio no cambia). */
+    public void addLine(Product product, int quantity, List<String> removedIngredients) {
+        lines.add(new OrderLine(this, product, quantity, product.getPrice(), removedIngredients));
         recalculateTotal();
     }
 

@@ -1,50 +1,52 @@
 <section class="page">
   <header class="page-head">
     <div>
-      <p class="eyebrow">Personas</p>
+      <p class="eyebrow">Plataforma</p>
       <h2>Empresas</h2>
-      <p>Cafeterías, hoteles y restaurantes con sus datos fiscales y de contacto.</p>
+      <p>Panaderías que usan PanGestión. Cada una gestiona sus propios productos, clientes y pedidos.</p>
     </div>
-    @if (auth.canEdit()) {
-      <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nueva empresa</button>
-    }
+    <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nueva empresa</button>
   </header>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="panel-head"><h3>Listado</h3><span>{{ companies().length }} empresas</span></div>
-      <div class="list">
+  <article class="panel group">
+    <div class="group__head">
+      <div class="group__title">
+        <span class="badge" style="background: var(--primary)">E</span>
+        <div>
+          <h3>Todas las empresas</h3>
+          <p>{{ companies().length }} empresas</p>
+        </div>
+      </div>
+    </div>
+    <div class="group__body">
+      <div class="card-grid">
         @for (company of companies(); track company.id) {
-          <button type="button" class="list-item" [class.is-selected]="selectedId() === company.id" (click)="select(company)">
+          <div class="card" [class.card--muted]="!company.active" (click)="select(company)">
             <div>
-              <strong>{{ company.name }}</strong>
-              <p>{{ company.taxId }} · {{ company.email || 'sin email' }} · {{ company.phone || 'sin teléfono' }}</p>
+              <p class="card__title">{{ company.name }}</p>
+              <p class="card__sub"><span class="tone tone--pendiente">{{ typeLabels[company.type] }}</span></p>
+              <p class="card__sub">{{ company.taxId }} · {{ company.address }}</p>
+              <p class="card__sub">{{ company.openingTime }}–{{ company.closingTime }} · franjas de {{ company.slotMinutes }} min</p>
             </div>
-            <span class="tone">{{ company.customerCount }} clientes</span>
-          </button>
+            <div class="card__foot">
+              <span class="tone" [class.tone--ok]="company.active">{{ company.active ? 'Activa' : 'Inactiva' }}</span>
+              <span class="card__sub">{{ company.userCount }} usuarios · {{ company.customerCount }} clientes</span>
+            </div>
+          </div>
         } @empty {
           <p class="empty">No hay empresas.</p>
         }
       </div>
-    </article>
+    </div>
+  </article>
 
-    <aside class="panel">
-      <div class="panel-head"><h3>{{ selected() ? 'Editar empresa' : 'Nueva empresa' }}</h3></div>
-      <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
-        <label class="full"><span>Razón social</span><input formControlName="name" /></label>
-        <label><span>CIF / NIF</span><input formControlName="taxId" /></label>
-        <label><span>Teléfono</span><input formControlName="phone" /></label>
-        <label class="full"><span>Email</span><input type="email" formControlName="email" /></label>
-        <label class="full"><span>Dirección fiscal</span><input formControlName="address" /></label>
-        @if (auth.canEdit()) {
-          <div class="form-actions full">
-            <button type="submit" class="btn btn--primary">Guardar</button>
-            @if (selected()) {
-              <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
-            }
-          </div>
+  @if (dialogOpen()) {
+    <app-modal [title]="selected() ? 'Editar empresa' : 'Nueva empresa'" width="640px" (closed)="closeDialog()">
+      <app-company-form [company]="selected()" [canEditType]="true" (submitted)="save($event)">
+        @if (selected()) {
+          <button type="button" class="btn btn--danger" (click)="remove()">Eliminar</button>
         }
-      </form>
-    </aside>
-  </div>
+      </app-company-form>
+    </app-modal>
+  }
 </section>

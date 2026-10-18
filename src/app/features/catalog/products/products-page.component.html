@@ -3,7 +3,7 @@
     <div>
       <p class="eyebrow">Catálogo</p>
       <h2>Productos</h2>
-      <p>Descripción, categoría, precio y receta. Los inactivos no se ofrecen a los clientes.</p>
+      <p>Descripción, categoría, precio y receta. Los inactivos no se ofrecen a los clientes. Usa ◀ ▶ para ordenar dentro de cada categoría.</p>
     </div>
     @if (auth.canEdit()) {
       <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo producto</button>
@@ -26,39 +26,68 @@
     <button type="submit" class="btn">Buscar</button>
   </form>
 
-  <div class="layout">
-    <article class="panel">
-      <div class="list">
-        @for (product of products(); track product.id) {
-          <div class="list-item" [class.is-selected]="selectedId() === product.id" (click)="select(product)">
+  <div class="groups">
+    @for (group of groups(); track group.id) {
+      <article class="panel group">
+        <div class="group__head">
+          <div class="group__title">
+            <span class="badge" [style.background]="group.color">{{ group.name.charAt(0) }}</span>
             <div>
-              <strong><span class="color-dot" [style.background]="product.categoryColor"></span>{{ product.name }}</strong>
-              <p>{{ product.categoryName }} · coste {{ product.cost | currency: 'EUR' }} · {{ product.description }}</p>
-            </div>
-            <div class="meta">
-              @if (auth.canEdit()) {
-                <button type="button" class="tone" [class.tone--ok]="product.active" [class.tone--off]="!product.active"
-                        title="Activar / desactivar" (click)="$event.stopPropagation(); toggleActive(product)">
-                  {{ product.active ? 'Activo' : 'Inactivo' }}
-                </button>
-              } @else {
-                <span class="tone" [class.tone--ok]="product.active">{{ product.active ? 'Activo' : 'Inactivo' }}</span>
-              }
-              <strong>{{ product.price | currency: 'EUR' }}</strong>
+              <h3>{{ group.name }}</h3>
+              <p>{{ group.products.length }} productos</p>
             </div>
           </div>
-        } @empty {
-          <p class="empty">No hay productos con estos filtros.</p>
-        }
-      </div>
-    </article>
+        </div>
+        <div class="group__body">
+          <div class="card-grid">
+            @for (product of group.products; track product.id; let first = $first, last = $last) {
+              <div class="card" [class.card--muted]="!product.active" (click)="select(product)">
+                <div class="card__top">
+                  @if (product.imageUrl) {
+                    <img class="thumb" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                  }
+                  <div class="card__main">
+                    <p class="card__title"><span class="color-dot" [style.background]="product.displayColor"></span>{{ product.name }}</p>
+                    @if (product.abbreviation) {
+                      <p class="card__sub"><span class="abbr">{{ product.abbreviation }}</span></p>
+                    }
+                    @if (product.description || product.ingredients.length) {
+                      <p class="card__sub">{{ product.description || ingredientNames(product) }}</p>
+                    }
+                  </div>
+                  <span class="card__price">{{ product.price | currency: 'EUR' }}</span>
+                </div>
+                <div class="card__foot">
+                  @if (auth.canEdit()) {
+                    <button type="button" class="tone" [class.tone--ok]="product.active" [class.tone--off]="!product.active"
+                            title="Activar / desactivar" (click)="$event.stopPropagation(); toggleActive(product)">
+                      {{ product.active ? 'Activo' : 'Inactivo' }}
+                    </button>
+                  } @else {
+                    <span class="tone" [class.tone--ok]="product.active">{{ product.active ? 'Activo' : 'Inactivo' }}</span>
+                  }
+                  @if (canReorder()) {
+                    <span class="sort-buttons" (click)="$event.stopPropagation()">
+                      <button type="button" class="btn btn--small" title="Antes" [disabled]="first" (click)="move(product, -1)">◀</button>
+                      <button type="button" class="btn btn--small" title="Después" [disabled]="last" (click)="move(product, 1)">▶</button>
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <article class="panel"><p class="empty">No hay productos con estos filtros.</p></article>
+    }
+  </div>
 
-    <aside class="panel">
-      <div class="panel-head">
-        <h3>{{ selected() ? 'Editar producto' : 'Nuevo producto' }}</h3>
-      </div>
+  @if (dialogOpen()) {
+    <app-modal [title]="selected() ? 'Editar producto' : 'Nuevo producto'" width="760px" (closed)="closeDialog()">
       <form [formGroup]="form" class="form-grid" (ngSubmit)="save()">
-        <label class="full"><span>Nombre</span><input formControlName="name" /></label>
+        <label><span>Nombre</span><input formControlName="name" /></label>
+        <label><span>Abreviatura</span><input formControlName="abbreviation" placeholder="Ej: N-X, CuXL" /></label>
         <label>
           <span>Categoría</span>
           <select formControlName="categoryId">
@@ -68,36 +97,51 @@
           </select>
         </label>
         <label><span>Precio (€)</span><input type="number" step="0.01" min="0" formControlName="price" /></label>
+        <label class="check"><input type="checkbox" formControlName="ownColor" /> Color propio</label>
+        <label>
+          <span>{{ form.controls.ownColor.value ? 'Color del producto' : 'Usa el color de la categoría' }}</span>
+          <input type="color" formControlName="color" />
+        </label>
         <label class="full check"><input type="checkbox" formControlName="active" /> Activo (se ofrece a los clientes)</label>
-        <label class="full"><span>Descripción</span><textarea rows="3" formControlName="description"></textarea></label>
-
-        <div class="full field" formArrayName="ingredients">
-          <span>Receta (cantidad por unidad de producto)</span>
-          @for (line of recipe.controls; track line; let i = $index) {
-            <div class="recipe-row" [formGroupName]="i">
-              <select formControlName="ingredientId">
-                <option [ngValue]="0" disabled>Ingrediente…</option>
-                @for (ingredient of ingredients(); track ingredient.id) {
-                  <option [ngValue]="ingredient.id">{{ ingredient.name }} ({{ ingredient.unit }})</option>
-                }
-              </select>
-              <input type="number" step="0.001" min="0" formControlName="quantity" />
-              @if (auth.canEdit()) {
-                <button type="button" class="btn btn--small" (click)="removeRecipeLine(i)">✕</button>
+        <div class="full field">
+          <span>Foto</span>
+          <div class="photo">
+            <div class="photo__preview" [style.background]="form.controls.ownColor.value ? form.controls.color.value : (selected()?.categoryColor ?? '#475569')">
+              @if (imagePreview(); as src) {
+                <img [src]="src" alt="Foto del producto" />
+              } @else {
+                <span>{{ form.controls.abbreviation.value || form.controls.name.value.charAt(0) || '?' }}</span>
               }
             </div>
-          } @empty {
-            <p class="muted">Sin ingredientes.</p>
-          }
-          @if (auth.canEdit()) {
-            <button type="button" class="btn btn--small" (click)="addRecipeLine()">+ Añadir ingrediente</button>
-          }
+            @if (auth.canEdit()) {
+              <div class="photo__actions">
+                <label class="btn btn--small">
+                  {{ imagePreview() ? 'Cambiar foto' : 'Subir foto' }}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden (change)="onImageSelected($event)" />
+                </label>
+                @if (imagePreview()) {
+                  <button type="button" class="btn btn--small" (click)="clearImage()">Quitar foto</button>
+                }
+                <small class="muted">JPG, PNG o WEBP · máx. 2 MB</small>
+              </div>
+            }
+          </div>
         </div>
+        <label class="full"><span>Descripción</span><textarea rows="3" formControlName="description"></textarea></label>
 
-        <p class="full muted">
-          Coste estimado: <strong>{{ recipeCost() | currency: 'EUR' }}</strong> · Margen:
-          <strong [class.text-danger]="margin() < 0.3">{{ margin() | percent: '1.0-0' }}</strong>
-        </p>
+        <div class="full field">
+          <span>Ingredientes que lleva</span>
+          <div class="chips">
+            @for (ingredient of ingredients(); track ingredient.id) {
+              <button type="button" class="tone chip" [class.is-on]="hasIngredient(ingredient.id)"
+                      [disabled]="!auth.canEdit()" (click)="toggleIngredient(ingredient.id)">
+                {{ hasIngredient(ingredient.id) ? '✓ ' : '' }}{{ ingredient.name }}
+              </button>
+            } @empty {
+              <span class="muted">No hay ingredientes. Créalos en Catálogo → Ingredientes.</span>
+            }
+          </div>
+        </div>
 
         @if (auth.canEdit()) {
           <div class="form-actions full">
@@ -108,6 +152,6 @@
           </div>
         }
       </form>
-    </aside>
-  </div>
+    </app-modal>
+  }
 </section>
