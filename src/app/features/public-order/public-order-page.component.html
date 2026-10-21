@@ -3,17 +3,14 @@
   <header class="po__top">
     <div class="po__brand">
       <span class="po__logo" aria-hidden="true">🥖</span>
-      <div>
-        <strong>{{ company()?.name ?? 'Haz tu pedido' }}</strong>
-        @if (company(); as c) {
-          <small>{{ c.address }}</small>
-        }
-      </div>
+      <strong>{{ company()?.name ?? 'Haz tu pedido' }}</strong>
+      @if (company(); as c) {
+        <small>· {{ c.address }}</small>
+      }
     </div>
 
     @if (!confirmed() && !loading()) {
       <nav class="po__progress" aria-label="Pasos del pedido">
-        <p class="po__step-count">Paso {{ step() }} de {{ steps.length }}</p>
         <ol>
           @for (s of steps; track s.number) {
             <li [class.is-done]="s.number < step()" [class.is-current]="s.number === step()">
@@ -116,37 +113,19 @@
           <div class="products">
             @for (p of visibleProducts(); track p.id) {
               @let qty = quantityOf(p.id);
-              <article class="product" [class.is-in-cart]="qty > 0">
+              <button type="button" class="product" [class.is-in-cart]="qty > 0" (click)="openDetail(p)"
+                      [attr.aria-label]="p.name + ', ' + (p.price | currency: 'EUR') + (qty ? ', tienes ' + qty + ' en tu pedido' : '')">
                 @if (p.imageUrl) {
-                  <img [src]="p.imageUrl" [alt]="p.name" loading="lazy" />
+                  <img [src]="p.imageUrl" alt="" loading="lazy" />
                 } @else {
-                  <div class="product__noimg" [style.background]="p.color" aria-hidden="true">{{ p.name.charAt(0) }}</div>
+                  <span class="product__noimg" [style.background]="p.color" aria-hidden="true">{{ p.name.charAt(0) }}</span>
                 }
-                <div class="product__body">
-                  <h2>{{ p.name }}</h2>
-                  @if (p.description) {
-                    <p class="product__desc">{{ p.description }}</p>
-                  } @else if (p.ingredients.length) {
-                    <p class="product__desc">{{ ingredientNames(p) }}</p>
-                  }
-                  @if (p.allergens.length) {
-                    <p class="product__allergens">⚠️ Alérgenos: {{ p.allergens.join(', ') }}</p>
-                  }
-                  <div class="product__foot">
-                    <strong class="product__price">{{ p.price | currency: 'EUR' }}</strong>
-                    @if (qty === 0) {
-                      <button type="button" class="pbtn pbtn--primary" (click)="changeProduct(p, 1)"
-                              [attr.aria-label]="'Añadir ' + p.name">+ Añadir</button>
-                    } @else {
-                      <div class="qty" role="group" [attr.aria-label]="'Cantidad de ' + p.name">
-                        <button type="button" (click)="changeProduct(p, -1)" [attr.aria-label]="'Quitar uno de ' + p.name">−</button>
-                        <output aria-live="polite">{{ qty }}</output>
-                        <button type="button" (click)="changeProduct(p, 1)" [attr.aria-label]="'Añadir otro ' + p.name">+</button>
-                      </div>
-                    }
-                  </div>
-                </div>
-              </article>
+                @if (qty > 0) {
+                  <span class="product__badge" aria-hidden="true">{{ qty }}</span>
+                }
+                <span class="product__name">{{ p.name }}</span>
+                <span class="product__price">{{ p.price | currency: 'EUR' }}</span>
+              </button>
             } @empty {
               <p class="po__status">No hay productos en esta categoría.</p>
             }
@@ -181,9 +160,11 @@
                       <button type="button" (click)="changeLine(line, 1)" [attr.aria-label]="'Añadir otro ' + line.product.name">+</button>
                     </div>
                     @if (line.product.ingredients.length) {
-                      <button type="button" class="pbtn" (click)="openCustomize(line)">✏️ Quitar ingredientes</button>
+                      <button type="button" class="icon-btn" (click)="openCustomize(line)" title="Quitar ingredientes"
+                              [attr.aria-label]="'Quitar ingredientes de ' + line.product.name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg></button>
                     }
-                    <button type="button" class="pbtn pbtn--ghost" (click)="removeLine(line)">🗑 Eliminar</button>
+                    <button type="button" class="icon-btn icon-btn--danger" (click)="removeLine(line)" title="Eliminar"
+                            [attr.aria-label]="'Eliminar ' + line.product.name + ' del pedido'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg></button>
                   </div>
                 </article>
               }
@@ -252,7 +233,7 @@
             }
           </div>
 
-          <h2 class="po__sub">2. Elige la hora</h2>
+          <h2 class="po__sub" #hoursTitle>2. Elige la hora</h2>
           @if (loadingSlots()) {
             <p class="po__status">Buscando horas libres…</p>
           } @else if (!hasFreeSlots()) {
@@ -274,32 +255,6 @@
             }
           }
 
-          @if (time()) {
-            <section class="summary" aria-live="polite">
-              <h2>Resumen de tu pedido</h2>
-              <ul>
-                <li><span>📍</span> {{ company()?.name }}</li>
-                <li><span>📅</span> {{ dayName(date()) }}, {{ date() | date: 'd MMMM' }} a las {{ time()!.slice(0, 5) }}</li>
-                <li><span>👤</span> {{ customer().name }} · {{ customer().email }}</li>
-              </ul>
-              <div class="lines">
-                @for (line of cart(); track line.key) {
-                  <div class="lines__row">
-                    <span>{{ line.quantity }} × {{ line.product.name }}
-                      @if (line.removed.length) {
-                        <small class="removed-text">{{ removedLabel(line) }}</small>
-                      }
-                    </span>
-                    <span>{{ line.product.price * line.quantity | currency: 'EUR' }}</span>
-                  </div>
-                }
-              </div>
-              <div class="total">
-                <span>Total · se paga al recoger</span>
-                <strong>{{ total() | currency: 'EUR' }}</strong>
-              </div>
-            </section>
-          }
         }
       }
     }
@@ -308,8 +263,10 @@
   <!-- Barra inferior fija: carrito y botones Atras / Continuar -->
   @if (!loading() && !confirmed() && step() > 1) {
     <footer class="po__bar">
-      @if (step() === 2 && itemCount() > 0) {
-        <p class="po__bar-cart">🛒 {{ itemCount() }} {{ itemCount() === 1 ? 'producto' : 'productos' }} · <strong>{{ total() | currency: 'EUR' }}</strong></p>
+      @if (step() === 2 && justAdded()) {
+        <p class="po__bar-added" role="status">✓ Añadido: {{ justAdded() }}</p>
+      } @else if (step() === 2 && itemCount() > 0) {
+        <p class="po__bar-cart" role="status">🛒 {{ itemCount() }} {{ itemCount() === 1 ? 'producto' : 'productos' }} · <strong>{{ total() | currency: 'EUR' }}</strong></p>
       } @else if (blockedReason() && (step() !== 4 || showErrors())) {
         <p class="po__bar-hint">{{ blockedReason() }}</p>
       }
@@ -322,12 +279,119 @@
             {{ step() === 2 ? 'Ver mi pedido' : 'Continuar' }} →
           </button>
         } @else {
-          <button type="button" class="pbtn pbtn--success pbtn--grow" [disabled]="!!blockedReason() || sending()" (click)="confirm()">
-            {{ sending() ? 'Enviando…' : '✓ Confirmar pedido' }}
+          <button type="button" class="pbtn pbtn--primary pbtn--grow" [class.is-blocked]="!!blockedReason()" (click)="openReview()">
+            Revisar y confirmar →
           </button>
         }
       </div>
     </footer>
+  }
+
+  <!-- Resumen final antes de confirmar: todo lo del pedido, con "Cambiar" para volver a cada paso -->
+  @if (reviewing() && time()) {
+    <div class="sheet-backdrop" (click)="reviewing.set(false)">
+      <section class="sheet confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" (click)="$event.stopPropagation()">
+        <button type="button" class="sheet__close" aria-label="Cerrar" (click)="reviewing.set(false)">✕</button>
+        <h2 id="confirm-title">Revisa y confirma</h2>
+        <p>Comprueba que todo está bien antes de enviar el pedido.</p>
+
+        <div class="confirm__block">
+          <div class="confirm__head"><h3>📅 Recogida</h3><button type="button" class="link" (click)="reviewing.set(false)">Cambiar</button></div>
+          <p class="confirm__big"><span class="cap">{{ dayName(date()) }}</span>, {{ date() | date: 'd MMMM' }} · {{ time()!.slice(0, 5) }}</p>
+          <p>{{ company()?.name }}<br />{{ company()?.address }}</p>
+        </div>
+
+        <div class="confirm__block">
+          <div class="confirm__head"><h3>👤 Tus datos</h3><button type="button" class="link" (click)="editFromReview(4)">Cambiar</button></div>
+          <p><b>{{ customer().name }}</b><br />{{ customer().email }}@if (customer().phone) {<br />{{ customer().phone }}}</p>
+        </div>
+
+        <div class="confirm__block">
+          <div class="confirm__head"><h3>🛒 Productos ({{ itemCount() }})</h3><button type="button" class="link" (click)="editFromReview(3)">Cambiar</button></div>
+          <div class="lines">
+            @for (line of cart(); track line.key) {
+              <div class="lines__row">
+                <span><b>{{ line.quantity }} ×</b> {{ line.product.name }}
+                  @if (line.removed.length) {
+                    <small class="removed-text">{{ removedLabel(line) }}</small>
+                  }
+                </span>
+                <span>{{ line.product.price * line.quantity | currency: 'EUR' }}</span>
+              </div>
+            }
+          </div>
+          @if (notes.trim()) {
+            <p class="confirm__notes">📝 {{ notes }}</p>
+          }
+        </div>
+
+        <div class="total">
+          <span>Total<br /><small>Se paga al recoger</small></span>
+          <strong>{{ total() | currency: 'EUR' }}</strong>
+        </div>
+
+        @if (error()) {
+          <div class="alert" role="alert"><strong>No se ha podido completar.</strong> {{ error() }}</div>
+        }
+
+        <div class="sheet__buttons sheet__buttons--sticky">
+          <button type="button" class="pbtn pbtn--success pbtn--grow" [disabled]="sending()" (click)="confirm()">
+            {{ sending() ? 'Enviando…' : '✓ Confirmar pedido' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  <!-- Panel del producto: informacion, ingredientes que se pueden quitar, cantidad y "Añadir al pedido" -->
+  @if (detail(); as d) {
+    <div class="sheet-backdrop" (click)="detail.set(null)">
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title" (click)="$event.stopPropagation()">
+        <button type="button" class="sheet__close" aria-label="Cerrar" (click)="detail.set(null)">✕</button>
+        @if (d.product.imageUrl) {
+          <img class="sheet__img" [src]="d.product.imageUrl" alt="" />
+        }
+        <h2 id="detail-title">{{ d.product.name }}</h2>
+        <p class="sheet__price">{{ d.product.price | currency: 'EUR' }}</p>
+        @if (d.product.description) {
+          <p>{{ d.product.description }}</p>
+        }
+        @if (d.product.allergens.length) {
+          <p class="product__allergens">⚠️ Alérgenos: {{ d.product.allergens.join(', ') }}</p>
+        }
+
+        @if (d.product.ingredients.length) {
+          <h3 class="sheet__label">Ingredientes</h3>
+          <p class="sheet__help">Si no quieres alguno, desmárcalo.</p>
+          <div class="checks">
+            @for (ing of d.product.ingredients; track ing.id) {
+              <label class="check" [class.is-off]="d.removed.includes(ing.id)">
+                <input type="checkbox" [checked]="!d.removed.includes(ing.id)" (change)="toggleDetailIngredient(ing.id)" />
+                <span>{{ ing.name }}</span>
+                @if (d.removed.includes(ing.id)) {
+                  <small>Sin {{ ing.name.toLowerCase() }}</small>
+                }
+              </label>
+            }
+          </div>
+        }
+
+        @if (quantityOf(d.product.id) > 0) {
+          <p class="sheet__incart">🛒 Ya tienes {{ quantityOf(d.product.id) }} en tu pedido.</p>
+        }
+
+        <div class="sheet__buttons sheet__buttons--sticky">
+          <div class="qty" role="group" aria-label="Cantidad">
+            <button type="button" (click)="changeDetailQuantity(-1)" [disabled]="d.quantity <= 1" aria-label="Uno menos">−</button>
+            <output aria-live="polite">{{ d.quantity }}</output>
+            <button type="button" (click)="changeDetailQuantity(1)" aria-label="Uno más">+</button>
+          </div>
+          <button type="button" class="pbtn pbtn--primary pbtn--grow" (click)="addFromDetail()">
+            Añadir · {{ d.product.price * d.quantity | currency: 'EUR' }}
+          </button>
+        </div>
+      </section>
+    </div>
   }
 
   <!-- Panel para quitar ingredientes -->
@@ -347,6 +411,20 @@
             </label>
           }
         </div>
+        @if (c.max > 1) {
+          <div class="sheet__units">
+            <span>¿A cuántos se lo quitas?</span>
+            <div class="qty" role="group" aria-label="Unidades a las que se aplica">
+              <button type="button" (click)="changeUnits(-1)" [disabled]="c.units <= 1" aria-label="Una menos">−</button>
+              <output aria-live="polite">{{ c.units }}</output>
+              <button type="button" (click)="changeUnits(1)" [disabled]="c.units >= c.max" aria-label="Una más">+</button>
+            </div>
+            <small>de {{ c.max }}</small>
+          </div>
+          @if (c.units < c.max) {
+            <p class="sheet__note">Se {{ c.units === 1 ? 'guardará' : 'guardarán' }} aparte en tu pedido. {{ c.max - c.units === 1 ? 'El otro se queda igual.' : 'Los otros ' + (c.max - c.units) + ' se quedan igual.' }}</p>
+          }
+        }
         <div class="sheet__buttons">
           <button type="button" class="pbtn pbtn--ghost" (click)="customizing.set(null)">Cancelar</button>
           <button type="button" class="pbtn pbtn--primary pbtn--grow" (click)="applyCustomize()">Guardar</button>

@@ -103,14 +103,22 @@ Pensada para cualquier persona (de 15 a más de 60 años) y primero para el móv
 parecido al "Nuevo pedido" del panel:
 
 1. **¿Dónde quieres pedir?** Tarjetas de negocio (se salta si solo hay uno).
-2. **Elige tus productos.** Pestañas por categoría, foto, ingredientes, alérgenos y botón grande «Añadir» / − +.
+2. **Elige tus productos.** Pestañas por categoría y tarjetas compactas (foto, nombre, precio; 2 por fila en el móvil,
+   4 en escritorio) con un globo con la cantidad que ya llevas. Al tocar una se abre el panel del producto: descripción,
+   alérgenos, ingredientes para desmarcar ("sin cebolla"), cantidad y «Añadir». Cada combinación de ingredientes quitados
+   es una línea aparte del pedido ("Vegetal" y "Vegetal sin cebolla"); las iguales se suman. Producción las muestra en
+   filas distintas. Al añadir, la barra inferior confirma «✓ Añadido: 2 × Vegetal sin cebolla».
 3. **Revisa tu pedido.** Cantidades, «Quitar ingredientes» (panel que sube desde abajo: "sin nueces"), eliminar y notas.
 4. **Tus datos.** Nombre, teléfono (opcional) y email con ejemplos y errores en palabras sencillas.
-5. **¿Cuándo lo recoges?** Hoy / Mañana / días siguientes, horas agrupadas por mañana/tarde/noche (las completas
-   tachadas, las pasadas ocultas), resumen final y «Confirmar pedido».
+5. **¿Cuándo lo recoges?** Los 7 días en dos filas (Hoy / Mañana / nombre del día); al tocar uno baja solo a las horas, horas agrupadas por mañana/tarde/noche (las completas
+   tachadas, las pasadas ocultas), botón «Revisar y confirmar», que abre
+   el panel **Revisa y confirma**: recogida (día, hora, dirección), tus datos, productos con sus "sin …", notas y total,
+   cada bloque con «Cambiar» para volver a su paso, y al final «✓ Confirmar pedido».
 
 Después, pantalla de **Pedido hecho** con el número de pedido, cuándo, dónde y el total (se paga al recoger).
-Reglas de diseño: tema claro de alto contraste solo en esta página, letra de 18px, botones de 48px o más, barra
+Móvil minimalista: cabecera de una línea (icono · negocio · calle) con solo las bolitas de progreso, títulos de paso
+pequeños para que el protagonismo sea de productos y categorías, y en Revisar cantidad + lápiz + papelera en una fila
+(iconos SVG, no emojis, para que se vean en todos los móviles). Reglas de diseño: tema claro de alto contraste solo en esta página, letra de 18px, botones de 48px o más, barra
 inferior fija con Atrás/Continuar que explica por qué no se puede seguir, indicador "Paso X de 5" (se puede volver
 a pasos hechos) y el progreso se guarda en `sessionStorage` por si se recarga la página (día y hora no).
 

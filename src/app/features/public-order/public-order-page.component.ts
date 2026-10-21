@@ -43,11 +43,12 @@ const STORAGE_KEY = 'pangestion.public-order';
 export class PublicOrderPageComponent implements OnInit {
   private readonly api = inject(PublicApiService);
   private readonly stepTitle = viewChild<ElementRef<HTMLElement>>('stepTitle');
+  private readonly hoursTitle = viewChild<ElementRef<HTMLElement>>('hoursTitle');
 
   readonly steps = [
     { number: 1, title: '¿Dónde quieres pedir?', help: 'Toca el establecimiento al que quieres hacer el pedido.' },
-    { number: 2, title: 'Elige tus productos', help: 'Toca «Añadir» en lo que quieras. Puedes cambiar de categoría en las pestañas.' },
-    { number: 3, title: 'Revisa tu pedido', help: 'Comprueba las cantidades. Si no quieres algún ingrediente, toca «Quitar ingredientes».' },
+    { number: 2, title: 'Elige tus productos', help: 'Toca un producto para ver lo que lleva y añadirlo. Arriba puedes cambiar de categoría.' },
+    { number: 3, title: 'Revisa tu pedido', help: 'Comprueba las cantidades. Con el lápiz quitas ingredientes y con la papelera eliminas el producto.' },
     { number: 4, title: 'Tus datos', help: 'Los usamos solo para avisarte si hay algún problema con tu pedido.' },
     { number: 5, title: '¿Cuándo lo recoges?', help: 'Elige el día y la hora a la que pasarás a recogerlo. Después, confirma el pedido.' },
   ];
@@ -62,8 +63,17 @@ export class PublicOrderPageComponent implements OnInit {
   readonly cart = signal<CartLine[]>([]);
   private nextKey = 1;
 
-  /** Dialogo de "Quitar ingredientes" abierto sobre una linea del carrito. */
-  readonly customizing = signal<{ key: number; product: PublicProduct; removed: number[] } | null>(null);
+  /** Panel del producto abierto en el paso 2: ingredientes quitados y cantidad a añadir. */
+  readonly detail = signal<{ product: PublicProduct; removed: number[]; quantity: number } | null>(null);
+  /** Texto del aviso "Añadido: 2 × Vegetal sin cebolla" que sale unos segundos en la barra inferior. */
+  readonly justAdded = signal<string | null>(null);
+  private justAddedTimer?: ReturnType<typeof setTimeout>;
+
+  /**
+   * Panel de "Quitar ingredientes" abierto sobre una linea del carrito.
+   * units = a cuantas unidades de esa linea se aplica (si son menos que la linea, se separan como variante aparte).
+   */
+  readonly customizing = signal<{ key: number; product: PublicProduct; removed: number[]; units: number; max: number } | null>(null);
 
   readonly customer = signal({ name: '', phone: '', email: '' });
   /** Se marcan los errores del formulario solo despues de intentar continuar. */
@@ -83,6 +93,8 @@ export class PublicOrderPageComponent implements OnInit {
   readonly sending = signal(false);
   readonly error = signal<string | null>(null);
   readonly confirmed = signal<Order | null>(null);
+  /** Panel final "Revisa y confirma" abierto. */
+  readonly reviewing = signal(false);
 
   // ----- Calculados -----
 
@@ -209,17 +221,38 @@ export class PublicOrderPageComponent implements OnInit {
       .reduce((sum, l) => sum + l.quantity, 0);
   }
 
-  /** "Añadir" y los botones + / - de la tarjeta: trabajan sobre el producto tal cual (sin personalizar). */
-  changeProduct(product: PublicProduct, delta: number): void {
-    const lines = this.cart();
-    const base = lines.find((l) => l.product.id === product.id && l.removed.length === 0);
-    if (delta > 0) {
-      if (base) this.changeLine(base, delta);
-      else this.cart.set([...lines, { key: this.nextKey++, product, quantity: delta, removed: [] }]);
-      return;
-    }
-    const target = base ?? [...lines].reverse().find((l) => l.product.id === product.id);
-    if (target) this.changeLine(target, delta);
+  // Panel del producto (paso 2)
+
+  openDetail(product: PublicProduct): void {
+    this.detail.set({ product, removed: [], quantity: 1 });
+  }
+
+  toggleDetailIngredient(id: number): void {
+    this.detail.update((d) =>
+      d ? { ...d, removed: d.removed.includes(id) ? d.removed.filter((x) => x !== id) : [...d.removed, id].sort((a, b) => a - b) } : d,
+    );
+  }
+
+  changeDetailQuantity(delta: number): void {
+    this.detail.update((d) => (d ? { ...d, quantity: Math.max(1, d.quantity + delta) } : d));
+  }
+
+  /**
+   * Añade el producto al pedido. Si ya habia uno igual (mismos ingredientes quitados) suma la cantidad;
+   * si no, queda como una linea aparte: "Vegetal" y "Vegetal sin cebolla" son dos lineas distintas.
+   */
+  addFromDetail(): void {
+    const d = this.detail();
+    if (!d) return;
+    const same = this.cart().find((l) => l.product.id === d.product.id && l.removed.join() === d.removed.join());
+    if (same) this.changeLine(same, d.quantity);
+    else this.cart.update((lines) => [...lines, { key: this.nextKey++, product: d.product, quantity: d.quantity, removed: d.removed }]);
+
+    const removed = this.removedLabel(d);
+    this.justAdded.set(`${d.quantity} × ${d.product.name}${removed ? ' ' + removed : ''}`);
+    clearTimeout(this.justAddedTimer);
+    this.justAddedTimer = setTimeout(() => this.justAdded.set(null), 2500);
+    this.detail.set(null);
   }
 
   changeLine(line: CartLine, delta: number): void {
@@ -232,11 +265,6 @@ export class PublicOrderPageComponent implements OnInit {
     this.cart.update((lines) => lines.filter((l) => l.key !== line.key));
   }
 
-  /** "Lleva: tomate, queso, cebolla" (si el producto no tiene descripcion). */
-  ingredientNames(product: PublicProduct): string {
-    return 'Lleva: ' + product.ingredients.map((i) => i.name.toLowerCase()).join(', ');
-  }
-
   /** "sin cebolla, sin queso" */
   removedLabel(line: { product: PublicProduct; removed: number[] }): string {
     return line.product.ingredients
@@ -245,8 +273,13 @@ export class PublicOrderPageComponent implements OnInit {
       .join(', ');
   }
 
+  /** Abre el panel. Si la linea tiene varias unidades, por defecto el cambio se aplica a una sola. */
   openCustomize(line: CartLine): void {
-    this.customizing.set({ key: line.key, product: line.product, removed: [...line.removed] });
+    this.customizing.set({ key: line.key, product: line.product, removed: [...line.removed], units: 1, max: line.quantity });
+  }
+
+  changeUnits(delta: number): void {
+    this.customizing.update((c) => (c ? { ...c, units: Math.min(c.max, Math.max(1, c.units + delta)) } : c));
   }
 
   toggleIngredient(id: number): void {
@@ -255,12 +288,26 @@ export class PublicOrderPageComponent implements OnInit {
     );
   }
 
-  /** Guarda los ingredientes quitados. Si la linea queda igual que otra del mismo producto, se juntan. */
+  /**
+   * Guarda los ingredientes quitados. Si se aplica solo a algunas unidades, esas se separan en una linea nueva
+   * (como si fuera otro producto). Las lineas que quedan iguales se juntan: dos "sin cebolla" suman en una.
+   */
   applyCustomize(): void {
     const c = this.customizing();
     if (!c) return;
+    const lines: CartLine[] = [];
+    for (const l of this.cart()) {
+      if (l.key !== c.key) {
+        lines.push(l);
+      } else if (c.units >= l.quantity) {
+        lines.push({ ...l, removed: c.removed });
+      } else {
+        lines.push({ ...l, quantity: l.quantity - c.units });
+        lines.push({ key: this.nextKey++, product: l.product, quantity: c.units, removed: c.removed });
+      }
+    }
     const merged: CartLine[] = [];
-    for (const line of this.cart().map((l) => (l.key === c.key ? { ...l, removed: c.removed } : l))) {
+    for (const line of lines) {
       const same = merged.find((m) => m.product.id === line.product.id && m.removed.join() === line.removed.join());
       if (same) same.quantity += line.quantity;
       else merged.push({ ...line });
@@ -284,12 +331,14 @@ export class PublicOrderPageComponent implements OnInit {
     return new Date(day + 'T00:00').toLocaleDateString('es-ES', { weekday: 'long' });
   }
 
+  /** Al elegir el dia se baja solo hasta las horas, que es lo siguiente que hay que hacer. */
   selectDate(day: string): void {
     this.date.set(day);
-    this.loadSlots();
+    this.loadSlots(true);
   }
 
-  private loadSlots(): void {
+  /** scrollToHours: cuando lleguen las horas, bajar hasta ellas (antes la pagina aun es corta y no puede bajar). */
+  private loadSlots(scrollToHours = false): void {
     this.time.set(null);
     const companyId = this.companyId();
     if (!companyId) return;
@@ -298,6 +347,9 @@ export class PublicOrderPageComponent implements OnInit {
       next: (slots) => {
         this.slots.set(slots);
         this.loadingSlots.set(false);
+        if (scrollToHours) {
+          setTimeout(() => this.hoursTitle()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+        }
       },
       error: () => this.loadingSlots.set(false),
     });
@@ -327,6 +379,19 @@ export class PublicOrderPageComponent implements OnInit {
     setTimeout(() => this.stepTitle()?.nativeElement.focus(), 0);
   }
 
+  /** Paso 5: abre el resumen final (solo si ya hay hora elegida). */
+  openReview(): void {
+    if (this.blockedReason()) return;
+    this.error.set(null);
+    this.reviewing.set(true);
+  }
+
+  /** "Cambiar" en el resumen: cierra el panel y vuelve a ese paso. */
+  editFromReview(step: number): void {
+    this.reviewing.set(false);
+    this.goTo(step);
+  }
+
   confirm(): void {
     if (this.blockedReason() || this.sending()) return;
     const c = this.customer();
@@ -345,6 +410,7 @@ export class PublicOrderPageComponent implements OnInit {
         next: (order) => {
           this.confirmed.set(order);
           this.sending.set(false);
+          this.reviewing.set(false);
           this.clearProgress();
           window.scrollTo({ top: 0 });
         },
