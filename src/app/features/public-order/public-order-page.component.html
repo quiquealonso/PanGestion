@@ -1,129 +1,357 @@
-<div class="public">
-  <header class="public-head">
-    <div class="brand"><span class="brand__mark">P</span><strong>PanGestión</strong></div>
-    <p>Haz tu pedido y recógelo en tienda a la hora que prefieras.</p>
+<div class="po">
+  <!-- Cabecera: establecimiento y progreso -->
+  <header class="po__top">
+    <div class="po__brand">
+      <span class="po__logo" aria-hidden="true">🥖</span>
+      <div>
+        <strong>{{ company()?.name ?? 'Haz tu pedido' }}</strong>
+        @if (company(); as c) {
+          <small>{{ c.address }}</small>
+        }
+      </div>
+    </div>
+
+    @if (!confirmed() && !loading()) {
+      <nav class="po__progress" aria-label="Pasos del pedido">
+        <p class="po__step-count">Paso {{ step() }} de {{ steps.length }}</p>
+        <ol>
+          @for (s of steps; track s.number) {
+            <li [class.is-done]="s.number < step()" [class.is-current]="s.number === step()">
+              <button type="button" [disabled]="s.number >= step()" (click)="goTo(s.number)"
+                      [attr.aria-current]="s.number === step() ? 'step' : null"
+                      [attr.aria-label]="'Paso ' + s.number + ': ' + s.title">
+                {{ s.number < step() ? '✓' : s.number }}
+              </button>
+            </li>
+          }
+        </ol>
+      </nav>
+    }
   </header>
 
-  @if (confirmed(); as order) {
-    <section class="panel done">
-      <p class="eyebrow">¡Pedido recibido!</p>
-      <h2>Pedido nº {{ order.id }}</h2>
-      <p>
-        Te esperamos en <strong>{{ order.companyName }}</strong> el
-        <strong>{{ order.pickupDate | date: 'EEEE d MMMM' }}</strong> a las <strong>{{ order.pickupTime }}</strong>.
-      </p>
-      <p>Total a pagar en tienda: <strong>{{ order.total | currency: 'EUR' }}</strong></p>
-      <button type="button" class="btn btn--primary" (click)="newOrder()">Hacer otro pedido</button>
-    </section>
-  } @else {
-    <div class="public-layout">
-      <main class="steps">
-        <section class="panel">
-          <p class="eyebrow">1 · Establecimiento, día y hora</p>
-          <div class="chips">
-            @for (company of companies(); track company.id) {
-              <button type="button" class="chip" [class.is-active]="companyId() === company.id" (click)="selectCompany(company.id)">
-                {{ company.name }}<small>{{ typeLabels[company.type] }} · {{ company.address }} · {{ company.openingTime }}–{{ company.closingTime }}</small>
-              </button>
-            } @empty {
-              <p class="muted">Ahora mismo no hay panaderías aceptando pedidos.</p>
-            }
-          </div>
-          <div class="chips">
-            @for (day of days; track day) {
-              <button type="button" class="chip day" [class.is-active]="date() === day" (click)="selectDate(day)">
-                {{ day | date: 'EEE' }}<small>{{ day | date: 'd MMM' }}</small>
-              </button>
-            }
-          </div>
-          <div class="slots">
-            @for (slot of slots(); track slot.time) {
-              <button type="button" class="slot" [class.is-active]="time() === slot.time" [disabled]="!slot.available" (click)="time.set(slot.time)">
-                {{ slot.time }}
-              </button>
-            } @empty {
-              <p class="muted">No hay franjas para este día.</p>
-            }
-          </div>
-        </section>
+  <main class="po__main">
+    @if (loading()) {
+      <p class="po__status">Cargando…</p>
+    } @else if (confirmed(); as order) {
+      <!-- ===== Pedido hecho ===== -->
+      <section class="done" aria-live="polite">
+        <div class="done__icon" aria-hidden="true">✓</div>
+        <h1 tabindex="-1">¡Pedido hecho!</h1>
+        <p class="done__lead">Gracias, {{ order.customerName }}. Ya lo tenemos.</p>
 
-        <section class="panel">
-          <p class="eyebrow">2 · Añade productos</p>
-          <div class="chips">
-            <button type="button" class="chip" [class.is-active]="categoryFilter() === null" (click)="categoryFilter.set(null)">Todo</button>
-            @for (category of categories(); track category.id) {
-              <button type="button" class="chip" [class.is-active]="categoryFilter() === category.id" (click)="categoryFilter.set(category.id)">
-                <span class="color-dot" [style.background]="category.color"></span>{{ category.name }}
+        <div class="done__number">
+          <span>Número de pedido</span>
+          <strong>{{ order.id }}</strong>
+          <small>Díselo al recogerlo</small>
+        </div>
+
+        <ul class="done__info">
+          <li><span aria-hidden="true">📅</span> <div><b>Cuándo:</b> {{ dayName(order.pickupDate) }}, {{ order.pickupDate | date: 'd MMMM' }} a las {{ order.pickupTime.slice(0, 5) }}</div></li>
+          <li><span aria-hidden="true">📍</span> <div><b>Dónde:</b> {{ order.companyName }} · {{ company()?.address }}</div></li>
+          <li><span aria-hidden="true">💶</span> <div><b>Total:</b> {{ order.total | currency: 'EUR' }} · se paga al recoger</div></li>
+        </ul>
+
+        <div class="lines">
+          @for (line of order.lines; track $index) {
+            <div class="lines__row">
+              <span>{{ line.quantity }} × {{ line.productName }}
+                @if (line.removedIngredients.length) {
+                  <small class="removed-text">sin {{ line.removedIngredients.join(', sin ').toLowerCase() }}</small>
+                }
+              </span>
+              <span>{{ line.subtotal | currency: 'EUR' }}</span>
+            </div>
+          }
+        </div>
+
+        @if (company()?.phone; as phone) {
+          <p class="po__hint">¿Necesitas cambiar algo? Llama al <a [href]="'tel:' + phone">{{ phone }}</a>.</p>
+        }
+        <button type="button" class="pbtn pbtn--primary pbtn--block" (click)="newOrder()">Hacer otro pedido</button>
+      </section>
+    } @else {
+      <!-- Titulo e instrucciones del paso -->
+      <div class="po__heading">
+        <h1 #stepTitle tabindex="-1">{{ current().title }}</h1>
+        <p>{{ current().help }}</p>
+      </div>
+
+      @if (error()) {
+        <div class="alert" role="alert">
+          <strong>No se ha podido completar.</strong> {{ error() }}
+        </div>
+      }
+
+      @switch (step()) {
+        <!-- ===== 1. Establecimiento ===== -->
+        @case (1) {
+          @if (companies().length === 0) {
+            <p class="po__status">Ahora mismo no hay ningún establecimiento aceptando pedidos.</p>
+          }
+          <div class="places">
+            @for (c of companies(); track c.id) {
+              <button type="button" class="place" [class.is-selected]="c.id === companyId()" (click)="selectCompany(c.id)">
+                <span class="place__type">{{ typeLabels[c.type] }}</span>
+                <strong>{{ c.name }}</strong>
+                <span>📍 {{ c.address }}</span>
+                <span>🕒 Recogida de {{ c.openingTime.slice(0, 5) }} a {{ c.closingTime.slice(0, 5) }}</span>
+                <span class="place__go">Pedir aquí →</span>
               </button>
             }
           </div>
-          <div class="catalog">
-            @for (product of visibleProducts(); track product.id) {
-              <article class="product">
-                @if (product.imageUrl) {
-                  <img class="product__photo" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+        }
+
+        <!-- ===== 2. Productos ===== -->
+        @case (2) {
+          <div class="tabs" role="tablist" aria-label="Categorías">
+            @for (cat of categories(); track cat.id) {
+              @let active = (activeCategory() ?? categories()[0]?.id) === cat.id;
+              <button type="button" role="tab" class="tab" [class.is-active]="active" [attr.aria-selected]="active"
+                      (click)="activeCategory.set(cat.id)">
+                {{ cat.name }}
+              </button>
+            }
+          </div>
+
+          <div class="products">
+            @for (p of visibleProducts(); track p.id) {
+              @let qty = quantityOf(p.id);
+              <article class="product" [class.is-in-cart]="qty > 0">
+                @if (p.imageUrl) {
+                  <img [src]="p.imageUrl" [alt]="p.name" loading="lazy" />
+                } @else {
+                  <div class="product__noimg" [style.background]="p.color" aria-hidden="true">{{ p.name.charAt(0) }}</div>
                 }
-                <div>
-                  <strong><span class="color-dot" [style.background]="product.color"></span>{{ product.name }}</strong>
-                  @if (product.description) {
-                    <p>{{ product.description }}</p>
+                <div class="product__body">
+                  <h2>{{ p.name }}</h2>
+                  @if (p.description) {
+                    <p class="product__desc">{{ p.description }}</p>
+                  } @else if (p.ingredients.length) {
+                    <p class="product__desc">{{ ingredientNames(p) }}</p>
                   }
-                  @if (product.ingredients.length) {
-                    <p class="ingredients">Lleva: {{ product.ingredients.join(', ') }}</p>
+                  @if (p.allergens.length) {
+                    <p class="product__allergens">⚠️ Alérgenos: {{ p.allergens.join(', ') }}</p>
                   }
-                  @if (product.allergens.length) {
-                    <small>Alérgenos: {{ product.allergens.join(', ') }}</small>
-                  }
-                </div>
-                <div class="product__foot">
-                  <strong>{{ product.price | currency: 'EUR' }}</strong>
-                  <div class="qty">
-                    <button type="button" (click)="change(product.id, -1)" [disabled]="!quantities()[product.id]">−</button>
-                    <span>{{ quantities()[product.id] ?? 0 }}</span>
-                    <button type="button" (click)="change(product.id, 1)">+</button>
+                  <div class="product__foot">
+                    <strong class="product__price">{{ p.price | currency: 'EUR' }}</strong>
+                    @if (qty === 0) {
+                      <button type="button" class="pbtn pbtn--primary" (click)="changeProduct(p, 1)"
+                              [attr.aria-label]="'Añadir ' + p.name">+ Añadir</button>
+                    } @else {
+                      <div class="qty" role="group" [attr.aria-label]="'Cantidad de ' + p.name">
+                        <button type="button" (click)="changeProduct(p, -1)" [attr.aria-label]="'Quitar uno de ' + p.name">−</button>
+                        <output aria-live="polite">{{ qty }}</output>
+                        <button type="button" (click)="changeProduct(p, 1)" [attr.aria-label]="'Añadir otro ' + p.name">+</button>
+                      </div>
+                    }
                   </div>
                 </div>
               </article>
+            } @empty {
+              <p class="po__status">No hay productos en esta categoría.</p>
             }
           </div>
-        </section>
+        }
 
-        <section class="panel">
-          <p class="eyebrow">3 · Tus datos</p>
-          <div class="form-grid">
-            <label><span>Nombre</span><input [(ngModel)]="customer.name" autocomplete="name" /></label>
-            <label><span>Teléfono</span><input [(ngModel)]="customer.phone" autocomplete="tel" /></label>
-            <label class="full"><span>Email</span><input type="email" [(ngModel)]="customer.email" autocomplete="email" /></label>
+        <!-- ===== 3. Revisar ===== -->
+        @case (3) {
+          @if (cart().length === 0) {
+            <div class="empty">
+              <p>Tu pedido está vacío.</p>
+              <button type="button" class="pbtn pbtn--primary" (click)="goTo(2)">Elegir productos</button>
+            </div>
+          } @else {
+            <div class="review">
+              @for (line of cart(); track line.key) {
+                <article class="review__item">
+                  <div class="review__top">
+                    <div>
+                      <h2>{{ line.product.name }}</h2>
+                      @if (line.removed.length) {
+                        <p class="removed-text">{{ removedLabel(line) }}</p>
+                      }
+                      <p class="review__price">{{ line.product.price | currency: 'EUR' }} / unidad</p>
+                    </div>
+                    <strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
+                  </div>
+                  <div class="review__actions">
+                    <div class="qty" role="group" [attr.aria-label]="'Cantidad de ' + line.product.name">
+                      <button type="button" (click)="changeLine(line, -1)" [attr.aria-label]="'Quitar uno de ' + line.product.name">−</button>
+                      <output>{{ line.quantity }}</output>
+                      <button type="button" (click)="changeLine(line, 1)" [attr.aria-label]="'Añadir otro ' + line.product.name">+</button>
+                    </div>
+                    @if (line.product.ingredients.length) {
+                      <button type="button" class="pbtn" (click)="openCustomize(line)">✏️ Quitar ingredientes</button>
+                    }
+                    <button type="button" class="pbtn pbtn--ghost" (click)="removeLine(line)">🗑 Eliminar</button>
+                  </div>
+                </article>
+              }
+
+              <button type="button" class="pbtn pbtn--block" (click)="goTo(2)">+ Añadir más productos</button>
+
+              <label class="field">
+                <span>¿Quieres decirnos algo? <small>(opcional)</small></span>
+                <textarea rows="3" [(ngModel)]="notes" placeholder="Por ejemplo: el pan poco hecho, por favor"></textarea>
+              </label>
+
+              <div class="total">
+                <span>Total ({{ itemCount() }} {{ itemCount() === 1 ? 'producto' : 'productos' }})</span>
+                <strong>{{ total() | currency: 'EUR' }}</strong>
+              </div>
+            </div>
+          }
+        }
+
+        <!-- ===== 4. Datos ===== -->
+        @case (4) {
+          <form class="form" (ngSubmit)="next()" novalidate>
+            <label class="field" [class.has-error]="showErrors() && customerErrors().name">
+              <span>Nombre y apellido</span>
+              <input name="name" autocomplete="name" placeholder="Por ejemplo: María García"
+                     [ngModel]="customer().name" (ngModelChange)="updateCustomer('name', $event)" />
+              @if (showErrors() && customerErrors().name) {
+                <small class="field__error">{{ customerErrors().name }}</small>
+              }
+            </label>
+
+            <label class="field" [class.has-error]="showErrors() && customerErrors().phone">
+              <span>Teléfono <small>(opcional, para avisarte)</small></span>
+              <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Por ejemplo: 612 345 678"
+                     [ngModel]="customer().phone" (ngModelChange)="updateCustomer('phone', $event)" />
+              @if (showErrors() && customerErrors().phone) {
+                <small class="field__error">{{ customerErrors().phone }}</small>
+              }
+            </label>
+
+            <label class="field" [class.has-error]="showErrors() && customerErrors().email">
+              <span>Email</span>
+              <input name="email" type="email" inputmode="email" autocomplete="email" placeholder="Por ejemplo: maria@gmail.com"
+                     [ngModel]="customer().email" (ngModelChange)="updateCustomer('email', $event)" />
+              @if (showErrors() && customerErrors().email) {
+                <small class="field__error">{{ customerErrors().email }}</small>
+              }
+            </label>
+
+            <p class="po__hint">🔒 Solo usamos estos datos para este pedido.</p>
+            <button type="submit" hidden></button>
+          </form>
+        }
+
+        <!-- ===== 5. Dia y hora ===== -->
+        @case (5) {
+          <h2 class="po__sub">1. Elige el día</h2>
+          <div class="days">
+            @for (day of days; track day) {
+              <button type="button" class="day" [class.is-selected]="day === date()" (click)="selectDate(day)"
+                      [attr.aria-pressed]="day === date()">
+                <span>{{ dayName(day) }}</span>
+                <strong>{{ day | date: 'd' }}</strong>
+                <small>{{ day | date: 'MMM' }}</small>
+              </button>
+            }
           </div>
-        </section>
-      </main>
 
-      <aside class="panel summary">
-        <p class="eyebrow">Tu pedido</p>
-        <p class="when">
-          {{ company()?.name }}<br />
-          {{ date() | date: 'EEEE d MMMM' }} · {{ time() ?? 'elige una hora' }}
-        </p>
-        @for (line of lines(); track line.product.id) {
-          <div class="line"><span>{{ line.quantity }} × {{ line.product.name }}</span><strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong></div>
-        } @empty {
-          <p class="muted">Aún no has añadido productos.</p>
+          <h2 class="po__sub">2. Elige la hora</h2>
+          @if (loadingSlots()) {
+            <p class="po__status">Buscando horas libres…</p>
+          } @else if (!hasFreeSlots()) {
+            <p class="po__status">No quedan horas libres este día. Prueba con otro día.</p>
+          } @else {
+            @for (group of slotGroups(); track group.label) {
+              <p class="slot-group">{{ group.label }}</p>
+              <div class="hours">
+                @for (slot of group.slots; track slot.time) {
+                  <button type="button" class="hour" [class.is-selected]="slot.time === time()" [disabled]="!slot.available"
+                          (click)="time.set(slot.time)" [attr.aria-pressed]="slot.time === time()">
+                    {{ slot.time.slice(0, 5) }}
+                    @if (!slot.available) {
+                      <small>Completo</small>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          }
+
+          @if (time()) {
+            <section class="summary" aria-live="polite">
+              <h2>Resumen de tu pedido</h2>
+              <ul>
+                <li><span>📍</span> {{ company()?.name }}</li>
+                <li><span>📅</span> {{ dayName(date()) }}, {{ date() | date: 'd MMMM' }} a las {{ time()!.slice(0, 5) }}</li>
+                <li><span>👤</span> {{ customer().name }} · {{ customer().email }}</li>
+              </ul>
+              <div class="lines">
+                @for (line of cart(); track line.key) {
+                  <div class="lines__row">
+                    <span>{{ line.quantity }} × {{ line.product.name }}
+                      @if (line.removed.length) {
+                        <small class="removed-text">{{ removedLabel(line) }}</small>
+                      }
+                    </span>
+                    <span>{{ line.product.price * line.quantity | currency: 'EUR' }}</span>
+                  </div>
+                }
+              </div>
+              <div class="total">
+                <span>Total · se paga al recoger</span>
+                <strong>{{ total() | currency: 'EUR' }}</strong>
+              </div>
+            </section>
+          }
         }
-        <div class="line total"><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
-        <label class="field">
-          <span>Notas e instrucciones especiales</span>
-          <textarea rows="3" [(ngModel)]="notes" maxlength="500"></textarea>
-        </label>
-        @if (error(); as message) {
-          <p class="error-box">{{ message }}</p>
+      }
+    }
+  </main>
+
+  <!-- Barra inferior fija: carrito y botones Atras / Continuar -->
+  @if (!loading() && !confirmed() && step() > 1) {
+    <footer class="po__bar">
+      @if (step() === 2 && itemCount() > 0) {
+        <p class="po__bar-cart">🛒 {{ itemCount() }} {{ itemCount() === 1 ? 'producto' : 'productos' }} · <strong>{{ total() | currency: 'EUR' }}</strong></p>
+      } @else if (blockedReason() && (step() !== 4 || showErrors())) {
+        <p class="po__bar-hint">{{ blockedReason() }}</p>
+      }
+      <div class="po__bar-buttons">
+        @if (step() > (companies().length === 1 ? 2 : 1)) {
+          <button type="button" class="pbtn pbtn--ghost" (click)="back()">← Atrás</button>
         }
-        <button type="button" class="btn btn--primary confirm" [disabled]="!canConfirm() || sending()" (click)="confirm()">
-          {{ sending() ? 'Enviando…' : 'Confirmar pedido' }}
-        </button>
-        @if (!time()) {
-          <small class="muted">Elige una hora de recogida para poder confirmar.</small>
+        @if (step() < 5) {
+          <button type="button" class="pbtn pbtn--primary pbtn--grow" [class.is-blocked]="blockedReason() && step() !== 4" (click)="next()">
+            {{ step() === 2 ? 'Ver mi pedido' : 'Continuar' }} →
+          </button>
+        } @else {
+          <button type="button" class="pbtn pbtn--success pbtn--grow" [disabled]="!!blockedReason() || sending()" (click)="confirm()">
+            {{ sending() ? 'Enviando…' : '✓ Confirmar pedido' }}
+          </button>
         }
-      </aside>
+      </div>
+    </footer>
+  }
+
+  <!-- Panel para quitar ingredientes -->
+  @if (customizing(); as c) {
+    <div class="sheet-backdrop" (click)="customizing.set(null)">
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" (click)="$event.stopPropagation()">
+        <h2 id="sheet-title">{{ c.product.name }}</h2>
+        <p>Desmarca lo que <b>no</b> quieres.</p>
+        <div class="checks">
+          @for (ing of c.product.ingredients; track ing.id) {
+            <label class="check" [class.is-off]="c.removed.includes(ing.id)">
+              <input type="checkbox" [checked]="!c.removed.includes(ing.id)" (change)="toggleIngredient(ing.id)" />
+              <span>{{ ing.name }}</span>
+              @if (c.removed.includes(ing.id)) {
+                <small>Sin {{ ing.name.toLowerCase() }}</small>
+              }
+            </label>
+          }
+        </div>
+        <div class="sheet__buttons">
+          <button type="button" class="pbtn pbtn--ghost" (click)="customizing.set(null)">Cancelar</button>
+          <button type="button" class="pbtn pbtn--primary pbtn--grow" (click)="applyCustomize()">Guardar</button>
+        </div>
+      </section>
     </div>
   }
 </div>

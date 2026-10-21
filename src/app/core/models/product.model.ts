@@ -49,6 +49,7 @@ export interface PublicProduct {
   categoryId: number;
   categoryName: string;
   categoryColor: string;
-  ingredients: string[];
+  /** Ingredientes con su id: se muestran y se pueden quitar ("sin cebolla"). */
+  ingredients: ProductIngredient[];
   allergens: string[];
 }

@@ -47,10 +47,13 @@ public final class ProductDto {
         }
     }
 
-    /** Version para la parte publica: con los ingredientes y alergenos para informar al cliente. */
+    /**
+     * Version para la parte publica: con los ingredientes (para informar y para poder quitarlos, "sin cebolla")
+     * y los alergenos que resultan de ellos.
+     */
     public record PublicResponse(Long id, String name, String description, BigDecimal price, String color, String imageUrl,
                                  Long categoryId, String categoryName, String categoryColor,
-                                 List<String> ingredients, List<String> allergens) {
+                                 List<IngredientRef> ingredients, List<String> allergens) {
 
         public static PublicResponse from(Product product, String imageUrl) {
             List<String> allergens = product.getIngredients().stream()
@@ -61,7 +64,7 @@ public final class ProductDto {
             return new PublicResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice(),
                     product.getDisplayColor(), imageUrl,
                     product.getCategory().getId(), product.getCategory().getName(), product.getCategory().getColor(),
-                    product.getIngredients().stream().map(Ingredient::getName).toList(), allergens);
+                    product.getIngredients().stream().map(IngredientRef::from).toList(), allergens);
         }
     }
 }

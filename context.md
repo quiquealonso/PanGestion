@@ -99,9 +99,20 @@ nunca en el build de producción). **Quitar antes de publicar.**
 
 ### Web pública (`/pedido`)
 
-Elegir negocio → día (7 próximos) y franja (las completas o pasadas salen tachadas) → productos por categoría
-(con foto, ingredientes y alérgenos) → datos del cliente → confirmar. La API ya admite personalizar ingredientes
-desde aquí, pero la pantalla aún no tiene el botón.
+Pensada para cualquier persona (de 15 a más de 60 años) y primero para el móvil. Asistente de un paso cada vez,
+parecido al "Nuevo pedido" del panel:
+
+1. **¿Dónde quieres pedir?** Tarjetas de negocio (se salta si solo hay uno).
+2. **Elige tus productos.** Pestañas por categoría, foto, ingredientes, alérgenos y botón grande «Añadir» / − +.
+3. **Revisa tu pedido.** Cantidades, «Quitar ingredientes» (panel que sube desde abajo: "sin nueces"), eliminar y notas.
+4. **Tus datos.** Nombre, teléfono (opcional) y email con ejemplos y errores en palabras sencillas.
+5. **¿Cuándo lo recoges?** Hoy / Mañana / días siguientes, horas agrupadas por mañana/tarde/noche (las completas
+   tachadas, las pasadas ocultas), resumen final y «Confirmar pedido».
+
+Después, pantalla de **Pedido hecho** con el número de pedido, cuándo, dónde y el total (se paga al recoger).
+Reglas de diseño: tema claro de alto contraste solo en esta página, letra de 18px, botones de 48px o más, barra
+inferior fija con Atrás/Continuar que explica por qué no se puede seguir, indicador "Paso X de 5" (se puede volver
+a pasos hechos) y el progreso se guarda en `sessionStorage` por si se recarga la página (día y hora no).
 
 ## Backend (`backend/src/main/java/com/pangestion`)
 
@@ -134,7 +145,6 @@ desde aquí, pero la pantalla aún no tiene el botón.
 - Horario por día de la semana y con tramos partidos (El Mosset: mañanas y noches, distinto lunes y domingo).
 - Extras con suplemento ("ingrediente extra +1 €") y precios por día (pizzas a 6 € los miércoles).
 - Reparto a domicilio con zonas y pedido mínimo.
-- Personalizar ingredientes desde la web pública.
 - Nombres repetidos entre categorías ("Barbacoa" pizza/bocadillo/hamburguesa): mostrar la categoría en el detalle del pedido.
 - Redimensionar imágenes al subirlas; almacenamiento S3/R2 al desplegar.
 - Paginación en listados grandes, tests de integración de la API y despliegue (VPS con Docker + PostgreSQL).

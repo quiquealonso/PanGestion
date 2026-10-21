@@ -13,7 +13,8 @@ export interface PublicOrderRequest {
   pickupTime: string;
   customer: { name: string; email: string; phone: string | null; businessName: null; taxId: null };
   notes: string | null;
-  lines: { productId: number; quantity: number }[];
+  /** removedIngredientIds: ingredientes que el cliente quita ("sin cebolla"). */
+  lines: { productId: number; quantity: number; removedIngredientIds: number[] }[];
 }
 
 /** Endpoints sin login de la web publica: el cliente elige la panaderia y pide a ella. */

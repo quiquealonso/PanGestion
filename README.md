@@ -27,7 +27,9 @@ El contexto del proyecto y las decisiones tomadas, en [`context.md`](context.md)
 - **Clientes**, **Mi empresa** (datos y horario de recogida) y **Usuarios** con roles.
 - **Superadministrador:** alta de empresas (panadería, bar o restaurante) y de sus usuarios.
 
-**Web pública** (`/pedido`, sin login): elegir negocio, día y franja disponible, añadir productos y confirmar.
+**Web pública** (`/pedido`, sin login, pensada para el móvil y para cualquier edad): asistente de 5 pasos —
+negocio → productos → revisar (quitar ingredientes) → datos → día y hora + confirmar— con botones grandes,
+instrucciones en cada paso y número de pedido al terminar.
 
 ## Requisitos
 
