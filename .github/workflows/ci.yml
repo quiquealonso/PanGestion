@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Compilar y probar
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # El backend esta en backend/ (el repo tiene tambien el frontend en la raiz)
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - run: bash ./mvnw -B verify
