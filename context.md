@@ -76,7 +76,7 @@ nunca en el build de producción). **Quitar antes de publicar.**
 ### Pedidos de demostración y copias de la BD
 
 - La panadería (empresa 1) tiene ~310 pedidos generados del 12 al 24 de octubre de 2026 (12–17 entregados, 19–24 pendientes) con `config/DemoOrdersGenerator` (ver `backend/README.md`).
-- Copias de la BD (H2 + `uploads/`) en `backups/` (se sube a Git: el repo es privado; ver README "Empezar en otro ordenador") y en el SSD: `D:\2DAW\DesarrolloServidor\PanGestion-backups\`. Para restaurar: parar el backend y copiar `data/` y `uploads/` del zip dentro de `backend/`.
+- Copias de la BD (H2 + `uploads/`) en el SSD (no se suben a Git porque el repo es público; para usarlas se copian a `backups/`, que está en `.gitignore`; ver README "Empezar en otro ordenador"): `D:\2DAW\DesarrolloServidor\PanGestion-backups\`. Para restaurar: parar el backend y copiar `data/` y `uploads/` del zip dentro de `backend/`.
 
 ## Funcionalidades
 

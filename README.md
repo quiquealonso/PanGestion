@@ -51,6 +51,8 @@ npm ci
 
 **2. Restaurar la base de datos de pruebas** (opcional pero recomendado: trae los ~310 pedidos de ejemplo, la
 panadería con fotos y el bar El Mosset). Sin este paso, el backend crea los datos de ejemplo básicos al arrancar.
+La copia no está en el repositorio (es público): copia el zip desde el SSD
+(`D:\2DAW\DesarrolloServidor\PanGestion-backups\`) a una carpeta `backups/` en la raíz del proyecto, que Git ignora.
 
 ```bash
 # Linux / macOS
@@ -164,4 +166,4 @@ npm ci                      # en un disco exFAT/FAT: npm ci --no-bin-links
 - **Discos exFAT** (SSD portátil): no admiten enlaces simbólicos ni permisos de ejecución. Se instala con `--no-bin-links` (los scripts de `package.json` llaman al CLI de Angular con `node` directamente) y `mvnw` se lanza con `sh mvnw ...`. Git además pedirá `git config --global --add safe.directory <ruta>`.
 - **`mvnw` en Linux:** está marcado como ejecutable en Git; si aun así falla, `chmod +x backend/mvnw`.
 - **Finales de línea:** `.gitattributes` y `.editorconfig` fuerzan LF (CRLF solo para `.cmd`).
-- **Datos e imágenes:** la base de datos H2 y las fotos subidas no se sincronizan solas. Para llevarlas a otra máquina hay una copia en `backups/` (ver [Empezar en otro ordenador](#empezar-en-otro-ordenador-por-ejemplo-en-clase)); si no se restaura, se generan los datos de ejemplo básicos.
+- **Datos e imágenes:** la base de datos H2 y las fotos subidas no se sincronizan solas. Para llevarlas a otra máquina hay una copia en el SSD que se coloca en `backups/` (no se sube a Git) (ver [Empezar en otro ordenador](#empezar-en-otro-ordenador-por-ejemplo-en-clase)); si no se restaura, se generan los datos de ejemplo básicos.
