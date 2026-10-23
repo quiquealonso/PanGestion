@@ -52,4 +52,5 @@ backend/data/
 backend/uploads/
 backend/target/
 
-# backups/ SI se sube: el repo es privado y asi se puede restaurar la BD de pruebas al clonar
+# Copias de la BD: no se suben (el repo es publico); se guardan fuera, en el SSD
+backups/
