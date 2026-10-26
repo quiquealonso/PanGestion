@@ -25,7 +25,11 @@ panadería, el flujo de "Iniciar pedido" y la pantalla de "Producción del día"
 
 ## Entorno de trabajo
 
-- Copia de trabajo en Windows: `C:\Users\quiqu\Proyectos\PanGestion` (NTFS). Repositorio: `github.com/quiquealonso/PanGestion` (privado), rama `main`.
+- Copia de trabajo en Windows: `C:\Users\quiqu\Proyectos\PanGestion` (NTFS). Repositorio: `github.com/quiquealonso/PanGestion` (público).
+- **Ramas:** se trabaja en **`dev`**. `main` está protegida con el ruleset «main protegida»: solo entra por pull request
+  (desde `dev`), con el check **«Compilar y probar»** en verde y sin borrado ni force-push.
+- **CI** (`.github/workflows/ci.yml`): en cada PR y en cada push a `main`, Java 21 y `./mvnw -B verify` en `backend/`
+  (compila y pasa los tests del backend). El frontend **no** se comprueba en CI: ejecutar `npm run build` antes del PR.
 - Cada sistema operativo clona e instala por separado: `node_modules`, `.angular/`, `dist/`, `backend/target/`, `backend/data/` y `backend/uploads/` son locales y no van a Git.
 - Node **≥ 24.15** (Angular CLI 22). En Windows está instalado Node LTS 24.20 con winget. Java 21+; Maven se descarga solo con `mvnw`.
 - En discos **exFAT** (SSD portátil) hay que instalar con `npm ci --no-bin-links` y `mvnw` pierde el permiso de ejecución (`sh mvnw ...`). Ver README.
@@ -197,6 +201,8 @@ instrucciones cortas en cada paso y botones grandes. Archivos: `src/app/features
 | 2026-10-18 | `1b6487e` | Generador de pedidos de demo y copia de la BD en `backups/` |
 | 2026-10-21 | `b8c16d2` | Web pública rediseñada: asistente de 5 pasos, móvil primero, tema claro accesible, quitar ingredientes desde la web, progreso en `sessionStorage` |
 | 2026-10-22 | `e546367` | Web pública: tarjetas compactas + panel del producto, variantes "sin …" como líneas aparte, móvil minimalista (cabecera de una línea, iconos SVG, días en dos filas con scroll a las horas) y panel final «Revisa y confirma» |
+| 2026-10-23 | `4f659fd` | CI del backend (`Compilar y probar`), `main` protegida por PR y la copia de la BD deja de subirse (repo público) |
+| 2026-10-26 | `07255f2` | Se trabaja en la rama `dev`; `context.md` con guía de la web pública, guía rápida e historial |
 
 ## Pendiente / ideas
 
