@@ -5,6 +5,7 @@ import com.pangestion.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +28,11 @@ public class UserController {
         return userService.findById(id);
     }
 
+    /** 201 con la cabecera Location del recurso creado. */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserDto.Response create(@Valid @RequestBody UserDto.Request request) {
-        return userService.create(request);
+    public ResponseEntity<UserDto.Response> create(@Valid @RequestBody UserDto.Request request) {
+        UserDto.Response created = userService.create(request);
+        return ResponseEntity.created(Locations.child(created.id())).body(created);
     }
 
     @PutMapping("/{id}")

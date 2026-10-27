@@ -11,7 +11,7 @@ import com.pangestion.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -55,9 +55,10 @@ public class PublicController {
         return productService.findPublic(id, categoryId);
     }
 
+    /** 201 con Location al detalle canonico del pedido (/api/orders/{id}, que consulta el negocio). */
     @PostMapping("/orders")
-    @ResponseStatus(HttpStatus.CREATED)
-    public OrderDto.Response createOrder(@Valid @RequestBody OrderDto.PublicRequest request) {
-        return orderService.createPublic(request);
+    public ResponseEntity<OrderDto.Response> createOrder(@Valid @RequestBody OrderDto.PublicRequest request) {
+        OrderDto.Response created = orderService.createPublic(request);
+        return ResponseEntity.created(Locations.of("/api/orders/{id}", created.id())).body(created);
     }
 }

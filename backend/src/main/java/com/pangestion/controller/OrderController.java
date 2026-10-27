@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -34,10 +35,11 @@ public class OrderController {
         return orderService.findById(id);
     }
 
+    /** 201 con la cabecera Location del recurso creado. */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public OrderDto.Response create(@Valid @RequestBody OrderDto.Request request) {
-        return orderService.create(request);
+    public ResponseEntity<OrderDto.Response> create(@Valid @RequestBody OrderDto.Request request) {
+        OrderDto.Response created = orderService.create(request);
+        return ResponseEntity.created(Locations.child(created.id())).body(created);
     }
 
     @PutMapping("/{id}")

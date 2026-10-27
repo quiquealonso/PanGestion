@@ -7,6 +7,7 @@ import com.pangestion.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,10 +37,22 @@ public class CustomerController {
         return orderService.findByCustomer(id);
     }
 
+    /**
+     * Creacion anidada (S9): pedido para este cliente. La ruta decide el cliente (el cuerpo no lleva customerId)
+     * y Location apunta al detalle canonico /api/orders/{id}.
+     */
+    @PostMapping("/{id}/orders")
+    public ResponseEntity<OrderDto.Response> createOrder(@PathVariable Long id,
+                                                         @Valid @RequestBody OrderDto.CustomerOrderRequest request) {
+        OrderDto.Response created = orderService.createForCustomer(id, request);
+        return ResponseEntity.created(Locations.of("/api/orders/{id}", created.id())).body(created);
+    }
+
+    /** 201 con la cabecera Location del recurso creado. */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CustomerDto.Response create(@Valid @RequestBody CustomerDto.Request request) {
-        return customerService.create(request);
+    public ResponseEntity<CustomerDto.Response> create(@Valid @RequestBody CustomerDto.Request request) {
+        CustomerDto.Response created = customerService.create(request);
+        return ResponseEntity.created(Locations.child(created.id())).body(created);
     }
 
     @PutMapping("/{id}")

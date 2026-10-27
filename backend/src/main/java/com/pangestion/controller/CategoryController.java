@@ -6,6 +6,7 @@ import com.pangestion.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +28,11 @@ public class CategoryController {
         return categoryService.findById(id);
     }
 
+    /** 201 con la cabecera Location del recurso creado. */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto.Response create(@Valid @RequestBody CategoryDto.Request request) {
-        return categoryService.create(request);
+    public ResponseEntity<CategoryDto.Response> create(@Valid @RequestBody CategoryDto.Request request) {
+        CategoryDto.Response created = categoryService.create(request);
+        return ResponseEntity.created(Locations.child(created.id())).body(created);
     }
 
     @PutMapping("/{id}")

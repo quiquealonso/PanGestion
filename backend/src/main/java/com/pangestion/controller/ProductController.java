@@ -6,6 +6,7 @@ import com.pangestion.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,10 +34,11 @@ public class ProductController {
         return productService.findById(id);
     }
 
+    /** 201 con la cabecera Location del recurso creado. */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ProductDto.Response create(@Valid @RequestBody ProductDto.Request request) {
-        return productService.create(request);
+    public ResponseEntity<ProductDto.Response> create(@Valid @RequestBody ProductDto.Request request) {
+        ProductDto.Response created = productService.create(request);
+        return ResponseEntity.created(Locations.child(created.id())).body(created);
     }
 
     @PutMapping("/{id}")

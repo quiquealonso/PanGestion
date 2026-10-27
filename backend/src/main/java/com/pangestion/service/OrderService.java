@@ -67,6 +67,13 @@ public class OrderService {
         return OrderDto.Response.from(orderRepository.save(order));
     }
 
+    /** Alta anidada bajo un cliente: primero se comprueba que el cliente es de esta empresa (404 si no). */
+    public OrderDto.Response createForCustomer(Long customerId, OrderDto.CustomerOrderRequest request) {
+        customerService.getEntity(customerId);
+        return create(new OrderDto.Request(customerId, request.pickupDate(), request.pickupTime(),
+                request.notes(), request.lines()));
+    }
+
     /** Edicion desde el panel. Si cambia la franja se vuelve a comprobar la disponibilidad. */
     public OrderDto.Response update(Long id, OrderDto.Request request) {
         Order order = getEntity(id);

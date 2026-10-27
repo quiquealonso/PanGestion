@@ -9,7 +9,7 @@ Aplicación web de **pedidos y gestión para negocios de hostelería** (panader�
 Nació de la propuesta `PanGestion.pdf` (panadería familiar) y se ha generalizado a **multiempresa**:
 
 - **Panel de gestión (backoffice):** cada negocio gestiona su catálogo, clientes, pedidos, producción y usuarios.
-- **Web pública (`/pedido`):** el cliente elige el negocio, el día y la franja de recogida, añade productos y confirma.
+- **Web pública (`/pedido`):** asistente para el móvil: el cliente elige negocio y productos (pudiendo quitar ingredientes), pone sus datos, elige día y hora de recogida, revisa y confirma.
 
 Referencia funcional: la aplicación de Oberta (`oberta.es/pedidos`), de la que se copiaron el catálogo real de la
 panadería, el flujo de "Iniciar pedido" y la pantalla de "Producción del día".
@@ -25,7 +25,11 @@ panadería, el flujo de "Iniciar pedido" y la pantalla de "Producción del día"
 
 ## Entorno de trabajo
 
-- Copia de trabajo en Windows: `C:\Users\quiqu\Proyectos\PanGestion` (NTFS). Repositorio: `github.com/quiquealonso/PanGestion` (privado), rama `main`.
+- Copia de trabajo en Windows: `C:\Users\quiqu\Proyectos\PanGestion` (NTFS). Repositorio: `github.com/quiquealonso/PanGestion` (público).
+- **Ramas:** se trabaja en **`dev`**. `main` está protegida con el ruleset «main protegida»: solo entra por pull request
+  (desde `dev`), con el check **«Compilar y probar»** en verde y sin borrado ni force-push.
+- **CI** (`.github/workflows/ci.yml`): en cada PR y en cada push a `main`, Java 21 y `./mvnw -B verify -Dgroups=reglas-negocio`
+  en `backend/`: compila todo pero **solo ejecuta los tests de la sesión 17** (`@Tag("reglas-negocio")`). El resto se pasa en local. El frontend **no** se comprueba en CI: ejecutar `npm run build` antes del PR.
 - Cada sistema operativo clona e instala por separado: `node_modules`, `.angular/`, `dist/`, `backend/target/`, `backend/data/` y `backend/uploads/` son locales y no van a Git.
 - Node **≥ 24.15** (Angular CLI 22). En Windows está instalado Node LTS 24.20 con winget. Java 21+; Maven se descarga solo con `mvnw`.
 - En discos **exFAT** (SSD portátil) hay que instalar con `npm ci --no-bin-links` y `mvnw` pierde el permiso de ejecución (`sh mvnw ...`). Ver README.
@@ -99,28 +103,51 @@ nunca en el build de producción). **Quitar antes de publicar.**
 
 ### Web pública (`/pedido`)
 
-Pensada para cualquier persona (de 15 a más de 60 años) y primero para el móvil. Asistente de un paso cada vez,
-parecido al "Nuevo pedido" del panel:
+Sin login. Pensada para **cualquier persona (de 15 a más de 60 años)** y **primero para el móvil**: un paso cada vez,
+instrucciones cortas en cada paso y botones grandes. Archivos: `src/app/features/public-order/public-order-page.component.{ts,html,scss}`.
 
-1. **¿Dónde quieres pedir?** Tarjetas de negocio (se salta si solo hay uno).
-2. **Elige tus productos.** Pestañas por categoría y tarjetas compactas (foto, nombre, precio; 2 por fila en el móvil,
-   4 en escritorio) con un globo con la cantidad que ya llevas. Al tocar una se abre el panel del producto: descripción,
-   alérgenos, ingredientes para desmarcar ("sin cebolla"), cantidad y «Añadir». Cada combinación de ingredientes quitados
-   es una línea aparte del pedido ("Vegetal" y "Vegetal sin cebolla"); las iguales se suman. Producción las muestra en
-   filas distintas. Al añadir, la barra inferior confirma «✓ Añadido: 2 × Vegetal sin cebolla».
-3. **Revisa tu pedido.** Cantidades, «Quitar ingredientes» (panel que sube desde abajo: "sin nueces"), eliminar y notas.
-4. **Tus datos.** Nombre, teléfono (opcional) y email con ejemplos y errores en palabras sencillas.
-5. **¿Cuándo lo recoges?** Los 7 días en dos filas (Hoy / Mañana / nombre del día); al tocar uno baja solo a las horas, horas agrupadas por mañana/tarde/noche (las completas
-   tachadas, las pasadas ocultas), botón «Revisar y confirmar», que abre
-   el panel **Revisa y confirma**: recogida (día, hora, dirección), tus datos, productos con sus "sin …", notas y total,
-   cada bloque con «Cambiar» para volver a su paso, y al final «✓ Confirmar pedido».
+**Flujo** (5 pasos + pantalla final):
 
-Después, pantalla de **Pedido hecho** con el número de pedido, cuándo, dónde y el total (se paga al recoger).
-Móvil minimalista: cabecera de una línea (icono · negocio · calle) con solo las bolitas de progreso, títulos de paso
-pequeños para que el protagonismo sea de productos y categorías, y en Revisar cantidad + lápiz + papelera en una fila
-(iconos SVG, no emojis, para que se vean en todos los móviles). Reglas de diseño: tema claro de alto contraste solo en esta página, letra de 18px, botones de 48px o más, barra
-inferior fija con Atrás/Continuar que explica por qué no se puede seguir, indicador "Paso X de 5" (se puede volver
-a pasos hechos) y el progreso se guarda en `sessionStorage` por si se recarga la página (día y hora no).
+| Paso | Qué ve el cliente |
+|---|---|
+| 1. ¿Dónde quieres pedir? | Tarjetas de negocio (tipo, dirección, horario). Si solo hay uno, se salta y se empieza en el 2 |
+| 2. Elige tus productos | Pestañas de categoría (fijas al hacer scroll) y tarjetas compactas: foto, nombre y precio (2 por fila en el móvil, 3 en tablet, 4 en escritorio; sin foto, franja de color baja). Globo con la cantidad que ya lleva. Al tocar una tarjeta se abre el **panel del producto**: foto, descripción, alérgenos, ingredientes para desmarcar, cantidad − + y «Añadir · precio». Al añadir, la barra inferior confirma «✓ Añadido: 2 × Vegetal sin cebolla» |
+| 3. Revisa tu pedido | Una tarjeta por línea con cantidad − +, **lápiz** (quitar ingredientes) y **papelera** (eliminar) en la misma fila; «+ Añadir más productos», notas opcionales y total |
+| 4. Tus datos | Nombre, teléfono (opcional) y email, con ejemplos en el placeholder. Los errores salen en palabras sencillas solo después de pulsar Continuar |
+| 5. ¿Cuándo lo recoges? | Los 7 próximos días en dos filas (Hoy / Mañana / nombre del día). Al tocar un día **baja solo** hasta las horas, agrupadas en Por la mañana / tarde / noche (completas tachadas con «Completo», pasadas ocultas). El botón «Revisar y confirmar» abre el panel final |
+| Revisa y confirma | Panel con recogida (día, fecha, hora, negocio y dirección), tus datos, productos con sus "sin …", notas y total («se paga al recoger»). Cada bloque tiene «Cambiar», que lleva a su paso. Abajo, «✓ Confirmar pedido» |
+| Pedido hecho | Número de pedido grande («díselo al recogerlo»), cuándo, dónde, total, líneas y teléfono del negocio. «Hacer otro pedido» vuelve al paso 2 conservando los datos |
+
+**Diseño y usabilidad:**
+
+- Tema **claro de alto contraste solo en esta página** (variables `--p-*` en `:host`; el panel de gestión sigue en tema oscuro). Texto base de 18px, botones y zonas táctiles de 44–48px o más, campos con letra ≥ 16px (el móvil no hace zoom al escribir).
+- **Minimalista en el móvil:** cabecera fija de una línea (icono · negocio · calle, cortada con "…") y solo las bolitas de progreso (✓ en los pasos hechos; se puede tocar un paso hecho para volver). Títulos e instrucciones de paso pequeños para que el protagonismo sea de productos y categorías.
+- **Barra inferior fija** con Atrás / Continuar. Si no se puede seguir, explica por qué ("Añade al menos un producto para continuar."). En el paso 2 muestra el carrito (🛒 N productos · total).
+- **Paneles que suben desde abajo** (`.sheet`) para el producto, quitar ingredientes y el resumen final; en escritorio salen centrados. Se cierran con ✕ o tocando fuera.
+- Iconos de lápiz y papelera en **SVG** (no emojis: 🗑 no se ve en todos los móviles).
+- Al cambiar de paso: scroll arriba y foco en el título (lectores de pantalla). `aria-label` en los botones de icono y en las cantidades.
+- El progreso (negocio, paso, carrito, datos y notas) se guarda en `sessionStorage` (`pangestion.public-order`) por si se recarga la página; el día y la hora no, porque pueden haber pasado. Si el envío falla (normalmente porque la hora se ha llenado), se muestra el error y se recargan las horas.
+
+**Piezas del componente** (para tocarlo rápido):
+
+- Estado con signals: `step`, `cart` (`CartLine {key, product, quantity, removed[]}`), `detail` (panel del producto), `customizing` (panel de quitar ingredientes del paso 3), `reviewing` (panel final), `customer`, `date`, `time`, `slots`.
+- `blockedReason` (computed) decide si se puede continuar y qué texto mostrar; `customerErrors` valida los datos; `slotGroups` agrupa las horas.
+- Paso 2: `openDetail` → `toggleDetailIngredient` / `changeDetailQuantity` → `addFromDetail` (suma a una línea igual o crea otra).
+- Paso 3: `changeLine`, `removeLine`, `openCustomize` → `applyCustomize` (se aplica a N unidades; si son menos que la línea, las separa en otra).
+- Paso 5: `selectDate` → `loadSlots(true)` (baja a las horas cuando llegan), `openReview` → `confirm`, `editFromReview(paso)`.
+- Navegación: `next`, `back`, `goTo`. Persistencia: `readProgress`, `applyRestore`, `clearProgress`.
+
+**API pública** (`PublicController`, `/api/public`, sin token): `GET /companies`, `GET /companies/{id}/slots?date=`,
+`GET /companies/{id}/categories`, `GET /companies/{id}/products` (incluye `ingredients` con su id y `allergens`),
+`POST /orders` (cliente por email dentro del negocio; líneas con `removedIngredientIds`).
+
+### Quitar ingredientes ("sin cebolla") de punta a punta
+
+1. **Catálogo:** `Product` ↔ `Ingredient` (ManyToMany). Los ingredientes describen de qué está hecho el producto y sus alérgenos; no controlan stock.
+2. **Pedido (web pública y panel):** cada línea lleva `removedIngredientIds`. En el carrito, cada combinación distinta es **una línea aparte** con su cantidad: "2 × Vegetal" y "1 × Vegetal sin cebolla". Las líneas iguales se juntan.
+3. **Base de datos:** tabla `order_line_removed_ingredients` (`order_line_id`, `ingredient_name`). Se guarda el **nombre** a propósito: si luego se renombra o borra el ingrediente, el pedido antiguo sigue diciendo lo que se pidió. Todos los negocios usan las mismas tablas, separados por `company_id`.
+4. **Cocina / obrador:** Producción del día agrupa por producto + ingredientes quitados (`productionLabel` en `core/models/order.model.ts`), así que salen filas distintas: "Vegetal 5" y "Vegetal (sin cebolla) 2". También se ve en el detalle del pedido.
+5. **Pendiente:** extras con suplemento ("+ bacon 1 €"), que necesitarían las tablas `product_extras` y `order_line_extras` (ver Pendiente).
 
 ## Backend (`backend/src/main/java/com/pangestion`)
 
@@ -142,11 +169,63 @@ a pasos hechos) y el progreso se guarda en `sessionStorage` por si se recarga la
 
 ## Convenciones
 
-- Código en inglés; textos de la interfaz en español. Tema oscuro (Space Grotesk / IBM Plex Sans).
+- Código en inglés; textos de la interfaz en español. Panel de gestión en tema oscuro y web pública en tema claro (Space Grotesk / IBM Plex Sans).
+- Web pública: textos cortos y sin tecnicismos ("Elige", "Revisa", "Tus datos"), un paso cada vez y nunca un botón solo con icono sin `aria-label`.
 - Backend por capas: Controller → Service → Repository. Reglas de negocio en el servicio.
 - Pantallas de gestión: **tarjetas en rejilla + diálogo** para crear/editar; borrar siempre con `ConfirmService` (nunca `confirm()` del navegador).
 - Las credenciales reales van en `backend/.env` (no se sube). En producción `JWT_SECRET` es obligatorio.
 - Gráficos: SVG propio siguiendo la guía de visualización (colores validados para daltonismo, un solo eje, tooltip y vista de tabla).
+
+## Tests del backend (`backend/src/test/java/com/pangestion`)
+
+`./mvnw verify` en `backend/`: **202 tests**, cada funcionalidad probada una a una. El CI solo ejecuta los 41 de la S17
+(`./mvnw verify -Dgroups=reglas-negocio`). Siguen los tipos de prueba del temario (S17 unidad con Mockito, S22 repositorios
+con `@DataJpaTest`, S31 HTTP con MockMvc). Correspondencia sesión ↔ código en `backend/docs/sesiones.md` y lo comprobado
+(regresiones provocadas, colección Postman) en `backend/docs/comprobaciones.md`.
+
+| Capa | Clases | Qué prueban |
+|---|---|---|
+| Unidad (sin Spring) | `storage/ImageTypeTest`, `storage/LocalImageStorageTest`, `security/TokenServiceTest` | Firma de imágenes, guardado/borrado en disco y `../`, claims y caducidad del JWT |
+| **S17** · unidad con Mockito (`@Tag("reglas-negocio")`, los del CI) | `service/OrderServiceRulesTest`, `service/CompanyServiceSlotsTest`, `service/UserServiceRulesTest`, `model/OrderModelTest` | Líneas iguales que se suman y «sin cebolla» aparte, productos inactivos, pedidos cerrados, franjas (pasadas, completas, editar sin contarse), reglas de usuarios y total del pedido |
+| Repositorio (`@DataJpaTest`) | `repository/CatalogRepositoriesTest`, `repository/OrderRepositoriesTest` | Consultas propias (búsquedas, orden, aforo, facturación, producción, estadísticas) y restricciones únicas de la BD |
+| HTTP (MockMvc + seguridad real) | `web/*ApiTest` (Auth, Security, Company, MyCompany, User, Category, Ingredient, Product, ProductImage, Customer, Order, Production, Public, Dashboard, ErrorHandling) | Cada endpoint: códigos 200/201/204/400/401/403/404/409, roles, aislamiento entre empresas, CORS y formato de errores |
+| Arranque | `config/SeedDataTest`, `PangestionApiApplicationTests` | Datos de ejemplo, usuarios de prueba que entran y pedidos de demo (sin domingos, sin pasar el aforo, sin duplicar) |
+
+- Base común: `support/ApiTestSupport` (contexto completo, perfil `test`, cada test en una transacción que se deshace, ayudas
+  `company()`, `user()`, `product()`, `order()`… y `as(usuario)` para el token) y `support/RepositoryTestSupport`.
+- Perfil `src/test/resources/application-test.properties`: H2 en memoria, sin datos de ejemplo, clave JWT de tests e imágenes en `target/`.
+- Colección Postman repetible en `backend/pruebas/` (23 peticiones, 41 aserciones; `npx newman run ...`, ver `backend/README.md`).
+- Si es una regla de negocio, su test con Mockito en `service/` con `@Tag("reglas-negocio")` (entra en el CI).
+- Al añadir una funcionalidad: su test HTTP en `web/` (caso correcto, validación 400, regla 409, otra empresa 404 y rol sin permiso 403).
+- Los tests destaparon un fallo: `DataInitializer` no tenía `@Order(1)` y, con la BD vacía, `DemoOrdersGenerator` arrancaba antes y fallaba.
+
+## Guía rápida para próximos cambios
+
+| Quiero cambiar… | Dónde |
+|---|---|
+| Pasos, textos o validaciones de la web pública | `features/public-order/public-order-page.component.ts` (`steps`, `blockedReason`, `customerErrors`) y su `.html` |
+| Aspecto de la web pública | `public-order-page.component.scss` (colores en `:host`, `--p-*`; móvil primero, `@media` al final) |
+| Lo que devuelve la API pública | `backend/.../controller/PublicController.java`, `dto/ProductDto.PublicResponse`, y alinear `core/models/product.model.ts` (`PublicProduct`) |
+| Crear pedidos / reglas de franjas | `backend/.../service/OrderService.java` (aforo por franja, horario de la empresa) |
+| Pantalla de producción | `features/production/` (agrupa producto + "sin …") y `OrderService.production` |
+| Estilos del panel de gestión | `src/styles.scss` (compartidos) y el `.scss` de cada pantalla |
+| Datos de ejemplo | `config/DataInitializer.java`, `resources/seed/el-mosset.json`, `config/DemoOrdersGenerator.java` |
+
+- **Presupuesto de estilos:** `angular.json` limita el SCSS de cada componente a 14 kB (aviso) / 16 kB (error). La web pública es la más grande (~13 kB ya compilado; el `.scss` fuente ocupa ~19 kB).
+- **Probar la web pública:** abrirla a tamaño móvil (375 × 812), hacer un pedido completo y después borrar el pedido y el cliente de prueba (con `admin@admin.es` o `admin2@admin.es`: `DELETE /api/orders/{id}` y `DELETE /api/customers/{id}`) para no ensuciar los datos de demo.
+- El servidor de Angular a veces se queda colgado tras un error de compilación: pararlo y volver a arrancarlo.
+
+## Historial de cambios
+
+| Fecha | Commit | Cambio |
+|---|---|---|
+| 2026-10-14 | `629ce3e` | Backend Spring Boot (Hibernate crea la BD) y panel Angular con las primeras pantallas |
+| 2026-10-18 | `03b0988` | Multiempresa con SUPERADMIN, tipo de negocio, carta de El Mosset, catálogo de Oberta con fotos, nuevo flujo de pedido, quitar ingredientes en el panel, gráfica semanal, producción del día, descargar pedidos y pasar a "en proceso" |
+| 2026-10-18 | `1b6487e` | Generador de pedidos de demo y copia de la BD en `backups/` |
+| 2026-10-21 | `b8c16d2` | Web pública rediseñada: asistente de 5 pasos, móvil primero, tema claro accesible, quitar ingredientes desde la web, progreso en `sessionStorage` |
+| 2026-10-22 | `e546367` | Web pública: tarjetas compactas + panel del producto, variantes "sin …" como líneas aparte, móvil minimalista (cabecera de una línea, iconos SVG, días en dos filas con scroll a las horas) y panel final «Revisa y confirma» |
+| 2026-10-23 | `4f659fd` | CI del backend (`Compilar y probar`), `main` protegida por PR y la copia de la BD deja de subirse (repo público) |
+| 2026-10-26 | `07255f2` | Se trabaja en la rama `dev`; `context.md` con guía de la web pública, guía rápida e historial |
 
 ## Pendiente / ideas
 
