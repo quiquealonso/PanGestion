@@ -35,6 +35,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@org.springframework.core.annotation.Order(1) // antes que DemoOrdersGenerator, que necesita las empresas ya creadas
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
