@@ -21,4 +21,6 @@ jobs:
           java-version: "21"
           cache: maven
           cache-dependency-path: backend/pom.xml
-      - run: bash ./mvnw -B verify
+      # Compila todo (tambien los demas tests), pero solo EJECUTA los de la sesion 17:
+      # los marcados con @Tag("reglas-negocio"). El resto se lanza en local con ./mvnw verify.
+      - run: bash ./mvnw -B verify -Dgroups=reglas-negocio

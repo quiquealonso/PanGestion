@@ -3,6 +3,7 @@ package com.pangestion.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.pangestion.model.BusinessType;
 import com.pangestion.model.Company;
+import com.pangestion.validation.ValidOpeningHours;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalTime;
@@ -12,6 +13,8 @@ public final class CompanyDto {
     private CompanyDto() {
     }
 
+    /** @ValidOpeningHours: la apertura antes que el cierre (si no, 400 en closingTime). */
+    @ValidOpeningHours
     public record Request(
             @NotBlank @Size(max = 120) String name,
             /** Solo lo cambia el SUPERADMIN; desde "Mi empresa" se ignora. */

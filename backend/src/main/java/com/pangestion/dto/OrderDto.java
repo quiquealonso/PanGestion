@@ -27,6 +27,14 @@ public final class OrderDto {
             @NotEmpty @Valid List<Line> lines) {
     }
 
+    /** Creacion anidada POST /api/customers/{id}/orders: el cliente lo decide la ruta, no el cuerpo. */
+    public record CustomerOrderRequest(
+            @NotNull LocalDate pickupDate,
+            @NotNull @JsonFormat(pattern = "HH:mm") LocalTime pickupTime,
+            @Size(max = 500) String notes,
+            @NotEmpty @Valid List<Line> lines) {
+    }
+
     /** Pedido realizado por un cliente desde la parte publica, a la panaderia (empresa) que elige. */
     public record PublicRequest(
             @NotNull Long companyId,

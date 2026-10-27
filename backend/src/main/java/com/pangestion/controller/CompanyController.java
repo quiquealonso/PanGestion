@@ -5,6 +5,7 @@ import com.pangestion.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +28,11 @@ public class CompanyController {
         return companyService.findById(id);
     }
 
+    /** 201 con la cabecera Location del recurso creado. */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CompanyDto.Response create(@Valid @RequestBody CompanyDto.Request request) {
-        return companyService.create(request);
+    public ResponseEntity<CompanyDto.Response> create(@Valid @RequestBody CompanyDto.Request request) {
+        CompanyDto.Response created = companyService.create(request);
+        return ResponseEntity.created(Locations.child(created.id())).body(created);
     }
 
     @PutMapping("/{id}")

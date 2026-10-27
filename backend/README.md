@@ -76,7 +76,7 @@ Estados de pedido: `PENDIENTE → EN_PROCESO → LISTO → ENTREGADO` (o `CANCEL
 ## Reglas de negocio
 
 - **Aislamiento por empresa:** el token JWT lleva el `companyId` del usuario y todos los servicios filtran por él (`security/CurrentUser`). Pedir un id de otra empresa devuelve 404.
-- Las franjas de recogida salen del horario de la empresa (`slot_minutes`) y tienen aforo (`orders_per_slot`); las pasadas o completas no se pueden elegir. Los cancelados no ocupan franja.
+- Las franjas de recogida salen del horario de la empresa (`slot_minutes`) y tienen aforo (`orders_per_slot`); las pasadas o completas no se pueden elegir. Los cancelados no ocupan franja. Al editar un pedido, su propio hueco no cuenta.
 - El total del pedido se calcula en el servidor con el precio actual de cada producto. Un pedido solo admite productos de su misma empresa.
 - En la web pública el cliente elige la panadería; se le identifica por email **dentro de esa panadería** (el mismo email en dos panaderías son dos clientes distintos).
 - Solo se pueden pedir productos activos. Un producto con pedidos no se borra: se desactiva.
@@ -116,11 +116,30 @@ Estados de pedido: `PENDIENTE → EN_PROCESO → LISTO → ENTREGADO` (o `CANCEL
 | Empresas | CRUD `/api/companies` (SUPERADMIN) |
 | Inicio | `GET /api/dashboard`, `GET /api/dashboard/weekly-sales?date=yyyy-MM-dd` (unidades por día de esa semana y de la anterior) |
 | Pedidos | `GET /api/orders?search&status&from&to`, `GET/PUT/DELETE /api/orders/{id}`, `POST /api/orders`, `PATCH /api/orders/{id}/status`, `POST /api/orders/start-day?date=` (pasa los pendientes de ese día a EN_PROCESO), `GET /api/orders/production?date=&pending=` (unidades por producto, personalización y hora de recogida; sin cancelados, y con `pending=true` sin entregados) |
-| Clientes | `GET /api/customers?search`, `GET /api/customers/{id}/orders`, CRUD `/api/customers` |
+| Clientes | `GET /api/customers?search`, `GET /api/customers/{id}/orders`, `POST /api/customers/{id}/orders` (creación anidada: la ruta decide el cliente; cuerpo sin `customerId`), CRUD `/api/customers` |
 | Productos | `GET /api/products?search&categoryId&active`, `PATCH /api/products/{id}/active`, `PUT /api/products/order`, `POST/DELETE /api/products/{id}/image` (multipart `file`), CRUD `/api/products` |
 | Ingredientes | CRUD `/api/ingredients` (cada uno indica en cuántos productos se usa) |
 | Categorías | `PUT /api/categories/order`, CRUD `/api/categories` |
 | Usuarios | CRUD `/api/users` (SUPERADMIN: todos; ADMIN: los de su empresa) |
 | Público | `GET /api/public/companies`, `/companies/{id}/slots?date=`, `/companies/{id}/categories`, `/companies/{id}/products`, `POST /api/public/orders` |
 
-Errores: siempre `{ status, message, fieldErrors, timestamp }` — 400 validación, 401 sin login, 403 sin permiso, 404 no existe, 409 regla de negocio.
+**Contrato común:**
+
+- `POST` de alta responde **201** con el recurso y la cabecera **`Location`** con la URL de su detalle (`/api/categories/7`). Las altas anidadas y la web pública apuntan al detalle canónico `/api/orders/{id}`. `DELETE` responde 204.
+- **JSON estricto:** un campo que no existe en el DTO (una errata, o `id`, `total`, `customerId` donde no toca) se rechaza con 400 `Campo no permitido: <campo>`, nunca se ignora en silencio.
+- **Errores** siempre con el mismo formato `{ status, message, fieldErrors, timestamp }` y sin trazas internas:
+  400 validación (`fieldErrors` por campo), JSON mal formado, tipo incorrecto o parámetro obligatorio que falta · 401 sin login o token no válido · 403 rol sin permiso · 404 no existe o ruta desconocida · 405 método no permitido · 409 regla de negocio · 413 fichero demasiado grande · 415 tipo de contenido no admitido.
+- Validación propia `@ValidOpeningHours` (paquete `validation`): la apertura antes que el cierre (400 en `closingTime`).
+
+## Tests y colección HTTP
+
+```bash
+./mvnw verify                            # todos los tests (unidad, repositorio, HTTP, arranque)
+./mvnw verify -Dgroups=reglas-negocio    # solo los de la sesión 17: lo que ejecuta el CI en cada PR
+```
+
+- Los tests de la sesión 17 (reglas de negocio con JUnit + Mockito, sin base de datos) llevan `@Tag("reglas-negocio")`:
+  `OrderServiceRulesTest`, `CompanyServiceSlotsTest`, `UserServiceRulesTest` y `OrderModelTest`. El CI (`.github/workflows/ci.yml`) compila todo pero solo ejecuta estos.
+- Colección Postman repetible en `pruebas/` (prepara sus datos, comprueba y limpia). Con el backend arrancado:
+  `npx newman run pruebas/PanGestion.postman_collection.json -e pruebas/Local.postman_environment.json`
+- Qué se comprobó en cada sesión: [`docs/comprobaciones.md`](docs/comprobaciones.md). Qué parte del código cubre cada sesión: [`docs/sesiones.md`](docs/sesiones.md).

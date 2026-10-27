@@ -28,8 +28,8 @@ panadería, el flujo de "Iniciar pedido" y la pantalla de "Producción del día"
 - Copia de trabajo en Windows: `C:\Users\quiqu\Proyectos\PanGestion` (NTFS). Repositorio: `github.com/quiquealonso/PanGestion` (público).
 - **Ramas:** se trabaja en **`dev`**. `main` está protegida con el ruleset «main protegida»: solo entra por pull request
   (desde `dev`), con el check **«Compilar y probar»** en verde y sin borrado ni force-push.
-- **CI** (`.github/workflows/ci.yml`): en cada PR y en cada push a `main`, Java 21 y `./mvnw -B verify` en `backend/`
-  (compila y pasa los tests del backend). El frontend **no** se comprueba en CI: ejecutar `npm run build` antes del PR.
+- **CI** (`.github/workflows/ci.yml`): en cada PR y en cada push a `main`, Java 21 y `./mvnw -B verify -Dgroups=reglas-negocio`
+  en `backend/`: compila todo pero **solo ejecuta los tests de la sesión 17** (`@Tag("reglas-negocio")`). El resto se pasa en local. El frontend **no** se comprueba en CI: ejecutar `npm run build` antes del PR.
 - Cada sistema operativo clona e instala por separado: `node_modules`, `.angular/`, `dist/`, `backend/target/`, `backend/data/` y `backend/uploads/` son locales y no van a Git.
 - Node **≥ 24.15** (Angular CLI 22). En Windows está instalado Node LTS 24.20 con winget. Java 21+; Maven se descarga solo con `mvnw`.
 - En discos **exFAT** (SSD portátil) hay que instalar con `npm ci --no-bin-links` y `mvnw` pierde el permiso de ejecución (`sh mvnw ...`). Ver README.
@@ -175,6 +175,29 @@ instrucciones cortas en cada paso y botones grandes. Archivos: `src/app/features
 - Pantallas de gestión: **tarjetas en rejilla + diálogo** para crear/editar; borrar siempre con `ConfirmService` (nunca `confirm()` del navegador).
 - Las credenciales reales van en `backend/.env` (no se sube). En producción `JWT_SECRET` es obligatorio.
 - Gráficos: SVG propio siguiendo la guía de visualización (colores validados para daltonismo, un solo eje, tooltip y vista de tabla).
+
+## Tests del backend (`backend/src/test/java/com/pangestion`)
+
+`./mvnw verify` en `backend/`: **202 tests**, cada funcionalidad probada una a una. El CI solo ejecuta los 41 de la S17
+(`./mvnw verify -Dgroups=reglas-negocio`). Siguen los tipos de prueba del temario (S17 unidad con Mockito, S22 repositorios
+con `@DataJpaTest`, S31 HTTP con MockMvc). Correspondencia sesión ↔ código en `backend/docs/sesiones.md` y lo comprobado
+(regresiones provocadas, colección Postman) en `backend/docs/comprobaciones.md`.
+
+| Capa | Clases | Qué prueban |
+|---|---|---|
+| Unidad (sin Spring) | `storage/ImageTypeTest`, `storage/LocalImageStorageTest`, `security/TokenServiceTest` | Firma de imágenes, guardado/borrado en disco y `../`, claims y caducidad del JWT |
+| **S17** · unidad con Mockito (`@Tag("reglas-negocio")`, los del CI) | `service/OrderServiceRulesTest`, `service/CompanyServiceSlotsTest`, `service/UserServiceRulesTest`, `model/OrderModelTest` | Líneas iguales que se suman y «sin cebolla» aparte, productos inactivos, pedidos cerrados, franjas (pasadas, completas, editar sin contarse), reglas de usuarios y total del pedido |
+| Repositorio (`@DataJpaTest`) | `repository/CatalogRepositoriesTest`, `repository/OrderRepositoriesTest` | Consultas propias (búsquedas, orden, aforo, facturación, producción, estadísticas) y restricciones únicas de la BD |
+| HTTP (MockMvc + seguridad real) | `web/*ApiTest` (Auth, Security, Company, MyCompany, User, Category, Ingredient, Product, ProductImage, Customer, Order, Production, Public, Dashboard, ErrorHandling) | Cada endpoint: códigos 200/201/204/400/401/403/404/409, roles, aislamiento entre empresas, CORS y formato de errores |
+| Arranque | `config/SeedDataTest`, `PangestionApiApplicationTests` | Datos de ejemplo, usuarios de prueba que entran y pedidos de demo (sin domingos, sin pasar el aforo, sin duplicar) |
+
+- Base común: `support/ApiTestSupport` (contexto completo, perfil `test`, cada test en una transacción que se deshace, ayudas
+  `company()`, `user()`, `product()`, `order()`… y `as(usuario)` para el token) y `support/RepositoryTestSupport`.
+- Perfil `src/test/resources/application-test.properties`: H2 en memoria, sin datos de ejemplo, clave JWT de tests e imágenes en `target/`.
+- Colección Postman repetible en `backend/pruebas/` (23 peticiones, 41 aserciones; `npx newman run ...`, ver `backend/README.md`).
+- Si es una regla de negocio, su test con Mockito en `service/` con `@Tag("reglas-negocio")` (entra en el CI).
+- Al añadir una funcionalidad: su test HTTP en `web/` (caso correcto, validación 400, regla 409, otra empresa 404 y rol sin permiso 403).
+- Los tests destaparon un fallo: `DataInitializer` no tenía `@Order(1)` y, con la BD vacía, `DemoOrdersGenerator` arrancaba antes y fallaba.
 
 ## Guía rápida para próximos cambios
 
