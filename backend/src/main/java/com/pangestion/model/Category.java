@@ -35,4 +35,16 @@ public class Category {
     /** Posicion en el catalogo (0 = primera). */
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    /**
+     * Donde se preparan sus productos (bares y restaurantes). null = lo decide cada producto.
+     * Si se indica, todos sus productos pasan a esa estacion (Bebidas → BARRA: la cocina no las ve).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Station station;
+
+    /** Posicion en la pantalla de cocina (0 = arriba): los entrantes antes que los principales. Aparte del orden del catalogo. */
+    @Column(name = "kitchen_order", nullable = false, columnDefinition = "integer default 0 not null")
+    private int kitchenOrder;
 }

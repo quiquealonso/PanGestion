@@ -10,6 +10,9 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
     List<Ingredient> findAllByCompanyIdOrderByNameAsc(Long companyId);
 
+    /** Los que se ofrecen como extra (tienen precio de extra). */
+    List<Ingredient> findAllByCompanyIdAndExtraPriceIsNotNullOrderByNameAsc(Long companyId);
+
     Optional<Ingredient> findByIdAndCompanyId(Long id, Long companyId);
 
     boolean existsByCompanyIdAndNameIgnoreCase(Long companyId, String name);

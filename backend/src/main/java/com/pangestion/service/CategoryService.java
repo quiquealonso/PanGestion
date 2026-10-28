@@ -51,6 +51,7 @@ public class CategoryService {
         category.setCompany(companyService.current());
         apply(category, request);
         category.setSortOrder(categoryRepository.nextSortOrder(currentUser.companyId()));
+        category.setKitchenOrder(category.getSortOrder());
         return toResponse(categoryRepository.save(category));
     }
 
@@ -83,10 +84,26 @@ public class CategoryService {
         return categoryRepository.findByIdAndCompanyId(id, currentUser.companyId()).orElseThrow(() -> new NotFoundException("Categoria", id));
     }
 
+    /**
+     * Orden de las categorias en la pantalla de cocina: cada una toma la posicion que ocupa en la lista.
+     * No cambia el orden del catalogo ni de la web.
+     */
+    public List<CategoryDto.Response> reorderKitchen(List<Long> ids) {
+        for (int position = 0; position < ids.size(); position++) {
+            getEntity(ids.get(position)).setKitchenOrder(position);
+        }
+        return findAll();
+    }
+
     private void apply(Category category, CategoryDto.Request request) {
         category.setName(request.name().trim());
         category.setColor(request.color().toUpperCase());
         category.setDescription(request.description());
+        category.setStation(request.station());
+        // Si la categoria dice donde se prepara, todos sus productos pasan ahi (Bebidas → barra)
+        if (request.station() != null && category.getId() != null) {
+            productRepository.findAllByCategoryId(category.getId()).forEach(p -> p.setStation(request.station()));
+        }
     }
 
     private CategoryDto.Response toResponse(Category category) {

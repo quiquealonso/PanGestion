@@ -135,4 +135,41 @@ class CategoryApiTest extends ApiTestSupport {
         mvc.perform(deleteRequest("/api/categories/{id}", empty.getId()).with(as(gestor))).andExpect(status().isNoContent());
         assertThat(categoryRepository.findById(empty.getId())).isEmpty();
     }
+
+    @Test
+    @DisplayName("estación de la categoría: Bebidas a barra pasa todos sus productos a barra, y los nuevos nacen en barra")
+    void categoryStation() throws Exception {
+        Category bebidas = category(forn, "Bebidas");
+        product(bebidas, "Caña", "1.80");
+        mvc.perform(putJson("/api/categories/{id}", """
+                        {"name": "Bebidas", "color": "#0EA5E9", "description": null, "station": "BARRA"}
+                        """, bebidas.getId()).with(as(gestor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.station").value("BARRA"));
+        mvc.perform(getJson("/api/products?categoryId={id}", bebidas.getId()).with(as(gestor)))
+                .andExpect(jsonPath("$[0].station").value("BARRA"));
+
+        // Aunque el producto pida cocina, manda la categoría
+        mvc.perform(postJson("/api/products", """
+                        {"name": "Refresco", "price": 2.20, "active": true, "categoryId": %d, "station": "COCINA"}
+                        """.formatted(bebidas.getId())).with(as(gestor)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.station").value("BARRA"));
+    }
+
+    @Test
+    @DisplayName("orden en cocina: aparte del orden del catálogo; con una categoría de otra empresa: 404")
+    void kitchenOrder() throws Exception {
+        Category entrantes = category(forn, "Entrantes");
+        mvc.perform(putJson("/api/categories/kitchen-order", "{\"ids\": [%d, %d]}".formatted(entrantes.getId(), pans.getId()))
+                        .with(as(gestor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Pans"))
+                .andExpect(jsonPath("$[0].kitchenOrder").value(1))
+                .andExpect(jsonPath("$[1].name").value("Entrantes"))
+                .andExpect(jsonPath("$[1].kitchenOrder").value(0));
+        Category other = category(company("Otro"), "Otra");
+        mvc.perform(putJson("/api/categories/kitchen-order", "{\"ids\": [%d]}".formatted(other.getId())).with(as(gestor)))
+                .andExpect(status().isNotFound());
+    }
 }

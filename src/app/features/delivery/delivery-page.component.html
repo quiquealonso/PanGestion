@@ -1,0 +1,113 @@
+<section class="delivery">
+  <header class="delivery__head">
+    <!-- El repartidor ya tiene su nombre en la cabecera; el titulo solo lo ven gestores y administradores -->
+    @if (!auth.isDriver()) {
+      <h2>Reparto</h2>
+    }
+    <span class="live" [class.live--off]="!live.connected()">{{ live.connected() ? 'En directo' : 'Reconectando…' }}</span>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Pedidos">
+    <button type="button" role="tab" [class.on]="tab() === 'ready'" [attr.aria-selected]="tab() === 'ready'" (click)="tab.set('ready')">
+      <strong>{{ ready().length }}</strong> Para llevar
+    </button>
+    <button type="button" role="tab" [class.on]="tab() === 'mine'" [attr.aria-selected]="tab() === 'mine'" (click)="tab.set('mine')">
+      <strong>{{ mine().length }}</strong> Míos
+    </button>
+    <button type="button" role="tab" [class.on]="tab() === 'kitchen'" [attr.aria-selected]="tab() === 'kitchen'" (click)="tab.set('kitchen')">
+      <strong>{{ kitchen().length }}</strong> En cocina
+    </button>
+    <button type="button" role="tab" [class.on]="tab() === 'done'" [attr.aria-selected]="tab() === 'done'" (click)="tab.set('done')">
+      <strong>{{ done().length }}</strong> Entregados
+    </button>
+  </div>
+
+  @if (!loaded()) {
+    <p class="muted">Cargando…</p>
+  } @else {
+    <div class="list">
+      @for (order of visible(); track order.id) {
+        <button type="button" class="card card--{{ order.status.toLowerCase() }}" [class.card--mine]="order.mine" (click)="open(order)">
+          <span class="card__top">
+            <span class="card__time">{{ order.time }}</span>
+            <span class="card__id">#{{ order.id }}</span>
+            <span class="card__total">{{ order.total | currency: 'EUR' }}</span>
+          </span>
+          <span class="card__name">{{ order.customerName }}</span>
+          <span class="card__address">📍 {{ order.address }}</span>
+          <span class="card__items">{{ order.itemCount }} {{ order.itemCount === 1 ? 'producto' : 'productos' }} · {{ order.items.join(', ') }}</span>
+          @if (order.status === 'TRANSPORTANDO' && !order.mine) {
+            <span class="card__who">🏍️ Lo lleva {{ order.driverName }}</span>
+          }
+          @if (order.notes) {
+            <span class="card__notes">📝 {{ order.notes }}</span>
+          }
+        </button>
+      } @empty {
+        <p class="empty">
+          @switch (tab()) {
+            @case ('ready') { No hay pedidos listos para llevar. Te avisamos cuando cocina termine uno. }
+            @case ('mine') { No llevas ningún pedido. Coge uno de «Para llevar». }
+            @case ('kitchen') { No hay pedidos a domicilio preparándose. }
+            @default { Aún no se ha entregado nada hoy. }
+          }
+        </p>
+      }
+    </div>
+  }
+</section>
+
+<!-- Hoja de acciones de un pedido (desde abajo, con botones grandes) -->
+@if (selected(); as o) {
+  <div class="sheet-backdrop" (click)="close()">
+    <section class="sheet" role="dialog" aria-modal="true" [attr.aria-label]="'Pedido ' + o.id" (click)="$event.stopPropagation()">
+      <span class="sheet__grip" aria-hidden="true"></span>
+      <header class="sheet__head">
+        <div>
+          <p class="sheet__eyebrow">#{{ o.id }} · entregar a las {{ o.time }}</p>
+          <h3>{{ o.customerName }}</h3>
+        </div>
+        <strong>{{ o.total | currency: 'EUR' }}</strong>
+      </header>
+      <p class="sheet__address">📍 {{ o.address }}</p>
+      <ul class="sheet__items">
+        @for (item of o.items; track $index) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+      @if (o.notes) {
+        <p class="card__notes">📝 {{ o.notes }}</p>
+      }
+
+      <div class="sheet__links">
+        <a class="btn" [href]="mapUrl(o)" target="_blank" rel="noopener">🗺 Mapa</a>
+        @if (o.customerPhone) {
+          <a class="btn" [href]="telUrl(o)">📞 Llamar</a>
+        }
+      </div>
+
+      <div class="sheet__actions">
+        @switch (o.status) {
+          @case ('LISTO') {
+            <button type="button" class="btn btn--primary big" [disabled]="busy()" (click)="take(o)">🏍️ Me lo llevo</button>
+          }
+          @case ('TRANSPORTANDO') {
+            @if (o.mine) {
+              <button type="button" class="btn btn--primary big" [disabled]="busy()" (click)="deliver(o)">✓ Entregado</button>
+              <button type="button" class="btn" [disabled]="busy()" (click)="release(o)">No me lo llevo</button>
+            } @else {
+              <p class="muted">Lo lleva {{ o.driverName }}.</p>
+            }
+          }
+          @case ('ENTREGADO') {
+            <p class="muted">Entregado.</p>
+          }
+          @default {
+            <p class="muted">Aún se está preparando en cocina. Te avisamos cuando esté listo.</p>
+          }
+        }
+        <button type="button" class="btn" (click)="close()">Cerrar</button>
+      </div>
+    </section>
+  </div>
+}

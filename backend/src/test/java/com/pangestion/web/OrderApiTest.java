@@ -249,4 +249,45 @@ class OrderApiTest extends ApiTestSupport {
         assertThat(orderRepository.findById(order.getId())).isEmpty();
         mvc.perform(deleteRequest("/api/orders/{id}", order.getId()).with(as(gestor))).andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("extras: suman su precio a la línea; quitar cebolla y añadir huevo a la vez; 'con huevo' es otra línea")
+    void extras() throws Exception {
+        Ingredient huevo = ingredient(bar, "Huevo", "Huevo");
+        huevo.setExtraPrice(new java.math.BigDecimal("1.00"));
+        Ingredient bacon = ingredient(bar, "Bacon", null);
+        bacon.setExtraPrice(new java.math.BigDecimal("1.50"));
+        ingredientRepository.save(huevo);
+        ingredientRepository.save(bacon);
+        String withExtras = "{\"productId\": %d, \"quantity\": 2, \"removedIngredientIds\": [%d], \"addedIngredientIds\": [%d, %d]}"
+                .formatted(pizza.getId(), cebolla.getId(), huevo.getId(), bacon.getId());
+
+        mvc.perform(postJson("/api/orders", body(lola.getId(), TOMORROW, "13:00", withExtras + "," + line(pizza, 1))).with(as(gestor)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.lines.length()").value(2))
+                .andExpect(jsonPath("$.lines[0].unitPrice").value(10.50))
+                .andExpect(jsonPath("$.lines[0].subtotal").value(21.00))
+                .andExpect(jsonPath("$.lines[0].removedIngredients[0]").value("Cebolla"))
+                .andExpect(jsonPath("$.lines[0].extras[0].name").value("Bacon"))
+                .andExpect(jsonPath("$.lines[0].extras[0].price").value(1.50))
+                .andExpect(jsonPath("$.lines[0].extras[1].name").value("Huevo"))
+                .andExpect(jsonPath("$.lines[1].unitPrice").value(8.00))
+                .andExpect(jsonPath("$.total").value(29.00));
+    }
+
+    @Test
+    @DisplayName("extras: un ingrediente sin precio de extra o un producto sin ingredientes (bebida): 409")
+    void extrasRules() throws Exception {
+        String noPrice = "{\"productId\": %d, \"quantity\": 1, \"addedIngredientIds\": [%d]}".formatted(pizza.getId(), formatge.getId());
+        mvc.perform(postJson("/api/orders", body(lola.getId(), TOMORROW, "13:00", noPrice)).with(as(gestor)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Queso no se puede anadir como extra"));
+
+        formatge.setExtraPrice(java.math.BigDecimal.ONE);
+        ingredientRepository.save(formatge);
+        String noIngredients = "{\"productId\": %d, \"quantity\": 1, \"addedIngredientIds\": [%d]}".formatted(bravas.getId(), formatge.getId());
+        mvc.perform(postJson("/api/orders", body(lola.getId(), TOMORROW, "13:00", noIngredients)).with(as(gestor)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("El producto Bravas no admite extras"));
+    }
 }

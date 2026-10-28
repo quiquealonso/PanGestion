@@ -4,6 +4,8 @@ import com.pangestion.model.BusinessType;
 import com.pangestion.model.Company;
 import com.pangestion.model.Order;
 import com.pangestion.model.OrderStatus;
+import com.pangestion.model.Product;
+import com.pangestion.model.Station;
 import com.pangestion.repository.CompanyRepository;
 import com.pangestion.repository.OrderRepository;
 import com.pangestion.repository.ProductRepository;
@@ -66,7 +68,11 @@ class SeedDataTest {
         assertThat(companies).extracting(Company::getName).containsExactly("El Mosset", "Panadería Demo");
         assertThat(companies.get(0).getType()).isEqualTo(BusinessType.BAR);
         assertThat(companies.get(1).getType()).isEqualTo(BusinessType.PANADERIA);
-        assertThat(productRepository.search(companies.get(0).getId(), "%", null, null)).hasSize(85);
+        // 85 de la carta (el-mosset.json) + 4 bebidas de barra
+        var barProducts = productRepository.search(companies.get(0).getId(), "%", null, null);
+        assertThat(barProducts).hasSize(89);
+        assertThat(barProducts).filteredOn(p -> p.getStation() == Station.BARRA)
+                .extracting(Product::getName).containsExactlyInAnyOrder("Caña", "Refresco", "Agua", "Café");
     }
 
     @Test
@@ -77,7 +83,10 @@ class SeedDataTest {
                 "admin@admin.es", "admin1234",
                 "admin2@admin.es", "admin1234",
                 "gestor@pangestion.local", "gestor123",
-                "visor@pangestion.local", "visor123");
+                "visor@pangestion.local", "visor123",
+                "camarero@pangestion.local", "camarero123",
+                "cocina@pangestion.local", "cocina123",
+                "repartidor@pangestion.local", "repartidor123");
         for (var user : users.entrySet()) {
             mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                             .content("{\"email\": \"%s\", \"password\": \"%s\"}".formatted(user.getKey(), user.getValue())))

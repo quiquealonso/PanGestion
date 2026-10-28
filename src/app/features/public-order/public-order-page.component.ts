@@ -7,22 +7,25 @@ import { BUSINESS_TYPE_LABELS, Company, TimeSlot } from '../../core/models/compa
 import { Order } from '../../core/models/order.model';
 import { PublicProduct } from '../../core/models/product.model';
 import { PublicApiService } from '../../core/services/public-api.service';
+import { Extra } from '../../core/models/ingredient.model';
 import { apiErrorMessage } from '../../core/utils/api-error';
 import { addDays, toIsoDate } from '../../core/utils/dates';
+import { ExtrasPickerComponent, customizationText, extrasPrice, toggleId } from '../../shared/extras-picker.component';
 
-/** Una linea del carrito: producto, cantidad e ingredientes quitados ("sin cebolla"). */
+/** Una linea del carrito: producto, cantidad, ingredientes quitados ("sin cebolla") y extras ("con huevo"). */
 interface CartLine {
   key: number;
   product: PublicProduct;
   quantity: number;
   removed: number[];
+  added: number[];
 }
 
 /** Lo que se guarda en sessionStorage para no perder el pedido si se recarga la pagina. */
 interface SavedProgress {
   companyId: number;
   step: number;
-  cart: { productId: number; quantity: number; removed: number[] }[];
+  cart: { productId: number; quantity: number; removed: number[]; added?: number[] }[];
   customer: { name: string; phone: string; email: string };
   notes: string;
 }
@@ -35,7 +38,7 @@ const STORAGE_KEY = 'pangestion.public-order';
  *   1. Donde pedir  2. Productos  3. Revisar  4. Tus datos  5. Dia y hora (y confirmar)
  */
 @Component({
-  imports: [CurrencyPipe, DatePipe, FormsModule],
+  imports: [CurrencyPipe, DatePipe, FormsModule, ExtrasPickerComponent],
   selector: 'app-public-order-page',
   styleUrl: './public-order-page.component.scss',
   templateUrl: './public-order-page.component.html',
@@ -64,7 +67,9 @@ export class PublicOrderPageComponent implements OnInit {
   private nextKey = 1;
 
   /** Panel del producto abierto en el paso 2: ingredientes quitados y cantidad a añadir. */
-  readonly detail = signal<{ product: PublicProduct; removed: number[]; quantity: number } | null>(null);
+  readonly detail = signal<{ product: PublicProduct; removed: number[]; added: number[]; quantity: number } | null>(null);
+  /** Extras del establecimiento (ingredientes con precio de extra) */
+  readonly extras = signal<Extra[]>([]);
   /** Texto del aviso "Añadido: 2 × Vegetal sin cebolla" que sale unos segundos en la barra inferior. */
   readonly justAdded = signal<string | null>(null);
   private justAddedTimer?: ReturnType<typeof setTimeout>;
@@ -73,9 +78,13 @@ export class PublicOrderPageComponent implements OnInit {
    * Panel de "Quitar ingredientes" abierto sobre una linea del carrito.
    * units = a cuantas unidades de esa linea se aplica (si son menos que la linea, se separan como variante aparte).
    */
-  readonly customizing = signal<{ key: number; product: PublicProduct; removed: number[]; units: number; max: number } | null>(null);
+  readonly customizing = signal<{ key: number; product: PublicProduct; removed: number[]; added: number[]; units: number; max: number } | null>(null);
 
   readonly customer = signal({ name: '', phone: '', email: '' });
+  /** Recoger en el local o a domicilio (solo si el establecimiento hace envios) */
+  readonly orderType = signal<'RECOGER' | 'DOMICILIO'>('RECOGER');
+  readonly address = signal('');
+  readonly isDelivery = computed(() => this.orderType() === 'DOMICILIO' && !!this.company()?.delivery);
   /** Se marcan los errores del formulario solo despues de intentar continuar. */
   readonly showErrors = signal(false);
   notes = '';
@@ -105,7 +114,7 @@ export class PublicOrderPageComponent implements OnInit {
     return this.products().filter((p) => p.categoryId === category);
   });
   readonly itemCount = computed(() => this.cart().reduce((sum, l) => sum + l.quantity, 0));
-  readonly total = computed(() => this.cart().reduce((sum, l) => sum + l.product.price * l.quantity, 0));
+  readonly total = computed(() => this.cart().reduce((sum, l) => sum + this.unitPrice(l) * l.quantity, 0));
 
   /** Franjas que aun se pueden elegir, agrupadas por parte del dia (las pasadas no se ensenan). */
   readonly slotGroups = computed(() => {
@@ -128,6 +137,9 @@ export class PublicOrderPageComponent implements OnInit {
       name: c.name.trim().length < 2 ? 'Escribe tu nombre.' : null,
       email: !/^\S+@\S+\.\S+$/.test(c.email.trim()) ? 'Escribe un email válido, por ejemplo: nombre@gmail.com' : null,
       phone: c.phone.trim() && !/^[0-9 +]{9,15}$/.test(c.phone.trim()) ? 'Escribe un teléfono de 9 cifras, por ejemplo: 612 345 678' : null,
+      // A domicilio: el repartidor necesita la direccion y un telefono para llamar al llegar
+      address: this.isDelivery() && this.address().trim().length < 5 ? 'Escribe la dirección: calle, número y piso.' : null,
+      deliveryPhone: this.isDelivery() && !c.phone.trim() ? 'Para llevártelo necesitamos un teléfono.' : null,
     };
   });
 
@@ -141,10 +153,10 @@ export class PublicOrderPageComponent implements OnInit {
         return this.itemCount() > 0 ? null : 'Añade al menos un producto para continuar.';
       case 4: {
         const e = this.customerErrors();
-        return e.name || e.email || e.phone ? 'Revisa tus datos: hay algún campo sin completar.' : null;
+        return e.name || e.email || e.phone || e.address || e.deliveryPhone ? 'Revisa tus datos: hay algún campo sin completar.' : null;
       }
       case 5:
-        return this.time() ? null : 'Elige una hora de recogida para poder confirmar.';
+        return this.time() ? null : `Elige una hora de ${this.isDelivery() ? 'entrega' : 'recogida'} para poder confirmar.`;
       default:
         return null;
     }
@@ -158,7 +170,7 @@ export class PublicOrderPageComponent implements OnInit {
       const progress: SavedProgress = {
         companyId,
         step: this.step(),
-        cart: this.cart().map((l) => ({ productId: l.product.id, quantity: l.quantity, removed: l.removed })),
+        cart: this.cart().map((l) => ({ productId: l.product.id, quantity: l.quantity, removed: l.removed, added: l.added })),
         customer: this.customer(),
         notes: this.notes,
       };
@@ -201,10 +213,11 @@ export class PublicOrderPageComponent implements OnInit {
       this.activeCategory.set(null);
     }
     this.companyId.set(id);
-    forkJoin({ categories: this.api.categories(id), products: this.api.products(id) }).subscribe({
-      next: ({ categories, products }) => {
+    forkJoin({ categories: this.api.categories(id), products: this.api.products(id), extras: this.api.extras(id) }).subscribe({
+      next: ({ categories, products, extras }) => {
         this.categories.set(categories.filter((c) => products.some((p) => p.categoryId === c.id)));
         this.products.set(products);
+        this.extras.set(extras);
         if (restore) this.applyRestore(restore, products);
       },
       error: (err) => this.error.set(apiErrorMessage(err)),
@@ -224,7 +237,7 @@ export class PublicOrderPageComponent implements OnInit {
   // Panel del producto (paso 2)
 
   openDetail(product: PublicProduct): void {
-    this.detail.set({ product, removed: [], quantity: 1 });
+    this.detail.set({ product, removed: [], added: [], quantity: 1 });
   }
 
   toggleDetailIngredient(id: number): void {
@@ -233,20 +246,29 @@ export class PublicOrderPageComponent implements OnInit {
     );
   }
 
+  toggleDetailExtra(id: number): void {
+    this.detail.update((d) => (d ? { ...d, added: toggleId(d.added, id) } : d));
+  }
+
+  /** Precio de una unidad: el producto mas sus extras. */
+  unitPrice(line: { product: PublicProduct; added: number[] }): number {
+    return line.product.price + extrasPrice(this.extras(), line.added);
+  }
+
   changeDetailQuantity(delta: number): void {
     this.detail.update((d) => (d ? { ...d, quantity: Math.max(1, d.quantity + delta) } : d));
   }
 
   /**
-   * Añade el producto al pedido. Si ya habia uno igual (mismos ingredientes quitados) suma la cantidad;
+   * Añade el producto al pedido. Si ya habia uno igual (mismos ingredientes quitados y extras) suma la cantidad;
    * si no, queda como una linea aparte: "Vegetal" y "Vegetal sin cebolla" son dos lineas distintas.
    */
   addFromDetail(): void {
     const d = this.detail();
     if (!d) return;
-    const same = this.cart().find((l) => l.product.id === d.product.id && l.removed.join() === d.removed.join());
+    const same = this.cart().find((l) => l.product.id === d.product.id && sameCustomization(l, d));
     if (same) this.changeLine(same, d.quantity);
-    else this.cart.update((lines) => [...lines, { key: this.nextKey++, product: d.product, quantity: d.quantity, removed: d.removed }]);
+    else this.cart.update((lines) => [...lines, { key: this.nextKey++, product: d.product, quantity: d.quantity, removed: d.removed, added: d.added }]);
 
     const removed = this.removedLabel(d);
     this.justAdded.set(`${d.quantity} × ${d.product.name}${removed ? ' ' + removed : ''}`);
@@ -265,17 +287,17 @@ export class PublicOrderPageComponent implements OnInit {
     this.cart.update((lines) => lines.filter((l) => l.key !== line.key));
   }
 
-  /** "sin cebolla, sin queso" */
-  removedLabel(line: { product: PublicProduct; removed: number[] }): string {
-    return line.product.ingredients
-      .filter((i) => line.removed.includes(i.id))
-      .map((i) => 'sin ' + i.name.toLowerCase())
-      .join(', ');
+  /** "con huevo, sin cebolla, sin queso": lo que se anade y lo que se quita */
+  removedLabel(line: { product: PublicProduct; removed: number[]; added: number[] }): string {
+    return customizationText(
+      line.product.ingredients.filter((i) => line.removed.includes(i.id)).map((i) => i.name),
+      this.extras().filter((e) => line.added.includes(e.id)).map((e) => e.name),
+    );
   }
 
   /** Abre el panel. Si la linea tiene varias unidades, por defecto el cambio se aplica a una sola. */
   openCustomize(line: CartLine): void {
-    this.customizing.set({ key: line.key, product: line.product, removed: [...line.removed], units: 1, max: line.quantity });
+    this.customizing.set({ key: line.key, product: line.product, removed: [...line.removed], added: [...line.added], units: 1, max: line.quantity });
   }
 
   changeUnits(delta: number): void {
@@ -288,8 +310,12 @@ export class PublicOrderPageComponent implements OnInit {
     );
   }
 
+  toggleExtra(id: number): void {
+    this.customizing.update((c) => (c ? { ...c, added: toggleId(c.added, id) } : c));
+  }
+
   /**
-   * Guarda los ingredientes quitados. Si se aplica solo a algunas unidades, esas se separan en una linea nueva
+   * Guarda los ingredientes quitados y los extras. Si se aplica solo a algunas unidades, esas se separan en una linea nueva
    * (como si fuera otro producto). Las lineas que quedan iguales se juntan: dos "sin cebolla" suman en una.
    */
   applyCustomize(): void {
@@ -300,15 +326,15 @@ export class PublicOrderPageComponent implements OnInit {
       if (l.key !== c.key) {
         lines.push(l);
       } else if (c.units >= l.quantity) {
-        lines.push({ ...l, removed: c.removed });
+        lines.push({ ...l, removed: c.removed, added: c.added });
       } else {
         lines.push({ ...l, quantity: l.quantity - c.units });
-        lines.push({ key: this.nextKey++, product: l.product, quantity: c.units, removed: c.removed });
+        lines.push({ key: this.nextKey++, product: l.product, quantity: c.units, removed: c.removed, added: c.added });
       }
     }
     const merged: CartLine[] = [];
     for (const line of lines) {
-      const same = merged.find((m) => m.product.id === line.product.id && m.removed.join() === line.removed.join());
+      const same = merged.find((m) => m.product.id === line.product.id && sameCustomization(m, line));
       if (same) same.quantity += line.quantity;
       else merged.push({ ...line });
     }
@@ -404,7 +430,14 @@ export class PublicOrderPageComponent implements OnInit {
         pickupTime: this.time()!,
         customer: { name: c.name.trim(), email: c.email.trim(), phone: c.phone.trim() || null, businessName: null, taxId: null },
         notes: this.notes.trim() || null,
-        lines: this.cart().map((l) => ({ productId: l.product.id, quantity: l.quantity, removedIngredientIds: l.removed })),
+        type: this.isDelivery() ? 'DOMICILIO' : 'RECOGER',
+        deliveryAddress: this.isDelivery() ? this.address().trim() : null,
+        lines: this.cart().map((l) => ({
+          productId: l.product.id,
+          quantity: l.quantity,
+          removedIngredientIds: l.removed,
+          addedIngredientIds: l.added,
+        })),
       })
       .subscribe({
         next: (order) => {
@@ -448,7 +481,7 @@ export class PublicOrderPageComponent implements OnInit {
     const lines: CartLine[] = [];
     for (const item of saved.cart) {
       const product = products.find((p) => p.id === item.productId);
-      if (product) lines.push({ key: this.nextKey++, product, quantity: item.quantity, removed: item.removed });
+      if (product) lines.push({ key: this.nextKey++, product, quantity: item.quantity, removed: item.removed, added: item.added ?? [] });
     }
     this.cart.set(lines);
     this.customer.set(saved.customer);
@@ -469,4 +502,9 @@ export class PublicOrderPageComponent implements OnInit {
 function minutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;
+}
+
+/** Mismos ingredientes quitados y mismos extras: dos lineas del mismo producto se pueden juntar. */
+function sameCustomization(a: { removed: number[]; added: number[] }, b: { removed: number[]; added: number[] }): boolean {
+  return a.removed.join() === b.removed.join() && a.added.join() === b.added.join();
 }

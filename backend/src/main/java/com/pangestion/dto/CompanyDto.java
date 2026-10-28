@@ -27,19 +27,22 @@ public final class CompanyDto {
             @NotNull @JsonFormat(pattern = "HH:mm") LocalTime closingTime,
             @Min(10) @Max(240) int slotMinutes,
             @Min(1) @Max(100) int ordersPerSlot,
-            boolean active) {
+            boolean active,
+            /** Hace envios a domicilio; null = no cambiarlo (o no, al crear). */
+            Boolean delivery) {
     }
 
     public record Response(Long id, String name, BusinessType type, String taxId, String email, String phone, String address,
                            @JsonFormat(pattern = "HH:mm") LocalTime openingTime,
                            @JsonFormat(pattern = "HH:mm") LocalTime closingTime,
-                           int slotMinutes, int ordersPerSlot, boolean active,
+                           int slotMinutes, int ordersPerSlot, boolean active, boolean delivery,
                            long userCount, long customerCount) {
 
         public static Response from(Company company, long userCount, long customerCount) {
             return new Response(company.getId(), company.getName(), company.getType(), company.getTaxId(), company.getEmail(),
                     company.getPhone(), company.getAddress(), company.getOpeningTime(), company.getClosingTime(),
-                    company.getSlotMinutes(), company.getOrdersPerSlot(), company.isActive(), userCount, customerCount);
+                    company.getSlotMinutes(), company.getOrdersPerSlot(), company.isActive(), company.isDelivery(),
+                    userCount, customerCount);
         }
     }
 

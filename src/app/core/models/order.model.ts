@@ -1,11 +1,22 @@
-export type OrderStatus = 'PENDIENTE' | 'EN_PROCESO' | 'LISTO' | 'ENTREGADO' | 'CANCELADO';
+import { LineExtra } from './ingredient.model';
 
-export const ORDER_STATUSES: OrderStatus[] = ['PENDIENTE', 'EN_PROCESO', 'LISTO', 'ENTREGADO', 'CANCELADO'];
+export type OrderStatus = 'PENDIENTE' | 'EN_PROCESO' | 'LISTO' | 'TRANSPORTANDO' | 'ENTREGADO' | 'CANCELADO';
+
+export const ORDER_STATUSES: OrderStatus[] = ['PENDIENTE', 'EN_PROCESO', 'LISTO', 'TRANSPORTANDO', 'ENTREGADO', 'CANCELADO'];
+
+/** Recoger en el local o a domicilio (lo lleva un repartidor). */
+export type OrderType = 'RECOGER' | 'DOMICILIO';
+
+export const ORDER_TYPE_LABELS: Record<OrderType, string> = {
+  RECOGER: 'Para recoger',
+  DOMICILIO: 'A domicilio',
+};
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDIENTE: 'Pendiente',
   EN_PROCESO: 'En proceso',
   LISTO: 'Listo',
+  TRANSPORTANDO: 'Transportando',
   ENTREGADO: 'Entregado',
   CANCELADO: 'Cancelado',
 };
@@ -18,6 +29,8 @@ export interface OrderLine {
   subtotal: number;
   /** Ingredientes quitados en este pedido ("sin cebolla"). */
   removedIngredients: string[];
+  /** Extras anadidos ("con huevo"), ya sumados en unitPrice. */
+  extras: LineExtra[];
 }
 
 export interface Order {
@@ -36,6 +49,11 @@ export interface Order {
   itemCount: number;
   createdAt: string;
   lines: OrderLine[];
+  type: OrderType;
+  /** Solo a domicilio */
+  deliveryAddress: string | null;
+  /** Repartidor que lo lleva (a domicilio) */
+  driverName: string | null;
 }
 
 export interface OrderLineRequest {
@@ -43,6 +61,8 @@ export interface OrderLineRequest {
   quantity: number;
   /** Ingredientes del producto que se quitan (opcional). */
   removedIngredientIds?: number[];
+  /** Extras que se anaden, con su precio (opcional). */
+  addedIngredientIds?: number[];
 }
 
 export interface OrderRequest {
@@ -51,6 +71,9 @@ export interface OrderRequest {
   pickupTime: string;
   notes: string | null;
   lines: OrderLineRequest[];
+  /** RECOGER por defecto; DOMICILIO necesita deliveryAddress */
+  type?: OrderType;
+  deliveryAddress?: string | null;
 }
 
 export interface OrderFilters {
@@ -68,13 +91,17 @@ export interface ProductionRow {
   categoryName: string;
   categoryColor: string;
   removedIngredients: string[];
+  /** Extras anadidos ("Huevo") */
+  extras: string[];
   pickupTime: string;
   quantity: number;
 }
 
-/** "pizza carbonara (sin bacon, sin nata)" */
-export function productionLabel(row: { productName: string; removedIngredients: string[] }): string {
-  return row.removedIngredients.length
-    ? `${row.productName} (${row.removedIngredients.map((i) => 'sin ' + i.toLowerCase()).join(', ')})`
-    : row.productName;
+/** "pizza carbonara (con huevo, sin bacon, sin nata)" */
+export function productionLabel(row: { productName: string; removedIngredients: string[]; extras?: string[] }): string {
+  const custom = [
+    ...(row.extras ?? []).map((e) => 'con ' + e.toLowerCase()),
+    ...row.removedIngredients.map((i) => 'sin ' + i.toLowerCase()),
+  ];
+  return custom.length ? `${row.productName} (${custom.join(', ')})` : row.productName;
 }

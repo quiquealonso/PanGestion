@@ -14,9 +14,9 @@
 
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 0.8rem; overflow: hidden; }
 .segmented button { padding: 0.45rem 0.8rem; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
-.segmented button.is-active { background: rgba(125, 211, 252, 0.16); color: var(--text); font-weight: 600; }
+.segmented button.is-active { background: rgba(var(--primary-rgb), 0.16); color: var(--text); font-weight: 600; }
 
-.stat-card--now { border-color: rgba(125, 211, 252, 0.45); }
+.stat-card--now { border-color: rgba(var(--primary-rgb), 0.45); }
 
 .table-panel { padding: 0; overflow: hidden; }
 .scroll { overflow-x: auto; }
@@ -29,13 +29,14 @@
 }
 .num { text-align: center; }
 .cell { font-family: 'Space Grotesk', sans-serif; font-size: 1.15rem; font-weight: 700; }
-.cell.empty { color: rgba(148, 163, 197, 0.35); font-weight: 400; }
-.now { outline: 2px solid rgba(125, 211, 252, 0.55); outline-offset: -2px; }
+.cell.empty { color: rgba(var(--muted-rgb), 0.35); font-weight: 400; }
+.now { outline: 2px solid rgba(var(--primary-rgb), 0.55); outline-offset: -2px; }
 thead .now { color: var(--primary); }
-.total-col { font-weight: 700; background: rgba(255, 255, 255, 0.03); }
+.total-col { font-weight: 700; background: rgba(var(--tint-rgb), 0.03); }
 .category-row th {
   padding-top: 0.9rem; text-align: left; color: var(--primary); font-size: 0.78rem;
   letter-spacing: 0.12em; text-transform: uppercase; background: transparent;
 }
-tfoot th, tfoot td { font-weight: 700; border-bottom: 0; background: rgba(255, 255, 255, 0.04); }
-.removed { display: block; font-weight: 400; }
+tfoot th, tfoot td { font-weight: 700; border-bottom: 0; background: rgba(var(--tint-rgb), 0.04); }
+.removed,
+.added { display: block; font-weight: 400; }

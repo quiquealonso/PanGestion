@@ -46,6 +46,12 @@ public class CategoryController {
         return categoryService.reorder(request.ids());
     }
 
+    /** Orden en la pantalla de cocina. Body: {"ids": [...]} de arriba abajo. */
+    @PutMapping("/kitchen-order")
+    public List<CategoryDto.Response> reorderKitchen(@Valid @RequestBody SortRequest request) {
+        return categoryService.reorderKitchen(request.ids());
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {

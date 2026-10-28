@@ -1,7 +1,9 @@
 package com.pangestion.controller;
 
 import com.pangestion.dto.DashboardDto;
+import com.pangestion.dto.DiningDashboardDto;
 import com.pangestion.service.DashboardService;
+import com.pangestion.service.DiningDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,10 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final DiningDashboardService diningDashboardService;
 
     @GetMapping
     public DashboardDto getSummary() {
         return dashboardService.getSummary();
+    }
+
+    /** Inicio de un bar o restaurante: la sala ahora mismo y la caja de hoy (una panaderia recibe 409). */
+    @GetMapping("/dining")
+    public DiningDashboardDto dining() {
+        return diningDashboardService.summary();
     }
 
     /** Unidades vendidas por dia: /api/dashboard/weekly-sales?date=2026-10-18 (cualquier dia de la semana; por defecto hoy). */

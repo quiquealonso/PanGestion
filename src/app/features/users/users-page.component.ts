@@ -39,7 +39,11 @@ export class UsersPageComponent implements OnInit {
 
   /** Roles que puede asignar quien esta logueado. */
   readonly roles = computed<Role[]>(() =>
-    this.auth.isSuperAdmin() ? ['SUPERADMIN', 'ADMIN', 'GESTOR', 'VISOR'] : ['ADMIN', 'GESTOR', 'VISOR'],
+    this.auth.isSuperAdmin()
+      ? ['SUPERADMIN', 'ADMIN', 'GESTOR', 'VISOR', 'CAMARERO', 'COCINA', 'REPARTIDOR']
+      : this.auth.hasDining()
+        ? ['ADMIN', 'GESTOR', 'VISOR', 'CAMARERO', 'COCINA', 'REPARTIDOR']
+        : ['ADMIN', 'GESTOR', 'VISOR', 'REPARTIDOR'],
   );
 
   /** Usuarios agrupados por empresa (los SUPERADMIN, en su propio grupo). */

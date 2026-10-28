@@ -46,6 +46,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CompanyRepository companyRepository;
     private final CustomerRepository customerRepository;
     private final OrderRepository orderRepository;
+    private final DiningAreaRepository diningAreaRepository;
     private final PasswordEncoder passwordEncoder;
     private final ImageStorage imageStorage;
 
@@ -180,9 +181,79 @@ public class DataInitializer implements CommandLineRunner {
         loadCompanyFromJson("/seed/el-mosset.json");
         company.setType(BusinessType.BAR);
         user("Pablo Admin", "admin2@admin.es", "admin1234", Role.ADMIN);
+        user("Carla Camarera", "camarero@pangestion.local", "camarero123", Role.CAMARERO);
+        user("Kike Cocina", "cocina@pangestion.local", "cocina123", Role.COCINA);
+        user("Rafa Repartidor", "repartidor@pangestion.local", "repartidor123", Role.REPARTIDOR);
+        company.setDelivery(true); // El Mosset lleva pedidos a domicilio
+        // Bebidas: se preparan en la barra (salen en su pantalla, no en la de cocina)
+        Category bebidas = category("Bebidas", "#0EA5E9", "Cervezas, refrescos y cafés");
+        for (String[] drink : new String[][] {{"Caña", "1.80"}, {"Refresco", "2.20"}, {"Agua", "1.50"}, {"Café", "1.30"}}) {
+            product(drink[0], null, null, bebidas, drink[1], null, true).setStation(Station.BARRA);
+        }
+        bebidas.setStation(Station.BARRA);
+        // Orden en la pantalla de cocina: primero lo que sale antes a la mesa
+        kitchenOrder("Entrantes", "Ensaladas", "Pizzas", "Hamburguesas", "Hamburguesas premium", "Bocadillos",
+                "Platos combinados", "Bebidas");
+        // Ingredientes que se pueden anadir como extra, con su precio
+        extra("Huevo", "1.00");
+        extra("Bacon", "1.50");
+        extra("Cheddar", "1.00");
+        extra("Mozzarella", "1.00");
+        extra("Champiñón", "0.80");
+        extra("Jamón serrano", "1.50");
+        extra("Cebolla", "0.50");
         Customer luis = customer("Luis Pérez", "luis@correo.es", "600999888", null, null);
         order(luis, today.plusDays(1), "21:00", OrderStatus.PENDIENTE, "Sin cebolla en la pizza",
                 productNamed("Pizzas", "Carbonara"), 2, productNamed("Entrantes", "Patatas fritas o bravas"), 1);
+        Customer marta = customer("Marta Gil", "marta.gil@correo.es", "611222333", null, null);
+        delivery(marta, "C/ Mayor 12, 2.º B", today, "21:30", OrderStatus.LISTO, productNamed("Pizzas", "Barbacoa"), 1);
+        delivery(luis, "Av. del Mar 4", today, "22:00", OrderStatus.PENDIENTE, productNamed("Pizzas", "Carbonara"), 2);
+
+        // Plano de la sala del bar: interior y terraza (medidas en celdas de la cuadricula)
+        DiningArea interior = area("Interior", 24, 14, 0);
+        table(interior, "1", 2, TableShape.RECT, 1, 1, 2, 2);
+        table(interior, "2", 2, TableShape.RECT, 4, 1, 2, 2);
+        table(interior, "3", 4, TableShape.RECT, 7, 1, 3, 2);
+        table(interior, "4", 4, TableShape.ROUND, 1, 5, 3, 3);
+        table(interior, "5", 4, TableShape.ROUND, 6, 5, 3, 3);
+        table(interior, "6", 6, TableShape.RECT, 11, 5, 4, 2);
+        table(interior, "7", 8, TableShape.RECT, 1, 10, 6, 2);
+        table(interior, "B1", 1, TableShape.ROUND, 20, 1, 1, 1);
+        table(interior, "B2", 1, TableShape.ROUND, 20, 3, 1, 1);
+        table(interior, "B3", 1, TableShape.ROUND, 20, 5, 1, 1);
+        diningAreaRepository.save(interior);
+        DiningArea terraza = area("Terraza", 20, 10, 1);
+        table(terraza, "T1", 2, TableShape.ROUND, 1, 1, 2, 2);
+        table(terraza, "T2", 2, TableShape.ROUND, 5, 1, 2, 2);
+        table(terraza, "T3", 2, TableShape.ROUND, 9, 1, 2, 2);
+        table(terraza, "T4", 4, TableShape.RECT, 1, 5, 3, 2);
+        table(terraza, "T5", 4, TableShape.RECT, 6, 5, 3, 2);
+        table(terraza, "T6", 6, TableShape.RECT, 12, 5, 5, 2);
+        diningAreaRepository.save(terraza);
+    }
+
+    private DiningArea area(String name, int width, int height, int sortOrder) {
+        DiningArea area = new DiningArea();
+        area.setCompany(company);
+        area.setName(name);
+        area.setWidth(width);
+        area.setHeight(height);
+        area.setSortOrder(sortOrder);
+        return area;
+    }
+
+    private void table(DiningArea area, String name, int seats, TableShape shape, int x, int y, int width, int height) {
+        DiningTable table = new DiningTable();
+        table.setCompany(company);
+        table.setArea(area);
+        table.setName(name);
+        table.setSeats(seats);
+        table.setShape(shape);
+        table.setX(x);
+        table.setY(y);
+        table.setWidth(width);
+        table.setHeight(height);
+        area.getTables().add(table);
     }
 
     private void user(String name, String email, String password, Role role) {
@@ -203,6 +274,22 @@ public class DataInitializer implements CommandLineRunner {
         category.setCompany(company);
         category.setSortOrder(categoryRepository.nextSortOrder(company.getId()));
         return categoryRepository.save(category);
+    }
+
+    /** Orden de las categorias de la empresa actual en la pantalla de cocina. */
+    private void kitchenOrder(String... names) {
+        List<String> order = List.of(names);
+        categoryRepository.findAllByCompanyIdOrderBySortOrderAscNameAsc(company.getId())
+                .forEach(c -> c.setKitchenOrder(order.contains(c.getName()) ? order.indexOf(c.getName()) : order.size()));
+    }
+
+    /** Precio de extra de un ingrediente de la empresa actual. */
+    private void extra(String name, String price) {
+        ingredientRepository.findAllByCompanyIdOrderByNameAsc(company.getId()).stream()
+                .filter(i -> i.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No existe el ingrediente " + name))
+                .setExtraPrice(new BigDecimal(price));
     }
 
     private Ingredient ingredient(String name, String allergen) {
@@ -325,6 +412,19 @@ public class DataInitializer implements CommandLineRunner {
     /** items: pares producto, cantidad. */
     private void order(Customer customer, LocalDate date, String time, OrderStatus status,
                        String notes, Object... items) {
+        orderRepository.save(newOrder(customer, date, time, status, notes, items));
+    }
+
+    /** Pedido a domicilio a una direccion. */
+    private void delivery(Customer customer, String address, LocalDate date, String time, OrderStatus status, Object... items) {
+        Order order = newOrder(customer, date, time, status, null, items);
+        order.setType(OrderType.DOMICILIO);
+        order.setDeliveryAddress(address);
+        orderRepository.save(order);
+    }
+
+    private Order newOrder(Customer customer, LocalDate date, String time, OrderStatus status,
+                           String notes, Object... items) {
         Order order = new Order();
         order.setCompany(company);
         order.setCustomer(customer);
@@ -335,6 +435,6 @@ public class DataInitializer implements CommandLineRunner {
         for (int i = 0; i < items.length; i += 2) {
             order.addLine((Product) items[i], (Integer) items[i + 1]);
         }
-        orderRepository.save(order);
+        return order;
     }
 }

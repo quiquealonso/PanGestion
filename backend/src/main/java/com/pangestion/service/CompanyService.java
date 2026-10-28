@@ -163,6 +163,9 @@ public class CompanyService {
         company.setSlotMinutes(request.slotMinutes());
         company.setOrdersPerSlot(request.ordersPerSlot());
         company.setActive(request.active());
+        if (request.delivery() != null) {
+            company.setDelivery(request.delivery());
+        }
     }
 
     private CompanyDto.Response toResponse(Company company) {

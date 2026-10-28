@@ -1,5 +1,6 @@
 package com.pangestion.dto;
 
+import com.pangestion.model.BusinessType;
 import com.pangestion.model.Role;
 import com.pangestion.model.User;
 import jakarta.validation.constraints.Email;
@@ -28,13 +29,14 @@ public final class UserDto {
     }
 
     public record Response(Long id, String name, String email, Role role, boolean active, LocalDateTime lastLogin,
-                           Long companyId, String companyName) {
+                           Long companyId, String companyName, BusinessType companyType) {
 
         public static Response from(User user) {
             var company = user.getCompany();
             return new Response(user.getId(), user.getName(), user.getEmail(), user.getRole(),
                     user.isActive(), user.getLastLogin(),
-                    company == null ? null : company.getId(), company == null ? null : company.getName());
+                    company == null ? null : company.getId(), company == null ? null : company.getName(),
+                    company == null ? null : company.getType());
         }
     }
 }

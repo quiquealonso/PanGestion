@@ -28,6 +28,14 @@ public class IngredientService {
         return ingredientRepository.findAllByCompanyIdOrderByNameAsc(currentUser.companyId()).stream().map(this::toResponse).toList();
     }
 
+    /** Extras que se pueden anadir a los productos de una empresa (tambien para la web publica). */
+    @Transactional(readOnly = true)
+    public List<IngredientDto.Extra> findExtras(Long companyId) {
+        return ingredientRepository.findAllByCompanyIdAndExtraPriceIsNotNullOrderByNameAsc(companyId).stream()
+                .map(IngredientDto.Extra::from)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public IngredientDto.Response findById(Long id) {
         return toResponse(getEntity(id));
@@ -67,6 +75,7 @@ public class IngredientService {
     private void apply(Ingredient ingredient, IngredientDto.Request request) {
         ingredient.setName(request.name().trim());
         ingredient.setAllergen(request.allergen() == null || request.allergen().isBlank() ? null : request.allergen().trim());
+        ingredient.setExtraPrice(request.extraPrice());
     }
 
     private IngredientDto.Response toResponse(Ingredient ingredient) {

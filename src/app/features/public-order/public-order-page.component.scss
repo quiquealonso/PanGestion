@@ -1132,3 +1132,27 @@ textarea {
     border-radius: 20px;
   }
 }
+
+/* Recoger o a domicilio: dos botones grandes */
+.type-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+
+  button {
+    min-height: 3.2rem;
+    border: 2px solid var(--p-border);
+    border-radius: 0.9rem;
+    background: var(--p-card);
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+
+    &.is-selected {
+      border-color: var(--p-primary);
+      background: var(--p-primary);
+      color: #fff;
+    }
+  }
+}

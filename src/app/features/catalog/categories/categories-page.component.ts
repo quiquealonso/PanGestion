@@ -2,7 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Category } from '../../../core/models/category.model';
-import { Product } from '../../../core/models/product.model';
+import { Product, STATION_LABELS, Station } from '../../../core/models/product.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -38,7 +38,10 @@ export class CategoriesPageComponent implements OnInit {
     name: ['', [Validators.required, Validators.maxLength(80)]],
     color: ['#F59E0B', [Validators.required, Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
     description: [''],
+    /** Bares y restaurantes: donde se preparan sus productos ('' = lo decide cada producto) */
+    station: ['' as Station | ''],
   });
+  readonly stationLabels = STATION_LABELS;
 
   ngOnInit(): void {
     if (!this.auth.canEdit()) this.form.disable();
@@ -68,14 +71,14 @@ export class CategoriesPageComponent implements OnInit {
   edit(): void {
     const category = this.selected();
     if (!category) return;
-    this.form.reset({ name: category.name, color: category.color, description: category.description ?? '' });
+    this.form.reset({ name: category.name, color: category.color, description: category.description ?? '', station: category.station ?? '' });
     this.mode.set('edit');
   }
 
 
   startCreate(): void {
     this.selectedId.set(null);
-    this.form.reset({ name: '', color: '#F59E0B', description: '' });
+    this.form.reset({ name: '', color: '#F59E0B', description: '', station: '' });
     this.mode.set('edit');
     this.dialogOpen.set(true);
   }
@@ -91,7 +94,8 @@ export class CategoriesPageComponent implements OnInit {
       return;
     }
     const id = this.selectedId();
-    const body = this.form.getRawValue();
+    const value = this.form.getRawValue();
+    const body = { ...value, station: value.station || null };
     const request = id ? this.categoriesService.update(id, body) : this.categoriesService.create(body);
     request.subscribe({
       next: (saved) => {

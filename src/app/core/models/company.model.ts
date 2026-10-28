@@ -26,6 +26,8 @@ export interface Company {
   ordersPerSlot: number;
   /** false = no acepta pedidos ni sale en la web publica. */
   active: boolean;
+  /** Hace envios a domicilio (la web ofrece "a domicilio" ademas de "recoger"). */
+  delivery: boolean;
   userCount: number;
   customerCount: number;
 }

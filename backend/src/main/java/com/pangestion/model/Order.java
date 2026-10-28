@@ -40,8 +40,26 @@ public class Order {
     private LocalTime pickupTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 12)
+    @Column(nullable = false, length = 15)
     private OrderStatus status = OrderStatus.PENDIENTE;
+
+    /** Recoger en el local o a domicilio. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(10) default 'RECOGER' not null")
+    private OrderType type = OrderType.RECOGER;
+
+    /** Direccion de entrega (solo a domicilio). */
+    @Column(name = "delivery_address", length = 255)
+    private String deliveryAddress;
+
+    /** Repartidor que lo lleva (a domicilio, desde que sale). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id")
+    private User driver;
+
+    /** Cuando salio con el repartidor. */
+    @Column(name = "dispatched_at")
+    private LocalDateTime dispatchedAt;
 
     @Column(length = 500)
     private String notes;
@@ -67,7 +85,12 @@ public class Order {
 
     /** Linea personalizada: el mismo producto quitandole algunos ingredientes (el precio no cambia). */
     public void addLine(Product product, int quantity, List<String> removedIngredients) {
-        lines.add(new OrderLine(this, product, quantity, product.getPrice(), removedIngredients));
+        addLine(product, quantity, removedIngredients, List.of());
+    }
+
+    /** Linea con ingredientes quitados y extras anadidos: el precio es el del producto mas los extras. */
+    public void addLine(Product product, int quantity, List<String> removedIngredients, List<LineExtra> extras) {
+        lines.add(new OrderLine(this, product, quantity, product.getPrice(), removedIngredients, extras));
         recalculateTotal();
     }
 
@@ -80,6 +103,25 @@ public class Order {
         total = lines.stream()
                 .map(OrderLine::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Pedido para llevar en un bar o restaurante: su estado sigue al de sus productos en cocina.
+     * Todos listos = LISTO; alguno empezado = EN_PROCESO; ninguno = PENDIENTE.
+     * No toca pedidos ya entregados o cancelados.
+     */
+    public void syncStatusFromLines() {
+        if (status == OrderStatus.TRANSPORTANDO || status == OrderStatus.ENTREGADO || status == OrderStatus.CANCELADO
+                || lines.isEmpty()) {
+            return;
+        }
+        if (lines.stream().allMatch(l -> l.getStatus().compareTo(ItemStatus.LISTO) >= 0)) {
+            status = OrderStatus.LISTO;
+        } else if (lines.stream().anyMatch(l -> l.getStatus() != ItemStatus.PENDIENTE)) {
+            status = OrderStatus.EN_PROCESO;
+        } else {
+            status = OrderStatus.PENDIENTE;
+        }
     }
 
     public int getItemCount() {

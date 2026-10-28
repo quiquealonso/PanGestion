@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 /**
  * Ingrediente que forma parte de los productos (nueces, chocolate blanco, arroz, pollo...).
  * Sirve para saber de que esta hecho cada producto y mostrar sus alergenos; no controla stock.
@@ -31,4 +33,11 @@ public class Ingredient {
     /** Alergeno que aporta (Gluten, Lacteos, Frutos de cascara...). Nulo si no tiene. */
     @Column(length = 100)
     private String allergen;
+
+    /**
+     * Precio si se anade como extra a un producto ("con huevo", +1,00 €). Nulo = no se ofrece como extra.
+     * 0 = extra gratis.
+     */
+    @Column(name = "extra_price", precision = 10, scale = 2)
+    private BigDecimal extraPrice;
 }

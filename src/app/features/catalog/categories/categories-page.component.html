@@ -29,7 +29,9 @@
                 <span class="badge" [style.background]="category.color">{{ category.name.charAt(0) }}</span>
                 <div>
                   <p class="card__title">{{ category.name }}</p>
-                  <p class="card__sub">{{ category.productCount }} productos</p>
+                  <p class="card__sub">{{ category.productCount }} productos
+                    @if (auth.hasDining() && category.station) { · se prepara en {{ stationLabels[category.station].toLowerCase() }} }
+                  </p>
                 </div>
               </div>
             </div>
@@ -97,6 +99,18 @@
             <span>Descripción</span>
             <textarea rows="3" formControlName="description"></textarea>
           </label>
+          @if (auth.hasDining()) {
+            <label class="full">
+              <span>Se prepara en</span>
+              <select formControlName="station">
+                <option value="">Lo decide cada producto</option>
+                <option value="COCINA">Cocina (todos sus productos)</option>
+                <option value="BARRA">Barra (todos sus productos; la cocina no los ve)</option>
+                <option value="NINGUNA">No se prepara (todos sus productos)</option>
+              </select>
+              <small class="muted">Al guardar, todos los productos de la categoría pasan ahí, y los nuevos también.</small>
+            </label>
+          }
           @if (auth.canEdit()) {
             <div class="form-actions full">
               <button type="submit" class="btn btn--primary">Guardar</button>

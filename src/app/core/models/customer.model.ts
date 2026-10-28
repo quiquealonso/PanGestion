@@ -8,6 +8,11 @@ export interface Customer {
   businessName: string | null;
   taxId: string | null;
   createdAt: string;
+  /** Resumen de sus pedidos no cancelados */
+  orderCount: number;
+  totalSpent: number;
+  /** Fecha de recogida de su ultimo pedido; null si no ha pedido nunca */
+  lastOrderDate: string | null;
 }
 
 export interface CustomerRequest {

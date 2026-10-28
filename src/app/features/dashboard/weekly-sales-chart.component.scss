@@ -21,8 +21,8 @@
 
 .chart { position: relative; }
 svg { display: block; width: 100%; height: auto; }
-.grid { stroke: rgba(173, 191, 224, 0.1); stroke-width: 1; }
-.baseline { stroke: rgba(173, 191, 224, 0.35); stroke-width: 1; }
+.grid { stroke: rgba(var(--line-rgb), 0.1); stroke-width: 1; }
+.baseline { stroke: rgba(var(--line-rgb), 0.35); stroke-width: 1; }
 .axis { fill: var(--muted); font-size: 11px; }
 .axis.today { fill: var(--text); font-weight: 700; }
 .bar--current { fill: var(--series-current); }

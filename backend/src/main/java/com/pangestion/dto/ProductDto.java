@@ -2,6 +2,7 @@ package com.pangestion.dto;
 
 import com.pangestion.model.Ingredient;
 import com.pangestion.model.Product;
+import com.pangestion.model.Station;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -21,7 +22,9 @@ public final class ProductDto {
             boolean active,
             @NotNull Long categoryId,
             /** Ingredientes que lleva (ids). */
-            List<Long> ingredientIds) {
+            List<Long> ingredientIds,
+            /** Donde se prepara; null = cocina (o no cambiarla al editar). */
+            Station station) {
     }
 
     public record IngredientRef(Long id, String name, String allergen) {
@@ -35,7 +38,7 @@ public final class ProductDto {
     public record Response(Long id, String name, String abbreviation, String description, BigDecimal price,
                            boolean active, String color, String displayColor, int sortOrder,
                            Long categoryId, String categoryName, String categoryColor,
-                           String imageUrl, List<IngredientRef> ingredients) {
+                           String imageUrl, List<IngredientRef> ingredients, Station station) {
 
         /** imageUrl la calcula el servicio con ImageStorage (depende de donde se guarden las imagenes). */
         public static Response from(Product product, String imageUrl) {
@@ -43,7 +46,7 @@ public final class ProductDto {
                     product.getDescription(), product.getPrice(), product.isActive(),
                     product.getColor(), product.getDisplayColor(), product.getSortOrder(),
                     product.getCategory().getId(), product.getCategory().getName(), product.getCategory().getColor(),
-                    imageUrl, product.getIngredients().stream().map(IngredientRef::from).toList());
+                    imageUrl, product.getIngredients().stream().map(IngredientRef::from).toList(), product.getStation());
         }
     }
 

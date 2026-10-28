@@ -39,13 +39,18 @@
         <div class="done__number">
           <span>Número de pedido</span>
           <strong>{{ order.id }}</strong>
-          <small>Díselo al recogerlo</small>
+          <small>{{ order.type === 'DOMICILIO' ? 'Te lo llevamos a casa' : 'Díselo al recogerlo' }}</small>
         </div>
 
         <ul class="done__info">
           <li><span aria-hidden="true">📅</span> <div><b>Cuándo:</b> {{ dayName(order.pickupDate) }}, {{ order.pickupDate | date: 'd MMMM' }} a las {{ order.pickupTime.slice(0, 5) }}</div></li>
-          <li><span aria-hidden="true">📍</span> <div><b>Dónde:</b> {{ order.companyName }} · {{ company()?.address }}</div></li>
-          <li><span aria-hidden="true">💶</span> <div><b>Total:</b> {{ order.total | currency: 'EUR' }} · se paga al recoger</div></li>
+          @if (order.type === 'DOMICILIO') {
+            <li><span aria-hidden="true">🏍️</span> <div><b>Dónde:</b> {{ order.deliveryAddress }}</div></li>
+            <li><span aria-hidden="true">💶</span> <div><b>Total:</b> {{ order.total | currency: 'EUR' }} · se paga al recibirlo</div></li>
+          } @else {
+            <li><span aria-hidden="true">📍</span> <div><b>Dónde:</b> {{ order.companyName }} · {{ company()?.address }}</div></li>
+            <li><span aria-hidden="true">💶</span> <div><b>Total:</b> {{ order.total | currency: 'EUR' }} · se paga al recoger</div></li>
+          }
         </ul>
 
         <div class="lines">
@@ -146,12 +151,12 @@
                   <div class="review__top">
                     <div>
                       <h2>{{ line.product.name }}</h2>
-                      @if (line.removed.length) {
+                      @if (line.removed.length || line.added.length) {
                         <p class="removed-text">{{ removedLabel(line) }}</p>
                       }
-                      <p class="review__price">{{ line.product.price | currency: 'EUR' }} / unidad</p>
+                      <p class="review__price">{{ unitPrice(line) | currency: 'EUR' }} / unidad</p>
                     </div>
-                    <strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
+                    <strong>{{ unitPrice(line) * line.quantity | currency: 'EUR' }}</strong>
                   </div>
                   <div class="review__actions">
                     <div class="qty" role="group" [attr.aria-label]="'Cantidad de ' + line.product.name">
@@ -187,6 +192,28 @@
         <!-- ===== 4. Datos ===== -->
         @case (4) {
           <form class="form" (ngSubmit)="next()" novalidate>
+            @if (company()?.delivery) {
+              <div class="field">
+                <span>¿Cómo lo quieres?</span>
+                <div class="type-choice" role="group" aria-label="Cómo lo quieres">
+                  <button type="button" [class.is-selected]="orderType() === 'RECOGER'" [attr.aria-pressed]="orderType() === 'RECOGER'"
+                          (click)="orderType.set('RECOGER')">🏪 Lo recojo</button>
+                  <button type="button" [class.is-selected]="orderType() === 'DOMICILIO'" [attr.aria-pressed]="orderType() === 'DOMICILIO'"
+                          (click)="orderType.set('DOMICILIO')">🏍️ A domicilio</button>
+                </div>
+              </div>
+              @if (isDelivery()) {
+                <label class="field" [class.has-error]="showErrors() && customerErrors().address">
+                  <span>Dirección de entrega</span>
+                  <input name="address" autocomplete="street-address" placeholder="Por ejemplo: C/ Mayor 12, 2.º B"
+                         [ngModel]="address()" (ngModelChange)="address.set($event)" />
+                  @if (showErrors() && customerErrors().address) {
+                    <small class="field__error">{{ customerErrors().address }}</small>
+                  }
+                </label>
+              }
+            }
+
             <label class="field" [class.has-error]="showErrors() && customerErrors().name">
               <span>Nombre y apellido</span>
               <input name="name" autocomplete="name" placeholder="Por ejemplo: María García"
@@ -196,12 +223,12 @@
               }
             </label>
 
-            <label class="field" [class.has-error]="showErrors() && customerErrors().phone">
-              <span>Teléfono <small>(opcional, para avisarte)</small></span>
+            <label class="field" [class.has-error]="showErrors() && (customerErrors().phone || customerErrors().deliveryPhone)">
+              <span>Teléfono <small>{{ isDelivery() ? '(para avisarte al llegar)' : '(opcional, para avisarte)' }}</small></span>
               <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Por ejemplo: 612 345 678"
                      [ngModel]="customer().phone" (ngModelChange)="updateCustomer('phone', $event)" />
-              @if (showErrors() && customerErrors().phone) {
-                <small class="field__error">{{ customerErrors().phone }}</small>
+              @if (showErrors() && (customerErrors().phone || customerErrors().deliveryPhone)) {
+                <small class="field__error">{{ customerErrors().phone || customerErrors().deliveryPhone }}</small>
               }
             </label>
 
@@ -296,9 +323,13 @@
         <p>Comprueba que todo está bien antes de enviar el pedido.</p>
 
         <div class="confirm__block">
-          <div class="confirm__head"><h3>📅 Recogida</h3><button type="button" class="link" (click)="reviewing.set(false)">Cambiar</button></div>
+          <div class="confirm__head"><h3>{{ isDelivery() ? '🏍️ Entrega' : '📅 Recogida' }}</h3><button type="button" class="link" (click)="reviewing.set(false)">Cambiar</button></div>
           <p class="confirm__big"><span class="cap">{{ dayName(date()) }}</span>, {{ date() | date: 'd MMMM' }} · {{ time()!.slice(0, 5) }}</p>
-          <p>{{ company()?.name }}<br />{{ company()?.address }}</p>
+          @if (isDelivery()) {
+            <p>A domicilio: {{ address() }}</p>
+          } @else {
+            <p>{{ company()?.name }}<br />{{ company()?.address }}</p>
+          }
         </div>
 
         <div class="confirm__block">
@@ -312,11 +343,11 @@
             @for (line of cart(); track line.key) {
               <div class="lines__row">
                 <span><b>{{ line.quantity }} ×</b> {{ line.product.name }}
-                  @if (line.removed.length) {
+                  @if (line.removed.length || line.added.length) {
                     <small class="removed-text">{{ removedLabel(line) }}</small>
                   }
                 </span>
-                <span>{{ line.product.price * line.quantity | currency: 'EUR' }}</span>
+                <span>{{ unitPrice(line) * line.quantity | currency: 'EUR' }}</span>
               </div>
             }
           </div>
@@ -326,7 +357,7 @@
         </div>
 
         <div class="total">
-          <span>Total<br /><small>Se paga al recoger</small></span>
+          <span>Total<br /><small>{{ isDelivery() ? 'Se paga al recibirlo' : 'Se paga al recoger' }}</small></span>
           <strong>{{ total() | currency: 'EUR' }}</strong>
         </div>
 
@@ -376,6 +407,11 @@
           </div>
         }
 
+        @if (d.product.ingredients.length && extras().length) {
+          <h3 class="sheet__label">¿Algo más?</h3>
+          <app-extras-picker [extras]="extras()" [selected]="d.added" (toggled)="toggleDetailExtra($event)" />
+        }
+
         @if (quantityOf(d.product.id) > 0) {
           <p class="sheet__incart">🛒 Ya tienes {{ quantityOf(d.product.id) }} en tu pedido.</p>
         }
@@ -387,7 +423,7 @@
             <button type="button" (click)="changeDetailQuantity(1)" aria-label="Uno más">+</button>
           </div>
           <button type="button" class="pbtn pbtn--primary pbtn--grow" (click)="addFromDetail()">
-            Añadir · {{ d.product.price * d.quantity | currency: 'EUR' }}
+            Añadir · {{ unitPrice(d) * d.quantity | currency: 'EUR' }}
           </button>
         </div>
       </section>
@@ -399,7 +435,7 @@
     <div class="sheet-backdrop" (click)="customizing.set(null)">
       <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" (click)="$event.stopPropagation()">
         <h2 id="sheet-title">{{ c.product.name }}</h2>
-        <p>Desmarca lo que <b>no</b> quieres.</p>
+        <p>Desmarca lo que <b>no</b> quieres y marca lo que quieras añadir.</p>
         <div class="checks">
           @for (ing of c.product.ingredients; track ing.id) {
             <label class="check" [class.is-off]="c.removed.includes(ing.id)">
@@ -411,9 +447,12 @@
             </label>
           }
         </div>
+        @if (extras().length) {
+          <app-extras-picker [extras]="extras()" [selected]="c.added" (toggled)="toggleExtra($event)" />
+        }
         @if (c.max > 1) {
           <div class="sheet__units">
-            <span>¿A cuántos se lo quitas?</span>
+            <span>¿A cuántos se lo cambias?</span>
             <div class="qty" role="group" aria-label="Unidades a las que se aplica">
               <button type="button" (click)="changeUnits(-1)" [disabled]="c.units <= 1" aria-label="Una menos">−</button>
               <output aria-live="polite">{{ c.units }}</output>

@@ -1,10 +1,15 @@
-export type Role = 'SUPERADMIN' | 'ADMIN' | 'GESTOR' | 'VISOR';
+import { BusinessType } from './company.model';
+
+export type Role = 'SUPERADMIN' | 'ADMIN' | 'GESTOR' | 'VISOR' | 'CAMARERO' | 'COCINA' | 'REPARTIDOR';
 
 export const ROLE_LABELS: Record<Role, string> = {
   SUPERADMIN: 'Superadministrador',
   ADMIN: 'Administrador',
   GESTOR: 'Gestor',
   VISOR: 'Visor',
+  CAMARERO: 'Camarero',
+  COCINA: 'Cocina',
+  REPARTIDOR: 'Repartidor',
 };
 
 export interface User {
@@ -17,6 +22,8 @@ export interface User {
   /** Empresa del usuario; null solo para SUPERADMIN. */
   companyId: number | null;
   companyName: string | null;
+  /** Tipo de negocio de su empresa (bar y restaurante tienen plano de mesas); null para SUPERADMIN. */
+  companyType: BusinessType | null;
 }
 
 export interface UserRequest {

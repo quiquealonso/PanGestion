@@ -74,10 +74,10 @@
             <span class="color-dot" [style.background]="line.product.displayColor"></span>
             <div class="cart-line__name">
               <strong>{{ line.product.name }}</strong>
-              @if (line.removed.length) {
+              @if (line.removed.length || line.added.length) {
                 <span class="removed">{{ removedLabel(line) }}</span>
               }
-              <small>{{ line.product.price | currency: 'EUR' }} / ud</small>
+              <small>{{ unitPrice(line) | currency: 'EUR' }} / ud</small>
               @if (line.product.ingredients.length) {
                 <span class="line-actions">
                   <button type="button" class="link" (click)="customize(line)">✎ Personalizar</button>
@@ -90,7 +90,7 @@
               <span>{{ line.quantity }}</span>
               <button type="button" (click)="changeLine(line, 1)" aria-label="Añadir uno">+</button>
             </span>
-            <strong class="cart-line__total">{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
+            <strong class="cart-line__total">{{ unitPrice(line) * line.quantity | currency: 'EUR' }}</strong>
             <button type="button" class="btn btn--small" title="Quitar del pedido" (click)="removeLine(line)">✕</button>
           </div>
         } @empty {
@@ -149,9 +149,21 @@
     @case (4) {
       <div class="final">
         <article class="panel">
-          <h3>¿Cuándo se recoge?</h3>
+          @if (delivers() || orderType() === 'DOMICILIO') {
+            <div class="segmented type-choice" role="group" aria-label="Cómo lo recibe">
+              <button type="button" [class.on]="orderType() === 'RECOGER'" (click)="orderType.set('RECOGER')">🏪 Lo recoge</button>
+              <button type="button" [class.on]="orderType() === 'DOMICILIO'" (click)="orderType.set('DOMICILIO')">🏍️ A domicilio</button>
+            </div>
+            @if (orderType() === 'DOMICILIO') {
+              <label class="field">
+                <span>Dirección de entrega</span>
+                <input [ngModel]="address()" (ngModelChange)="address.set($event)" placeholder="C/ Mayor 12, 2.º B" maxlength="255" />
+              </label>
+            }
+          }
+          <h3>¿Cuándo se {{ orderType() === 'DOMICILIO' ? 'entrega' : 'recoge' }}?</h3>
           <label class="field date-field">
-            <span>Día de recogida</span>
+            <span>Día de {{ orderType() === 'DOMICILIO' ? 'entrega' : 'recogida' }}</span>
             <input type="date" [min]="isEdit() ? '' : today" [ngModel]="date()" (ngModelChange)="selectDate($event)" />
           </label>
           <p class="eyebrow slots-title">Franjas disponibles</p>
@@ -171,15 +183,18 @@
           <p class="eyebrow">Confirmación</p>
           <p class="summary__who"><strong>{{ selectedCustomer()?.name }}</strong><br /><small>{{ selectedCustomer()?.email }}</small></p>
           <p class="summary__when">{{ date() | date: 'EEEE d MMMM' }} · {{ time() ?? 'elige una hora' }}</p>
+          @if (orderType() === 'DOMICILIO') {
+            <p class="summary__when">🏍️ {{ address() || 'falta la dirección' }}</p>
+          }
           @for (line of selectedLines(); track line.key) {
             <div class="summary-line">
               <span>
                 {{ line.quantity }} × {{ line.product.name }}
-                @if (line.removed.length) {
+                @if (line.removed.length || line.added.length) {
                   <span class="removed">{{ removedLabel(line) }}</span>
                 }
               </span>
-              <strong>{{ line.product.price * line.quantity | currency: 'EUR' }}</strong>
+              <strong>{{ unitPrice(line) * line.quantity | currency: 'EUR' }}</strong>
             </div>
           }
           <div class="summary-line summary-total"><span>Total</span><strong>{{ total() | currency: 'EUR' }}</strong></div>
@@ -200,7 +215,7 @@
   <!-- Personalizar una linea: marcar los ingredientes que se quitan -->
   @if (customizing(); as c) {
     <app-modal [title]="(c.key === null ? 'Nueva variante · ' : 'Personalizar · ') + c.product.name" width="480px" (closed)="customizing.set(null)">
-      <p class="muted">Desmarca lo que el cliente no quiere. El precio no cambia.</p>
+      <p class="muted">Desmarca lo que el cliente no quiere (el precio no cambia) y marca los extras que añade (suman su precio).</p>
       <div class="ingredient-list">
         @for (ingredient of c.product.ingredients; track ingredient.id) {
           <label class="ingredient" [class.is-removed]="c.removed.includes(ingredient.id)">
@@ -212,6 +227,7 @@
           </label>
         }
       </div>
+      <app-extras-picker [extras]="extras()" [selected]="c.added" (toggled)="toggleExtra($event)" />
       <div class="form-actions customize-foot">
         <span class="stepper">
           <button type="button" (click)="changeCustomizeQuantity(-1)" aria-label="Una menos">−</button>

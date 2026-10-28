@@ -17,6 +17,16 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    /** Pedidos a domicilio de un dia (sin los cancelados), por hora de entrega: la pantalla del repartidor. */
+    @Query("""
+            select o from Order o
+            where o.company.id = :companyId and o.pickupDate = :date
+              and o.type = com.pangestion.model.OrderType.DOMICILIO
+              and o.status <> com.pangestion.model.OrderStatus.CANCELADO
+            order by o.pickupTime, o.id
+            """)
+    List<Order> findForDelivery(@Param("companyId") Long companyId, @Param("date") LocalDate date);
+
     /** Pedidos de una empresa con filtros opcionales. El texto busca por cliente o por numero de pedido. */
     @EntityGraph(attributePaths = "customer")
     @Query("""
@@ -48,6 +58,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByCompanyIdAndPickupDateAndStatusNot(Long companyId, LocalDate date, OrderStatus status);
 
+    long countByCompanyIdAndPickupDateAndStatusIn(Long companyId, LocalDate date, java.util.Collection<OrderStatus> statuses);
+
     /** Pedidos que ocupan una franja de la empresa (los cancelados no cuentan). */
     @Query("""
             select count(o) from Order o
@@ -77,6 +89,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                       @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 
     boolean existsByCustomerId(Long customerId);
+
+    /** Resumen de pedidos de cada cliente de la empresa (los cancelados no cuentan). */
+    interface CustomerOrderStats {
+        Long getCustomerId();
+        long getOrderCount();
+        BigDecimal getTotalSpent();
+        LocalDate getLastOrderDate();
+    }
+
+    @Query("""
+            select o.customer.id as customerId, count(o) as orderCount, coalesce(sum(o.total), 0) as totalSpent,
+                   max(o.pickupDate) as lastOrderDate
+            from Order o
+            where o.company.id = :companyId and o.status <> com.pangestion.model.OrderStatus.CANCELADO
+            group by o.customer.id
+            """)
+    List<CustomerOrderStats> customerStats(@Param("companyId") Long companyId);
 
     long countByCompanyId(Long companyId);
 }

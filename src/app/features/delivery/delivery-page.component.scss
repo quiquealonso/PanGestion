@@ -1,0 +1,248 @@
+/* Pantalla del repartidor: pensada para el movil, una mano y el pulgar (botones grandes, nada de tablas) */
+.delivery {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.delivery__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .live {
+    margin-left: auto;
+  }
+
+  h2 {
+    margin: 0;
+  }
+}
+
+/* Pestanas con el numero grande: se ve de un vistazo cuanto hay */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.3rem 0;
+
+  /* Sin fondo propio en la tira (cortaba el degradado de la pagina): los botones son opacos para leerse al hacer scroll */
+  button {
+    display: grid;
+    gap: 0.1rem;
+    min-height: 3.6rem;
+    padding: 0.35rem 0.2rem;
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
+    background: var(--panel-strong);
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    strong {
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+
+    &.on {
+      border-color: rgba(var(--primary-rgb), 0.55);
+      background: linear-gradient(rgba(var(--primary-rgb), 0.18), rgba(var(--primary-rgb), 0.18)), var(--panel-strong);
+      color: var(--text);
+    }
+  }
+}
+
+.list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.card {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--primary);
+  border-radius: 1rem;
+  background: var(--panel-strong);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &--listo {
+    border-left-color: var(--success);
+  }
+
+  &--transportando {
+    border-left-color: #a78bfa;
+  }
+
+  &--entregado {
+    opacity: 0.7;
+    border-left-color: var(--muted);
+  }
+
+  &--mine {
+    border-color: rgba(167, 139, 250, 0.6);
+  }
+}
+
+.card__top {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.card__time {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.card__id {
+  color: var(--muted);
+}
+
+.card__total {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.card__name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.card__address {
+  font-size: 1rem;
+}
+
+.card__items,
+.card__who {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.card__notes {
+  margin: 0;
+  color: var(--tone-amber);
+  font-size: 0.85rem;
+}
+
+.empty {
+  padding: 1.5rem 0.5rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Hoja desde abajo: las acciones quedan al alcance del pulgar */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.sheet {
+  display: grid;
+  gap: 0.7rem;
+  width: min(640px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 0.6rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border-radius: 1.3rem 1.3rem 0 0;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+  animation: up 180ms ease-out;
+}
+
+.sheet__grip {
+  justify-self: center;
+  width: 2.6rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.sheet__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+
+  strong {
+    font-size: 1.2rem;
+  }
+}
+
+.sheet__eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.sheet__address {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.sheet__items {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.sheet__links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 0.5rem;
+
+  .btn {
+    justify-content: center;
+    min-height: 3rem;
+  }
+}
+
+.sheet__actions {
+  display: grid;
+  gap: 0.5rem;
+
+  .btn {
+    justify-content: center;
+    min-height: 3rem;
+  }
+
+  .big {
+    min-height: 3.6rem;
+    font-size: 1.15rem;
+  }
+}
+
+@keyframes up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}

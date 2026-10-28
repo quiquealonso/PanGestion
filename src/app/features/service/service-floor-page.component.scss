@@ -1,0 +1,102 @@
+/* Mesa del plano pulsable: el boton no pinta nada, solo la mesa */
+.pick {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+}
+
+.dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--primary-rgb), 0.45);
+  background: var(--panel-strong);
+
+  &--busy {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.35);
+  }
+}
+
+/* Vista de lista: botones grandes, comodos en el movil */
+.table-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+
+.table-card {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 92px;
+  align-content: start;
+  padding: 0.8rem 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: rgba(var(--tint-rgb), 0.03);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+  }
+
+  span,
+  small {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  &.is-busy {
+    border-color: rgba(var(--accent-rgb), 0.6);
+    background: rgba(var(--accent-rgb), 0.14);
+  }
+}
+
+.table-card .table-card__total {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.table-card .table-card__ready {
+  color: var(--success-text);
+  font-weight: 700;
+}
+
+.open-form {
+  display: grid;
+  gap: 1rem;
+
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .field > span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}
+
+.head-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}

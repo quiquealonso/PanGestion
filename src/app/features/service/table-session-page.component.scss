@@ -1,0 +1,367 @@
+/* Comanda: cabecera, comensales, carta y ticket. Movil primero; en pantalla ancha, carta y ticket juntos. */
+.comanda {
+  padding-bottom: 4.5rem;
+
+  /* Las filas con scroll horizontal (comensales, categorias) no deben ensanchar la pagina */
+  > *,
+  .layout-comanda > * {
+    min-width: 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+
+  h2 {
+    margin: 0;
+  }
+
+  p {
+    margin: 0.15rem 0 0;
+  }
+}
+
+.head__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.head__notes {
+  color: var(--tone-amber);
+  font-size: 0.85rem;
+}
+
+.head__total {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.3rem;
+  white-space: nowrap;
+}
+
+.back {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Movil: los botones de la mesa en una sola fila que se desliza (no ocupan dos filas sobre la carta) */
+@media (max-width: 720px) {
+  .head__actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+
+    .btn {
+      flex: none;
+    }
+  }
+}
+
+.closed {
+  padding: 1rem;
+}
+
+.chip.removed {
+  border-color: rgba(var(--danger-rgb), 0.55);
+  background: rgba(var(--danger-rgb), 0.14);
+  color: var(--danger-text);
+  text-decoration: line-through;
+}
+
+.tabs {
+  display: none;
+}
+
+.count {
+  margin-left: 0.3rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.78rem;
+}
+
+.count--ready {
+  background: var(--success);
+}
+
+.layout-comanda {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Carta */
+.menu__search {
+  margin-bottom: 0.7rem;
+}
+
+.cats {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
+
+  .chip {
+    flex: none;
+    border-left-width: 4px;
+  }
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+
+.product {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  gap: 0.4rem;
+  min-height: 74px;
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--c, var(--primary));
+  background: rgba(var(--tint-rgb), 0.03);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.product__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.product__price {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.product__count {
+  position: absolute;
+  top: -0.4rem;
+  right: -0.4rem;
+  display: grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Ticket */
+.line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(var(--line-rgb), 0.12);
+}
+
+.line__body {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+
+  small {
+    color: var(--tone-amber);
+    font-size: 0.78rem;
+  }
+}
+
+button.line__body {
+  cursor: pointer;
+}
+
+.line__price {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+
+  button {
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid var(--border);
+    border-radius: 0.55rem;
+    background: rgba(var(--tint-rgb), 0.05);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  strong {
+    min-width: 1.4rem;
+    text-align: center;
+  }
+}
+
+.round {
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.4rem;
+  background: rgba(var(--tint-rgb), 0.08);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.icon-btn {
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(var(--danger-rgb), 0.14);
+    color: var(--danger);
+  }
+}
+
+.ready-all {
+  width: 100%;
+  margin-bottom: 0.4rem;
+  border-color: rgba(var(--success-rgb), 0.5);
+  background: rgba(var(--success-rgb), 0.16);
+  color: var(--success-text);
+  font-weight: 700;
+}
+
+/* Estado de cada producto en cocina; "Servir" es un boton */
+.status {
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.45rem;
+  border: 0;
+  background: rgba(var(--tint-rgb), 0.08);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &--preparando {
+    background: rgba(var(--accent-rgb), 0.2);
+    color: var(--tone-amber);
+  }
+
+  &--listo {
+    padding: 0.4rem 0.7rem;
+    background: var(--success);
+    color: var(--on-primary);
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  &--servido {
+    background: transparent;
+  }
+}
+
+.send {
+  width: 100%;
+  margin-top: 0.9rem;
+}
+
+.sent-head {
+  margin-top: 1.6rem;
+}
+
+.send-bar {
+  display: none;
+}
+
+.edit {
+  display: grid;
+  gap: 1rem;
+
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .field > span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}
+
+/* Movil: una parte cada vez (pestanas) y barra fija para enviar */
+@media (max-width: 860px) {
+  .tabs {
+    display: inline-flex;
+    justify-self: stretch;
+
+    button {
+      flex: 1;
+    }
+  }
+
+  .layout-comanda {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .is-hidden {
+    display: none;
+  }
+
+  .send-bar {
+    position: fixed;
+    right: 0.8rem;
+    bottom: calc(4.9rem + env(safe-area-inset-bottom)); /* encima del menu inferior */
+    left: 0.8rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.7rem 0.6rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    background: var(--panel-strong);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+    span {
+      flex: 1;
+      font-weight: 600;
+    }
+  }
+}

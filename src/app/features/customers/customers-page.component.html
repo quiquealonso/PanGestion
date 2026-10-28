@@ -3,46 +3,102 @@
     <div>
       <p class="eyebrow">Personas</p>
       <h2>Clientes</h2>
-      <p>Particulares y negocios que compran a la panadería, con su contacto e historial de pedidos.</p>
+      <p>Particulares y negocios que hacen pedidos a {{ auth.user()?.companyName ?? 'tu negocio' }}, con su contacto e historial.</p>
     </div>
     @if (auth.canEdit()) {
       <button type="button" class="btn btn--primary" (click)="startCreate()">+ Nuevo cliente</button>
     }
   </header>
 
+  @let st = stats();
   <section class="stats-grid">
-    <article class="panel stat-card"><span>Clientes</span><strong>{{ customers().length }}</strong></article>
-    <article class="panel stat-card"><span>Negocios</span><strong>{{ businessCount() }}</strong></article>
-    <article class="panel stat-card"><span>Particulares</span><strong>{{ customers().length - businessCount() }}</strong></article>
+    <article class="panel stat-card">
+      <span>Clientes</span><strong>{{ customers().length }}</strong>
+      <small>{{ businessCount() }} negocios · {{ customers().length - businessCount() }} particulares</small>
+    </article>
+    <article class="panel stat-card">
+      <span>Nuevos por semana</span><strong>{{ st.newPerWeek | number: '1.0-1' }}</strong>
+      <small>media de 8 semanas · {{ st.newThisWeek }} esta semana</small>
+    </article>
+    <article class="panel stat-card">
+      <span>Activos (30 días)</span><strong>{{ st.active }}</strong>
+      <small>{{ st.activePct }}% del total · {{ st.withoutOrders }} sin pedidos</small>
+    </article>
+    <article class="panel stat-card">
+      <span>Pedidos por cliente</span><strong>{{ st.ordersPerBuyer | number: '1.0-1' }}</strong>
+      <small>entre los que han pedido</small>
+    </article>
+    <article class="panel stat-card">
+      <span>Gasto medio por cliente</span><strong>{{ st.spentPerBuyer | currency: 'EUR' }}</strong>
+      <small>ticket medio {{ st.avgTicket | currency: 'EUR' }}</small>
+    </article>
+    <article class="panel stat-card">
+      <span>Mejor cliente</span><strong class="stat-name">{{ st.top?.name ?? '—' }}</strong>
+      <small>{{ st.top ? (st.top.totalSpent | currency: 'EUR') + ' en ' + st.top.orderCount + ' pedidos' : 'Aún no hay pedidos' }}</small>
+    </article>
   </section>
+
+  <div class="panel toolbar filters">
+    <input type="search" placeholder="Buscar por nombre, email o razón social"
+           [(ngModel)]="search" (ngModelChange)="load()" />
+    <select aria-label="Tipo de cliente" [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)">
+      <option value="">Todos los tipos</option>
+      <option value="business">Negocios</option>
+      <option value="person">Particulares</option>
+    </select>
+    <select aria-label="Número de pedidos" [ngModel]="ordersFilter()" (ngModelChange)="ordersFilter.set($event)">
+      <option value="">Cualquier nº de pedidos</option>
+      @for (r of ordersRanges; track r.value) {
+        <option [value]="r.value">{{ r.label }}</option>
+      }
+    </select>
+    <select aria-label="Total gastado" [ngModel]="spentFilter()" (ngModelChange)="spentFilter.set($event)">
+      <option value="">Cualquier gasto</option>
+      @for (r of spentRanges; track r.value) {
+        <option [value]="r.value">{{ r.label }}</option>
+      }
+    </select>
+    <select aria-label="Ordenar" [ngModel]="sort()" (ngModelChange)="sort.set($event)">
+      <option value="name">Orden: nombre</option>
+      <option value="orders">Orden: más pedidos</option>
+      <option value="spent">Orden: más gastado</option>
+      <option value="last">Orden: último pedido</option>
+      <option value="newest">Orden: más recientes</option>
+    </select>
+    @if (hasFilters()) {
+      <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
+    }
+  </div>
 
   <article class="panel group">
     <div class="group__head">
       <div class="group__title">
         <span class="badge" style="background: var(--primary)">C</span>
         <div>
-          <h3>Todos los clientes</h3>
-          <p>{{ customers().length }} clientes</p>
+          <h3>{{ hasFilters() ? 'Clientes filtrados' : 'Todos los clientes' }}</h3>
+          <p>{{ filtered().length }} de {{ customers().length }} clientes</p>
         </div>
       </div>
-      <input type="search" class="search" placeholder="Buscar por nombre, email o razón social"
-             [(ngModel)]="search" (ngModelChange)="load()" />
     </div>
     <div class="group__body">
       <div class="card-grid">
-        @for (customer of customers(); track customer.id) {
+        @for (customer of filtered(); track customer.id) {
           <div class="card" (click)="select(customer)">
             <div>
               <p class="card__title">{{ customer.name }}</p>
-              <p class="card__sub">{{ customer.email }}</p>
               <p class="card__sub">{{ customer.phone || 'Sin teléfono' }}</p>
+            </div>
+            <div class="numbers">
+              <div><strong>{{ customer.orderCount }}</strong><span>{{ customer.orderCount === 1 ? 'pedido' : 'pedidos' }}</span></div>
+              <div><strong>{{ customer.totalSpent | currency: 'EUR' }}</strong><span>gastado</span></div>
             </div>
             <div class="card__foot">
               <span class="tone" [class.tone--pendiente]="customer.businessName">{{ customer.businessName || 'Particular' }}</span>
+              <span class="card__sub">{{ customer.lastOrderDate ? 'Último ' + (customer.lastOrderDate | date: 'dd/MM/yy') : 'Sin pedidos' }}</span>
             </div>
           </div>
         } @empty {
-          <p class="empty">No hay clientes con esa búsqueda.</p>
+          <p class="empty">No hay clientes con estos filtros.</p>
         }
       </div>
     </div>
@@ -57,8 +113,14 @@
         <label class="full"><span>Nombre</span><input formControlName="name" /></label>
         <label><span>Email</span><input type="email" formControlName="email" /></label>
         <label><span>Teléfono</span><input formControlName="phone" /></label>
-        <label><span>Razón social (si es un negocio)</span><input formControlName="businessName" placeholder="Vacío = particular" /></label>
-        <label><span>CIF / NIF</span><input formControlName="taxId" /></label>
+        <div class="full kind" role="group" aria-label="Tipo de cliente">
+          <button type="button" [class.on]="!isBusiness()" [disabled]="!auth.canEdit()" (click)="isBusiness.set(false)">Particular</button>
+          <button type="button" [class.on]="isBusiness()" [disabled]="!auth.canEdit()" (click)="isBusiness.set(true)">Negocio</button>
+        </div>
+        @if (isBusiness()) {
+          <label><span>Razón social</span><input formControlName="businessName" /></label>
+          <label><span>CIF / NIF</span><input formControlName="taxId" /></label>
+        }
         @if (auth.canEdit()) {
           <div class="form-actions full">
             <button type="submit" class="btn btn--primary">Guardar</button>
@@ -70,7 +132,7 @@
       </form>
 
       @if (selected()) {
-        <div class="history">
+        <div class="history" [class.history--tall]="!isBusiness()">
           <div class="panel-head">
             <h3>Pedidos</h3>
             <span>{{ orders().length }} · {{ totalSpent() | currency: 'EUR' }}</span>

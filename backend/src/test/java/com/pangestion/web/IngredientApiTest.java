@@ -94,4 +94,18 @@ class IngredientApiTest extends ApiTestSupport {
         mvc.perform(deleteRequest("/api/ingredients/{id}", free.getId()).with(as(gestor))).andExpect(status().isNoContent());
         assertThat(ingredientRepository.findById(free.getId())).isEmpty();
     }
+
+    @Test
+    @DisplayName("precio de extra: se guarda y se puede quitar (null = no es extra); negativo: 400")
+    void extraPrice() throws Exception {
+        String json = mvc.perform(postJson("/api/ingredients", "{\"name\": \"Huevo\", \"allergen\": \"Huevo\", \"extraPrice\": 1.00}")
+                        .with(as(user(company("Bar"), Role.GESTOR))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.extraPrice").value(1.00))
+                .andReturn().getResponse().getContentAsString();
+        mvc.perform(postJson("/api/ingredients", "{\"name\": \"Bacon\", \"allergen\": null, \"extraPrice\": -1}")
+                        .with(as(user(company("Bar 2"), Role.GESTOR))))
+                .andExpect(status().isBadRequest());
+        org.assertj.core.api.Assertions.assertThat(json).contains("\"extraPrice\":1.0");
+    }
 }

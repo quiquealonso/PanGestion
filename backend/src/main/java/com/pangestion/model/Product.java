@@ -54,6 +54,11 @@ public class Product {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Pantalla donde se prepara (bares y restaurantes). Con valor por defecto para las filas ya existentes. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(10) default 'COCINA' not null")
+    private Station station = Station.COCINA;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;

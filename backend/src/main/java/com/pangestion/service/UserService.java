@@ -3,6 +3,7 @@ package com.pangestion.service;
 import com.pangestion.dto.UserDto;
 import com.pangestion.exception.BusinessException;
 import com.pangestion.exception.NotFoundException;
+import com.pangestion.model.BusinessType;
 import com.pangestion.model.Role;
 import com.pangestion.model.User;
 import com.pangestion.repository.UserRepository;
@@ -114,6 +115,10 @@ public class UserService {
                 throw new BusinessException("No puedes crear superadministradores");
             }
             user.setCompany(companyService.current());
+        }
+        if ((request.role() == Role.CAMARERO || request.role() == Role.COCINA)
+                && user.getCompany().getType() == BusinessType.PANADERIA) {
+            throw new BusinessException("Los roles camarero y cocina solo existen en bares y restaurantes");
         }
         user.setName(request.name().trim());
         user.setEmail(request.email().trim().toLowerCase());

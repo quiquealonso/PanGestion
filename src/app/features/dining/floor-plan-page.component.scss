@@ -1,0 +1,118 @@
+.empty-plan {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+}
+
+.editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.plan__edit {
+  margin-left: auto;
+}
+
+.mini {
+  display: inline-block;
+  margin-right: 0.3rem;
+  border-radius: 3px;
+  border: 1.5px solid currentColor;
+  vertical-align: middle;
+
+  &--round {
+    border-radius: 50%;
+  }
+}
+
+/* El plano (.floor-stage, .floor-canvas, .floor-table) esta en styles.scss: lo comparte el servicio de mesas */
+.floor-canvas {
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.4);
+  }
+}
+
+.floor-table {
+  cursor: grab;
+  transition: left 120ms ease, top 120ms ease, width 120ms ease, height 120ms ease;
+
+  &.is-dragging {
+    z-index: 3;
+    cursor: grabbing;
+    transition: none;
+  }
+
+  &.is-readonly {
+    cursor: pointer;
+  }
+}
+
+.handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid var(--panel-strong);
+  background: var(--primary);
+  cursor: nwse-resize;
+}
+
+.plan__hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+}
+
+/* Panel lateral de la mesa seleccionada */
+.side__form {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  label,
+  .field {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  label > span,
+  .field > span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}
+
+.size {
+  display: flex;
+  justify-self: start;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.side__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}

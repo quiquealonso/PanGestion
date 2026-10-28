@@ -1,0 +1,157 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Sala</p>
+      <h2>Sala y mesas</h2>
+      <p>Distribución de las mesas por zonas. Arrastra una mesa para moverla y usa la esquina para cambiar su tamaño.</p>
+    </div>
+    @if (auth.canEdit()) {
+      <button type="button" class="btn btn--primary" (click)="openNewArea()">+ Nueva zona</button>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Cargando el plano…</p>
+  } @else if (!areas().length) {
+    <article class="panel empty-plan">
+      <h3>Aún no hay zonas</h3>
+      <p>Crea la primera (Interior, Terraza, Salón…) y coloca sus mesas.</p>
+      @if (auth.canEdit()) {
+        <button type="button" class="btn btn--primary" (click)="openNewArea()">+ Crear zona</button>
+      }
+    </article>
+  } @else {
+    <nav class="zones" aria-label="Zonas">
+      @for (area of areas(); track area.id) {
+        <button type="button" class="zone" [class.is-active]="area.id === active()?.id" (click)="selectArea(area)">
+          {{ area.name }} <small>{{ area.tables.length }} mesas · {{ area.seats }} plazas</small>
+        </button>
+      }
+      <span class="zones__total">Total: {{ totals().tables }} mesas · {{ totals().seats }} plazas</span>
+    </nav>
+
+    @if (active(); as area) {
+      <div class="editor">
+        <article class="panel plan">
+          @if (auth.canEdit()) {
+            <div class="plan__tools">
+              <span class="muted">Añadir:</span>
+              @for (preset of presets; track preset.label) {
+                <button type="button" class="btn btn--small" (click)="addTable(preset)">
+                  <i class="mini" [class.mini--round]="preset.shape === 'ROUND'"
+                     [style.width.px]="preset.width * 7" [style.height.px]="preset.height * 7"></i>
+                  {{ preset.label }}
+                </button>
+              }
+              <button type="button" class="btn btn--small plan__edit" (click)="openEditArea()">Editar zona</button>
+            </div>
+          }
+
+          <div class="floor-stage">
+            <div #canvas class="floor-canvas" tabindex="0" aria-label="Plano de la zona"
+                 [style.aspect-ratio]="area.width + ' / ' + area.height" [style.--cols]="area.width"
+                 [style.background-size]="(100 / area.width) + '% ' + (100 / area.height) + '%'"
+                 (pointerdown)="select(null)" (keydown)="onKey($event)">
+              @for (table of area.tables; track table.id) {
+                @let t = view(table);
+                <div class="floor-table"
+                     [class.is-dragging]="draft()?.id === t.id"
+                     [class.is-readonly]="!auth.canEdit()"
+                     [style.left.%]="(t.x / area.width) * 100" [style.top.%]="(t.y / area.height) * 100"
+                     [style.width.%]="(t.width / area.width) * 100" [style.height.%]="(t.height / area.height) * 100"
+                     (pointerdown)="startGesture($event, table, 'move')">
+                  <app-dining-table [table]="t" [selected]="t.id === selectedId()"
+                                    [invalid]="draft()?.id === t.id && draftInvalid()" />
+                  @if (t.id === selectedId() && auth.canEdit()) {
+                    <span class="handle" title="Cambiar tamaño" (pointerdown)="startGesture($event, table, 'resize')"></span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+          <p class="plan__hint muted">
+            {{ area.width }} × {{ area.height }} casillas
+            @if (auth.canEdit()) {
+              · Con una mesa seleccionada: flechas para moverla, Supr para borrarla.
+            }
+          </p>
+        </article>
+
+        <aside class="panel side">
+          @if (selected(); as table) {
+            <div class="panel-head"><h3>Mesa {{ table.name }}</h3></div>
+            <fieldset class="side__form" [disabled]="!auth.canEdit()">
+              <label><span>Nombre</span>
+                <input [(ngModel)]="nameDraft" maxlength="20" (change)="rename()" (keydown.enter)="rename()" />
+              </label>
+              <div class="field">
+                <span>Plazas</span>
+                <div class="stepper">
+                  <button type="button" (click)="step('seats', -1)" [disabled]="table.seats <= 1">−</button>
+                  <strong>{{ table.seats }}</strong>
+                  <button type="button" (click)="step('seats', 1)" [disabled]="table.seats >= 30">+</button>
+                </div>
+              </div>
+              <div class="field">
+                <span>Forma</span>
+                <div class="segmented">
+                  <button type="button" [class.on]="table.shape === 'ROUND'" (click)="patch({ shape: 'ROUND' })">Redonda</button>
+                  <button type="button" [class.on]="table.shape === 'RECT'" (click)="patch({ shape: 'RECT' })">Rectangular</button>
+                </div>
+              </div>
+              <div class="field">
+                <span>Tamaño</span>
+                <div class="size">
+                  <div class="stepper">
+                    <button type="button" (click)="step('width', -1)" [disabled]="table.width <= 1">−</button>
+                    <strong>{{ table.width }}</strong>
+                    <button type="button" (click)="step('width', 1)" [disabled]="table.width >= 12">+</button>
+                  </div>
+                  <span class="muted">×</span>
+                  <div class="stepper">
+                    <button type="button" (click)="step('height', -1)" [disabled]="table.height <= 1">−</button>
+                    <strong>{{ table.height }}</strong>
+                    <button type="button" (click)="step('height', 1)" [disabled]="table.height >= 12">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="side__actions">
+                <button type="button" class="btn btn--small" (click)="rotate()">↻ Girar</button>
+                <button type="button" class="btn btn--small" (click)="duplicate()">⧉ Duplicar</button>
+                <button type="button" class="btn btn--small btn--danger" (click)="removeTable()">Eliminar</button>
+              </div>
+            </fieldset>
+          } @else {
+            <div class="panel-head"><h3>{{ area.name }}</h3></div>
+            <p class="muted">{{ area.tables.length }} mesas · {{ area.seats }} plazas</p>
+            <p class="muted">Pulsa una mesa para ver y cambiar sus datos.</p>
+          }
+        </aside>
+      </div>
+    }
+  }
+
+  @if (areaDialog(); as mode) {
+    <app-modal [title]="mode === 'new' ? 'Nueva zona' : 'Editar zona'" width="460px" (closed)="areaDialog.set(null)">
+      <form class="form-grid" (ngSubmit)="saveArea()">
+        <label class="full"><span>Nombre</span>
+          <input name="name" [(ngModel)]="areaForm.name" required maxlength="60" list="area-names" />
+          <datalist id="area-names">
+            @for (n of areaNames; track n) {
+              <option [value]="n"></option>
+            }
+          </datalist>
+        </label>
+        <label><span>Ancho (casillas)</span><input name="width" type="number" min="6" max="60" [(ngModel)]="areaForm.width" /></label>
+        <label><span>Fondo (casillas)</span><input name="height" type="number" min="4" max="40" [(ngModel)]="areaForm.height" /></label>
+        <p class="full muted">Cada casilla es más o menos medio metro: una mesa de 2 personas ocupa 2 × 2.</p>
+        <div class="form-actions full">
+          <button type="submit" class="btn btn--primary" [disabled]="!areaForm.name.trim()">Guardar</button>
+          @if (mode === 'edit') {
+            <button type="button" class="btn btn--danger" (click)="removeArea()">Eliminar zona</button>
+          }
+        </div>
+      </form>
+    </app-modal>
+  }
+</section>

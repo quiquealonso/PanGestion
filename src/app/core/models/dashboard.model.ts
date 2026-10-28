@@ -18,3 +18,22 @@ export interface WeeklySales {
   current: number[];
   previous: number[];
 }
+
+/** Inicio de un bar o restaurante: la sala ahora mismo y la caja de hoy. */
+export interface DiningDashboard {
+  tables: number;
+  occupiedTables: number;
+  openSessions: number;
+  guestsNow: number;
+  /** Unidades listas para llevar a las mesas */
+  readyItems: number;
+  kitchenQueue: number;
+  barQueue: number;
+  /** Pedidos para llevar de hoy sin entregar */
+  takeawayToday: number;
+  revenueToday: number;
+  cashToday: number;
+  cardToday: number;
+  closedToday: number;
+  avgTicketToday: number;
+}

@@ -1,14 +1,43 @@
-<div class="shell">
+<!-- El repartidor solo usa su pantalla: sin menu lateral ni menu inferior, solo una cabecera con su nombre -->
+<div class="shell" [class.shell--collapsed]="collapsed()" [class.shell--driver]="auth.isDriver()">
   <aside class="sidebar">
     <div class="brand">
-      <span class="brand__mark">P</span>
-      <div>
+      @if (auth.user(); as user) {
+        <button type="button" class="brand__mark" (click)="toggleMenu($event)" [attr.aria-expanded]="menuOpen()"
+                aria-haspopup="menu" [attr.aria-label]="'Menú de ' + user.name" [title]="user.name">{{ initials() }}</button>
+      }
+      <div class="brand__text">
         <p>PanGestión</p>
         <span>{{ auth.user()?.companyName ?? 'Administración de empresas' }}</span>
       </div>
+      <button type="button" class="collapse-btn" (click)="toggleCollapsed()"
+              [attr.aria-label]="collapsed() ? 'Desplegar menú' : 'Plegar menú'" [title]="collapsed() ? 'Desplegar menú' : 'Plegar menú'">
+        {{ collapsed() ? '›' : '‹' }}
+      </button>
     </div>
 
     <nav class="nav">
+      <ng-container *ngTemplateOutlet="navLinks" />
+    </nav>
+
+  </aside>
+
+  <main class="workspace">
+    @if (auth.isDriver() && auth.user(); as user) {
+      <header class="driver-bar">
+        <button type="button" class="brand__mark" (click)="toggleMenu($event)" [attr.aria-expanded]="menuOpen()"
+                aria-haspopup="menu" [attr.aria-label]="'Menú de ' + user.name">{{ initials() }}</button>
+        <strong>{{ user.name }}</strong>
+      </header>
+    }
+    <section class="content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>
+
+<!-- Enlaces del menu: los usa el lateral (ordenador) y la hoja "Menu" del movil -->
+<ng-template #navLinks>
       @if (auth.isSuperAdmin()) {
         <div class="nav__group">
           <span class="nav__label">Plataforma</span>
@@ -16,52 +45,152 @@
           <a routerLink="/users" routerLinkActive="is-active">Usuarios</a>
           <a href="/pedido" target="_blank" rel="noopener">Web de pedidos ↗</a>
         </div>
-      } @else {
+      } @else if (auth.isKitchen()) {
         <div class="nav__group">
-          <span class="nav__label">Operaciones</span>
-          <a routerLink="/dashboard" routerLinkActive="is-active">Inicio</a>
-          <a routerLink="/orders" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Pedidos</a>
-          <a routerLink="/production" routerLinkActive="is-active">Producción del día</a>
-          @if (auth.canEdit()) {
-            <a routerLink="/orders/new" routerLinkActive="is-active">Nuevo pedido</a>
-          }
-          <a routerLink="/customers" routerLinkActive="is-active">Clientes</a>
+          <span class="nav__label">Sala</span>
+          <a routerLink="/kitchen" routerLinkActive="is-active">Cocina y barra</a>
         </div>
+      } @else if (auth.isDriver()) {
+        <div class="nav__group">
+          <span class="nav__label">Reparto</span>
+          <a routerLink="/delivery" routerLinkActive="is-active">Pedidos a domicilio</a>
+        </div>
+      } @else if (auth.isWaiter()) {
+        <div class="nav__group">
+          <span class="nav__label">Sala</span>
+          <a routerLink="/service" routerLinkActive="is-active">Servicio de mesas</a>
+          <a routerLink="/bar" routerLinkActive="is-active">Barra y cobros</a>
+        </div>
+      } @else {
+        @if (auth.hasDining()) {
+          <!-- Bar o restaurante: primero la sala; los encargos van aparte y la cocina sustituye a la producción -->
+          <div class="nav__group">
+            <span class="nav__label">Sala</span>
+            <a routerLink="/dashboard" routerLinkActive="is-active">Inicio</a>
+            @if (auth.canServe()) {
+              <a routerLink="/service" routerLinkActive="is-active">Servicio de mesas</a>
+              <a routerLink="/bar" routerLinkActive="is-active">Barra y cobros</a>
+              <a routerLink="/kitchen" routerLinkActive="is-active">Cocina y barra</a>
+            }
+            @if (auth.canReport()) {
+              <a routerLink="/dining-report" routerLinkActive="is-active">Informes de sala</a>
+            }
+          </div>
+          <div class="nav__group">
+            <span class="nav__label">Para llevar</span>
+            <a routerLink="/orders" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Pedidos</a>
+            @if (auth.canEdit()) {
+              <a routerLink="/orders/new" routerLinkActive="is-active">Nuevo pedido</a>
+            }
+            <a routerLink="/customers" routerLinkActive="is-active">Clientes</a>
+            @if (auth.canDeliver()) {
+              <a routerLink="/delivery" routerLinkActive="is-active">Reparto a domicilio</a>
+            }
+          </div>
+        } @else {
+          <div class="nav__group">
+            <span class="nav__label">Operaciones</span>
+            <a routerLink="/dashboard" routerLinkActive="is-active">Inicio</a>
+            <a routerLink="/orders" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Pedidos</a>
+            <a routerLink="/production" routerLinkActive="is-active">Producción del día</a>
+            @if (auth.canEdit()) {
+              <a routerLink="/orders/new" routerLinkActive="is-active">Nuevo pedido</a>
+            }
+            <a routerLink="/customers" routerLinkActive="is-active">Clientes</a>
+            @if (auth.canDeliver()) {
+              <a routerLink="/delivery" routerLinkActive="is-active">Reparto a domicilio</a>
+            }
+          </div>
+        }
 
         <div class="nav__group">
           <span class="nav__label">Catálogo</span>
           <a routerLink="/catalog/products" routerLinkActive="is-active">Productos</a>
           <a routerLink="/catalog/categories" routerLinkActive="is-active">Categorías</a>
           <a routerLink="/catalog/ingredients" routerLinkActive="is-active">Ingredientes</a>
+          @if (auth.hasDining()) {
+            <a routerLink="/catalog/kitchen-order" routerLinkActive="is-active">Orden en cocina</a>
+          }
         </div>
 
         <div class="nav__group">
           <span class="nav__label">Empresa</span>
           <a routerLink="/company" routerLinkActive="is-active">Mi empresa</a>
+          @if (auth.hasDining()) {
+            <a routerLink="/dining" routerLinkActive="is-active">Sala y mesas</a>
+          }
           @if (auth.canManageUsers()) {
             <a routerLink="/users" routerLinkActive="is-active">Usuarios</a>
           }
           <a href="/pedido" target="_blank" rel="noopener">Web de pedidos ↗</a>
         </div>
       }
-    </nav>
+</ng-template>
 
-    @if (auth.user(); as user) {
-      <section class="support-card">
-        <p class="eyebrow">{{ roleLabels[user.role] }}</p>
-        <h2>{{ user.name }}</h2>
-        <p>{{ user.email }}</p>
-        <button type="button" class="btn btn--small logout" (click)="auth.logout()">Cerrar sesión</button>
-      </section>
+<!-- Movil: menu fijo abajo, al alcance del pulgar. El ultimo boton abre el resto del menu y la cuenta -->
+@if (!auth.isDriver()) {
+<nav class="tabbar" aria-label="Menú principal">
+  @for (tab of tabs(); track tab.route) {
+    <a class="tabbar__item" [routerLink]="tab.route" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: !!tab.exact }">
+      <span class="tabbar__icon" aria-hidden="true">{{ tab.icon }}</span>
+      <span>{{ tab.label }}</span>
+    </a>
+  }
+  <button type="button" class="tabbar__item" [class.is-active]="sheetOpen()" (click)="sheetOpen.set(!sheetOpen())"
+          [attr.aria-expanded]="sheetOpen()">
+    @if (hasMore()) {
+      <span class="tabbar__icon" aria-hidden="true">☰</span>
+      <span>Menú</span>
+    } @else {
+      <span class="tabbar__avatar" aria-hidden="true">{{ initials() }}</span>
+      <span>Yo</span>
     }
-  </aside>
+  </button>
+</nav>
+}
 
-  <main class="workspace">
-    <section class="content">
-      <router-outlet></router-outlet>
+@if (sheetOpen() && auth.user(); as user) {
+  <div class="sheet-backdrop" (click)="sheetOpen.set(false)">
+    <section class="sheet" role="dialog" aria-modal="true" aria-label="Menú" (click)="$event.stopPropagation()">
+      <span class="sheet__grip" aria-hidden="true"></span>
+      <div class="sheet__user">
+        <span class="brand__mark" aria-hidden="true">{{ initials() }}</span>
+        <div>
+          <strong>{{ user.name }}</strong>
+          <span>{{ roleLabels[user.role] }} · {{ user.companyName ?? 'Plataforma' }}</span>
+        </div>
+      </div>
+      @if (hasMore()) {
+        <nav class="nav nav--sheet">
+          <ng-container *ngTemplateOutlet="navLinks" />
+        </nav>
+      }
+      <div class="sheet__actions">
+        <button type="button" class="btn" (click)="theme.toggle()">
+          {{ theme.theme() === 'dark' ? '☀ Modo claro' : '☾ Modo oscuro' }}
+        </button>
+        <button type="button" class="btn" (click)="auth.logout()">Cerrar sesión</button>
+      </div>
     </section>
-  </main>
-</div>
+  </div>
+}
+
+@if (menuOpen() && auth.user(); as user) {
+  <div class="user-menu__panel" role="menu" (click)="$event.stopPropagation()">
+    <p class="eyebrow">{{ roleLabels[user.role] }}</p>
+    <strong>{{ user.name }}</strong>
+    <span>{{ user.email }}</span>
+    <button type="button" class="btn btn--small" role="menuitem" (click)="theme.toggle()"
+            [attr.aria-label]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+      {{ theme.theme() === 'dark' ? '☀ Modo claro' : '☾ Modo oscuro' }}
+    </button>
+    <button type="button" class="btn btn--small" role="menuitem" (click)="auth.logout()">Cerrar sesión</button>
+  </div>
+}
+
+@if (auth.canServe() || auth.isDriver()) {
+  <app-ready-alerts />
+}
 
 <div class="toasts" aria-live="polite">
   @for (toast of notifications.toasts(); track toast.id) {

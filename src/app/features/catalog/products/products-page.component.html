@@ -102,6 +102,20 @@
           <span>{{ form.controls.ownColor.value ? 'Color del producto' : 'Usa el color de la categoría' }}</span>
           <input type="color" formControlName="color" />
         </label>
+        @if (auth.hasDining()) {
+          <label>
+            <span>Se prepara en</span>
+            @if (categoryStation(); as forced) {
+              <select disabled><option>{{ stationLabels[forced] }} (lo marca la categoría)</option></select>
+            } @else {
+              <select formControlName="station">
+                @for (s of stations; track s) {
+                  <option [ngValue]="s">{{ stationLabels[s] }}</option>
+                }
+              </select>
+            }
+          </label>
+        }
         <label class="full check"><input type="checkbox" formControlName="active" /> Activo (se ofrece a los clientes)</label>
         <div class="full field">
           <span>Foto</span>

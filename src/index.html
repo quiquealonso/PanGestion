@@ -7,6 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#09111f">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    // Tema claro/oscuro antes de que arranque Angular (evita el parpadeo). Lo gestiona ThemeService.
+    try {
+      var saved = localStorage.getItem('pangestion.theme');
+      document.documentElement.dataset.theme = saved === 'light' || saved === 'dark' ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <app-root></app-root>

@@ -1,7 +1,7 @@
 <section class="page">
   <header class="page-head">
     <div>
-      <p class="eyebrow">Pedidos</p>
+      <p class="eyebrow">{{ auth.hasDining() ? 'Pedidos para llevar' : 'Pedidos' }}</p>
       <h2>Del encargo a la entrega</h2>
       <p>{{ orders().length }} pedidos · {{ totalAmount() | currency: 'EUR' }} en total</p>
     </div>
@@ -62,7 +62,7 @@
                 <div class="card__top">
                   <div>
                     <p class="card__title">#{{ order.id }} · {{ order.customerName }}</p>
-                    <p class="card__sub">Recogida a las {{ order.pickupTime }}</p>
+                    <p class="card__sub">{{ order.type === 'DOMICILIO' ? '🏍️ Entrega' : 'Recogida' }} a las {{ order.pickupTime }}</p>
                     <p class="card__sub">{{ order.itemCount }} {{ order.itemCount === 1 ? 'unidad' : 'unidades' }}</p>
                   </div>
                   <span class="card__price">{{ order.total | currency: 'EUR' }}</span>
@@ -88,7 +88,11 @@
       <span class="tone tone--{{ order.status.toLowerCase() }}">{{ order.status | orderStatus }}</span>
 
       <dl class="details">
-        <div><dt>Recogida</dt><dd>{{ order.pickupDate | date: 'EEEE d MMM' }} · {{ order.pickupTime }}</dd></div>
+        <div><dt>{{ order.type === 'DOMICILIO' ? 'Entrega a domicilio' : 'Recogida' }}</dt><dd>{{ order.pickupDate | date: 'EEEE d MMM' }} · {{ order.pickupTime }}</dd></div>
+        @if (order.type === 'DOMICILIO') {
+          <div class="full"><dt>Dirección</dt><dd>{{ order.deliveryAddress }}</dd></div>
+          <div><dt>Repartidor</dt><dd>{{ order.driverName || 'Sin asignar' }}</dd></div>
+        }
         <div><dt>Email</dt><dd>{{ order.customerEmail }}</dd></div>
         <div><dt>Teléfono</dt><dd>{{ order.customerPhone || '—' }}</dd></div>
         <div class="full"><dt>Notas</dt><dd>{{ order.notes || 'Sin notas' }}</dd></div>
@@ -103,6 +107,9 @@
             <tr>
               <td>
                 {{ line.productName }}
+                @for (extra of line.extras; track extra.name) {
+                  <span class="added">con {{ extra.name.toLowerCase() }} (+{{ extra.price | currency: 'EUR' }})</span>
+                }
                 @for (name of line.removedIngredients; track name) {
                   <span class="removed">sin {{ name.toLowerCase() }}</span>
                 }
@@ -122,7 +129,8 @@
         <p class="eyebrow status-title">Cambiar estado</p>
         <div class="status-actions">
           @for (s of statuses; track s) {
-            <button type="button" class="btn btn--small" [disabled]="order.status === s" (click)="changeStatus(order, s)">
+            <button type="button" class="btn btn--small" [disabled]="order.status === s || (s === 'TRANSPORTANDO' && order.type !== 'DOMICILIO')"
+                    (click)="changeStatus(order, s)">
               {{ s | orderStatus }}
             </button>
           }
