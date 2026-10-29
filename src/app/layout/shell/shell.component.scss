@@ -1,12 +1,161 @@
 :host {
   display: block;
   min-height: 100vh;
+  /* Alto del menu inferior del movil (sin la zona segura): lo usan las barras fijas que van encima */
+  --tabbar-h: 0px;
 }
 
 .shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 200ms ease;
+}
+
+/* Plegado: solo queda una franja con las iniciales y la flecha (mas sitio para pantallas fijas) */
+.shell--collapsed {
+  grid-template-columns: 4.6rem minmax(0, 1fr);
+
+  .sidebar {
+    padding: 1rem 0.7rem;
+  }
+
+  .brand {
+    flex-direction: column;
+  }
+
+  .brand__text,
+  .nav {
+    display: none;
+  }
+
+  .collapse-btn {
+    margin-left: 0;
+  }
+}
+
+/* Repartidor y camarero: sin menu lateral en ninguna pantalla; arriba sus iniciales (abren su menu) y su nombre */
+.shell--single {
+  grid-template-columns: minmax(0, 1fr);
+
+  .sidebar {
+    display: none;
+  }
+}
+
+.single-bar {
+  /* Barra de app fina, de borde a borde y fija arriba: poca importancia, el sitio es para el contenido */
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  margin: -1.5rem -1.5rem 0.75rem;
+  padding: 0.35rem 0.6rem 0.35rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-strong);
+  backdrop-filter: blur(16px);
+}
+
+.single-bar__company {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.single-bar__brand {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.single-bar__logo {
+  display: block;
+  max-width: 9rem;
+  height: 2rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Botones de solo icono: modo claro/oscuro y cerrar sesion */
+.icon-action {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.6rem;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(var(--tint-rgb), 0.07);
+    color: var(--text);
+  }
+}
+
+.single-bar__sep {
+  flex: none;
+  width: 1px;
+  height: 1.4rem;
+  background: var(--border);
+}
+
+.single-bar__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0ea5e9, #14b8a6);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.single-bar__who {
+  display: grid;
+  min-width: 0;
+  max-width: 9rem;
+  line-height: 1.15;
+
+  strong {
+    overflow: hidden;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--muted);
+    font-size: 0.7rem;
+  }
 }
 
 /* El sidebar se queda fijo mientras el contenido hace scroll; si no cabe, hace scroll por dentro. */
@@ -19,7 +168,7 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.5rem;
-  background: linear-gradient(180deg, rgba(10, 17, 31, 0.94), rgba(10, 17, 31, 0.72));
+  background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   backdrop-filter: blur(24px);
 }
@@ -35,34 +184,94 @@
   place-items: center;
   width: 2.8rem;
   height: 2.8rem;
+  border: 0;
   border-radius: 0.9rem;
   background: linear-gradient(135deg, rgba(125, 211, 252, 0.95), rgba(251, 191, 36, 0.92));
   color: #09111f;
   font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
   font-weight: 700;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 }
 
-.brand p,
-.brand span,
-.support-card p,
-.support-card h2,
+.brand__text {
+  min-width: 0;
+}
+
+.collapse-btn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: rgba(var(--tint-rgb), 0.04);
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+/* Menu del usuario: se abre al pulsar sus iniciales (fuera del sidebar para que no lo recorte) */
+.user-menu__panel {
+  position: fixed;
+  top: 4.6rem;
+  left: 1rem;
+  z-index: 60;
+  display: grid;
+  gap: 0.45rem;
+  width: 240px;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
+
+  .eyebrow {
+    margin: 0;
+  }
+
+  strong {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  span {
+    margin-bottom: 0.3rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+.brand__text p,
+.brand__text span,
 .topbar p,
 .topbar h1 {
   margin: 0;
 }
 
-.brand p,
-.topbar h1,
-.support-card h2 {
+.brand__text p,
+.topbar h1 {
   font-family: 'Space Grotesk', sans-serif;
 }
 
-.brand p {
+.brand__text p {
   font-size: 1rem;
   font-weight: 700;
 }
 
-.brand span {
+.brand__text span {
   color: var(--muted);
   font-size: 0.92rem;
 }
@@ -79,7 +288,7 @@
 
 .nav__label {
   padding: 0 0.25rem;
-  color: rgba(148, 163, 197, 0.72);
+  color: rgba(var(--muted-rgb), 0.72);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -94,23 +303,15 @@
   border: 1px solid transparent;
   border-radius: 1rem;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--tint-rgb), 0.02);
   transition: 180ms ease;
 }
 
 .nav a:hover,
 .nav a.is-active {
   color: var(--text);
-  border-color: rgba(125, 211, 252, 0.28);
-  background: rgba(125, 211, 252, 0.12);
-}
-
-.support-card {
-  margin-top: auto;
-  padding: 1.2rem;
-  border-radius: 1.2rem;
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.12), rgba(251, 191, 36, 0.08));
-  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-color: rgba(var(--primary-rgb), 0.28);
+  background: rgba(var(--primary-rgb), 0.12);
 }
 
 .eyebrow {
@@ -120,16 +321,6 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-
-.support-card h2 {
-  margin-bottom: 0.4rem;
-  font-size: 1.1rem;
-}
-
-.support-card p {
-  color: var(--muted);
-  line-height: 1.6;
 }
 
 .workspace {
@@ -151,17 +342,13 @@
 .topbar__badge {
   padding: 0.7rem 1rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--tint-rgb), 0.06);
   border: 1px solid var(--border);
   color: var(--muted);
 }
 
 .content {
   min-height: calc(100vh - 3rem);
-}
-
-.logout {
-  margin-top: 0.8rem;
 }
 
 .toasts {
@@ -177,41 +364,187 @@
 .toast {
   padding: 0.85rem 1rem;
   border-radius: 0.95rem;
-  border: 1px solid rgba(94, 234, 212, 0.35);
-  background: rgba(13, 25, 48, 0.96);
-  color: #ccfbf1;
+  border: 1px solid rgba(var(--success-rgb), 0.35);
+  background: var(--panel-strong);
+  color: var(--success-text);
   text-align: left;
   box-shadow: var(--shadow);
   cursor: pointer;
 }
 
 .toast--error {
-  border-color: rgba(251, 113, 133, 0.45);
-  color: #fecdd3;
+  border-color: rgba(var(--danger-rgb), 0.45);
+  color: var(--danger-text);
+}
+
+/* ===== Movil: menu inferior y hoja con el resto ===== */
+.tabbar,
+.sheet-backdrop {
+  display: none;
 }
 
 @media (max-width: 960px) {
-  .shell {
+  :host {
+    --tabbar-h: 3.3rem;
+  }
+
+  :host(.no-tabbar) {
+    --tabbar-h: 0px;
+  }
+
+  /* En el movil no hay menu lateral: todo va en el menu de abajo (al alcance del pulgar) */
+  .shell,
+  .shell--collapsed {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
-    position: static;
-    height: auto;
-    overflow: visible;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
+    display: none;
   }
 
-  .support-card {
-    margin-top: 0;
+  .workspace {
+    padding-bottom: calc(var(--tabbar-h) + 1rem + env(safe-area-inset-bottom));
+  }
+
+  .shell--single .workspace {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .content {
+    min-height: 0;
+  }
+
+  .tabbar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 45;
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    padding: 0.2rem 0.4rem env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border);
+    background: var(--panel-strong);
+    backdrop-filter: blur(16px);
+  }
+
+  .tabbar__item {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0;
+    padding: 0.1rem 0.2rem;
+    border: 0;
+    border-radius: 0.8rem;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+
+    &.is-active {
+      background: rgba(var(--primary-rgb), 0.14);
+      color: var(--text);
+    }
+  }
+
+  .tabbar__icon {
+    font-size: 1.1rem;
+    line-height: 1.25;
+  }
+
+  .tabbar__avatar {
+    display: grid;
+    place-items: center;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, rgba(125, 211, 252, 0.95), rgba(251, 191, 36, 0.92));
+    color: #09111f;
+    font-size: 0.62rem;
+    font-weight: 700;
+  }
+
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .sheet {
+    display: grid;
+    gap: 0.9rem;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 0.6rem 1rem calc(var(--tabbar-h) + 1rem + env(safe-area-inset-bottom));
+    border-radius: 1.3rem 1.3rem 0 0;
+    background: var(--panel-strong);
+    box-shadow: var(--shadow);
+  }
+
+  .sheet__grip {
+    justify-self: center;
+    width: 2.6rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: var(--border);
+  }
+
+  .sheet__user {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+
+    div {
+      display: grid;
+    }
+
+    span:not(.brand__mark) {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  }
+
+  .nav--sheet a {
+    min-height: 2.8rem;
+    padding: 0.6rem 0.9rem;
+  }
+
+  .sheet__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+
+    .btn {
+      justify-content: center;
+      min-height: 3rem;
+    }
+  }
+
+  .toasts {
+    bottom: calc(var(--tabbar-h) + 0.6rem + env(safe-area-inset-bottom));
   }
 }
 
 @media (max-width: 720px) {
-  .workspace,
-  .sidebar {
-    padding: 1rem;
+  .single-bar {
+    margin: -1rem -1rem 0.6rem;
+  }
+
+  /* Sin tocar el padding de abajo: es el hueco del menu inferior (si no, lo ultimo queda tapado y no se llega con el scroll) */
+  .workspace {
+    padding-top: 1rem;
+    padding-right: 1rem;
+    padding-left: 1rem;
   }
 
   .topbar {

@@ -13,4 +13,9 @@ export class CategoriesService extends CrudService<Category, CategoryRequest> {
   reorder(ids: number[]): Observable<Category[]> {
     return this.http.put<Category[]>(`${this.url}/order`, { ids });
   }
+
+  /** Guarda el orden de la pantalla de cocina (ids de arriba abajo). No cambia el del catalogo. */
+  reorderKitchen(ids: number[]): Observable<Category[]> {
+    return this.http.put<Category[]>(`${this.url}/kitchen-order`, { ids });
+  }
 }

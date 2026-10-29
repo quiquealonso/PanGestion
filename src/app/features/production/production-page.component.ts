@@ -21,6 +21,8 @@ interface MatrixRow {
   key: string;
   name: string;
   removed: string[];
+  /** Extras anadidos ("Huevo") */
+  extras: string[];
   category: string;
   categoryColor: string;
   /** El primer producto de su categoria lleva la cabecera de grupo. */
@@ -77,13 +79,14 @@ export class ProductionPageComponent implements OnInit {
     const slots = this.slots();
     const result: MatrixRow[] = [];
     for (const row of this.rows()) {
-      const key = `${row.productId}|${row.removedIngredients.join(',')}`;
+      const key = `${row.productId}|${row.removedIngredients.join(',')}|${row.extras.join(',')}`;
       let line = result.find((r) => r.key === key);
       if (!line) {
         line = {
           key,
           name: row.productName,
           removed: row.removedIngredients,
+          extras: row.extras,
           category: row.categoryName,
           categoryColor: row.categoryColor,
           startsCategory: result[result.length - 1]?.category !== row.categoryName,
@@ -167,6 +170,7 @@ export class ProductionPageComponent implements OnInit {
 
   /** "Bacon" -> "sin bacon". Es una funcion flecha para poder usarla en la plantilla con map(). */
   readonly nameWithout = (ingredient: string) => 'sin ' + ingredient.toLowerCase();
+  readonly nameWith = (ingredient: string) => 'con ' + ingredient.toLowerCase();
 
   /** Pantalla completa, para dejarla puesta en el obrador. */
   fullscreen(element: HTMLElement): void {

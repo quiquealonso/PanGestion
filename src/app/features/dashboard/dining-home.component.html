@@ -1,0 +1,116 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">{{ today | date: 'EEEE d MMMM' }}</p>
+      <h2>Hola, {{ auth.user()?.name }}</h2>
+      <p>La sala de {{ auth.user()?.companyName }} ahora mismo.
+        <span class="live" [class.live--off]="!live.connected()">{{ live.connected() ? 'En directo' : 'Reconectando…' }}</span>
+      </p>
+    </div>
+    @if (auth.canServe()) {
+      <a class="btn btn--primary" routerLink="/service">Ir a la sala</a>
+    }
+  </header>
+
+  @if (error(); as message) {
+    <p class="error-box">{{ message }}</p>
+  }
+
+  @if (data(); as d) {
+    <h3 class="section-title">Ahora mismo</h3>
+    <section class="stats-grid">
+      <a class="panel stat-card" routerLink="/service">
+        <span>Mesas ocupadas</span>
+        <strong>{{ d.occupiedTables }} <em>/ {{ d.tables }}</em></strong>
+        <small>{{ d.guestsNow }} comensales · {{ occupancy() }}% de la sala</small>
+      </a>
+      <a class="panel stat-card" routerLink="/service" [class.stat-card--ok]="d.readyItems > 0">
+        <span>Listo para servir</span>
+        <strong>{{ d.readyItems }}</strong>
+        <small>{{ d.readyItems ? 'Hay platos esperando en el pase' : 'Nada esperando' }}</small>
+      </a>
+      <a class="panel stat-card" routerLink="/kitchen">
+        <span>En cocina</span>
+        <strong>{{ d.kitchenQueue }}</strong>
+        <small>Pendientes o preparándose</small>
+      </a>
+      <a class="panel stat-card" routerLink="/kitchen">
+        <span>En barra</span>
+        <strong>{{ d.barQueue }}</strong>
+        <small>Bebidas y cafés por hacer</small>
+      </a>
+      <a class="panel stat-card" routerLink="/orders">
+        <span>Para llevar hoy</span>
+        <strong>{{ d.takeawayToday }}</strong>
+        <small>Pedidos sin entregar</small>
+      </a>
+    </section>
+
+    <h3 class="section-title">Caja de hoy</h3>
+    <section class="stats-grid">
+      <a class="panel stat-card" routerLink="/bar">
+        <span>Cobrado hoy</span>
+        <strong>{{ d.revenueToday | currency: 'EUR' }}</strong>
+        <small>{{ d.cashToday | currency: 'EUR' }} efectivo · {{ d.cardToday | currency: 'EUR' }} tarjeta</small>
+      </a>
+      <a class="panel stat-card" routerLink="/bar">
+        <span>Mesas cerradas</span>
+        <strong>{{ d.closedToday }}</strong>
+        <small>Ticket medio {{ d.avgTicketToday | currency: 'EUR' }}</small>
+      </a>
+      <article class="panel stat-card">
+        <span>Mesas abiertas</span>
+        <strong>{{ d.openSessions }}</strong>
+        <small>Servicios en curso (pueden juntar mesas)</small>
+      </article>
+    </section>
+  }
+
+  <nav class="shortcuts" aria-label="Accesos">
+    @if (auth.canServe()) {
+      <a class="panel shortcut" routerLink="/service"><strong>Servicio de mesas</strong><span>Abrir mesas y tomar comandas</span></a>
+      <a class="panel shortcut" routerLink="/bar"><strong>Barra y cobros</strong><span>Cobrar, precuenta y caja</span></a>
+    }
+    @if (auth.canKitchen()) {
+      <a class="panel shortcut" routerLink="/kitchen"><strong>Cocina y barra</strong><span>Pantalla táctil de pedidos</span></a>
+    }
+    @if (auth.canReport()) {
+      <a class="panel shortcut" routerLink="/dining-report"><strong>Informes de sala</strong><span>Ventas, mesas y tiempos</span></a>
+    }
+    @if (auth.canEdit()) {
+      <a class="panel shortcut" routerLink="/orders/new"><strong>Pedido para llevar</strong><span>Apuntar un encargo</span></a>
+    }
+  </nav>
+
+  @if (week(); as w) {
+    <section class="board">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Últimos 7 días</p>
+            <h3>Facturado por día</h3>
+          </div>
+          <a class="link" routerLink="/dining-report">Ver informes</a>
+        </div>
+        <app-simple-bar-chart [data]="byDay()" [format]="euroTicks" ariaLabel="Facturado por día en los últimos 7 días"
+                              labelHeader="Día" valueHeader="Facturado" />
+      </article>
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Últimos 7 días</p>
+            <h3>Más vendidos en sala</h3>
+          </div>
+        </div>
+        @for (p of w.topProducts.slice(0, 6); track p.name) {
+          <div class="bar">
+            <div class="bar__label"><span>{{ p.name }}</span><strong>{{ p.quantity }}</strong></div>
+            <div class="bar__track"><div class="bar__fill" [style.width.%]="(p.quantity / topMax()) * 100"></div></div>
+          </div>
+        } @empty {
+          <p class="empty">Aún no hay mesas cerradas esta semana.</p>
+        }
+      </article>
+    </section>
+  }
+</section>

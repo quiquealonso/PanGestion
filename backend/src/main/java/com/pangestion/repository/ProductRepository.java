@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
+    List<Product> findAllByCategoryId(Long categoryId);
+
     /** Productos de una empresa con filtros opcionales: texto (nombre), categoria y estado activo. */
     @EntityGraph(attributePaths = "category")
     @Query("""

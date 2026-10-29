@@ -26,6 +26,22 @@ public interface OrderLineRepository extends JpaRepository<OrderLine, Long> {
                                       @Param("date") java.time.LocalDate date,
                                       @Param("excluded") java.util.Collection<com.pangestion.model.OrderStatus> excluded);
 
+    /** Pantalla de cocina: productos de una estacion de los pedidos para llevar de hoy que siguen abiertos. */
+    @Query("""
+            select l from OrderLine l
+            join fetch l.product
+            join fetch l.order o
+            join fetch o.customer
+            where o.company.id = :companyId and o.pickupDate = :date and l.station = :station
+              and o.status in (com.pangestion.model.OrderStatus.PENDIENTE, com.pangestion.model.OrderStatus.EN_PROCESO,
+                               com.pangestion.model.OrderStatus.LISTO)
+            """)
+    List<OrderLine> findForKitchen(@Param("companyId") Long companyId,
+                                   @Param("date") java.time.LocalDate date,
+                                   @Param("station") com.pangestion.model.Station station);
+
+    java.util.Optional<OrderLine> findByIdAndOrderCompanyId(Long id, Long companyId);
+
     /** Unidades vendidas por dia de recogida en un rango. Cada fila: [fecha, unidades]. Sin cancelados. */
     @Query("""
             select l.order.pickupDate, sum(l.quantity) from OrderLine l

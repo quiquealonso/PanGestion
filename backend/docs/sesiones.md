@@ -25,7 +25,7 @@ Correspondencia entre las sesiones de *Desarrollo web en entorno servidor* y el 
 
 | S | Objetivo | Dónde |
 |---|---|---|
-| 9 | Contrato REST; creación anidada con Location al detalle canónico | ✅ `POST /api/customers/{id}/orders` → `Location: /api/orders/{id}` |
+| 9 | Contrato REST; creación anidada con Location al detalle canónico | ✅ `POST /api/customers/{id}/orders` → `Location: /api/orders/{id}`; `POST /api/dining/areas/{id}/tables` → `Location: /api/dining/tables/{id}` |
 | 10 | DTO de salida sin datos internos | ✅ `dto/*.Response` (nunca la contraseña ni entidades) |
 | 11 | DTO de entrada; ids y calculados los pone el servidor | ✅ `dto/*.Request` y `from()`; id, total y orden los calcula el servidor |
 | 12 | Validar las entradas | ✅ Bean Validation + validación propia `validation/ValidOpeningHours` |
@@ -38,8 +38,8 @@ Correspondencia entre las sesiones de *Desarrollo web en entorno servidor* y el 
 |---|---|---|
 | 15 | Separar controller, service y repository | ✅ `controller/` → `service/` → `repository/` |
 | 16 | Inyección de dependencias por constructor | ✅ `@RequiredArgsConstructor` en todos los componentes |
-| 17 | Reglas de negocio probadas con JUnit + Mockito; una regresión hace fallar un test | ✅ `@Tag("reglas-negocio")`: `OrderServiceRulesTest`, `CompanyServiceSlotsTest`, `UserServiceRulesTest`, `OrderModelTest`. Único grupo que ejecuta el CI |
-| 18 | Justificar dónde va cada regla | ✅ las reglas viven en los servicios (`README.md` › Reglas de negocio) |
+| 17 | Reglas de negocio probadas con JUnit + Mockito; una regresión hace fallar un test | ✅ `@Tag("reglas-negocio")` (58 tests): `OrderServiceRulesTest`, `CompanyServiceSlotsTest`, `UserServiceRulesTest`, `OrderModelTest` y, de la sala, `DiningModelTest`, `TableSessionModelTest`, `KitchenModelTest`. Único grupo que ejecuta el CI |
+| 18 | Justificar dónde va cada regla | ✅ las reglas viven en los servicios (`README.md` › Reglas de negocio). Las que solo dependen de la propia entidad están en el modelo para probarlas sin Spring: `DiningArea.fits/overlapping`, `ItemStatus.canMoveTo`, `TableSession.guestShares`, `Order.syncStatusFromLines` |
 
 ## Unidades siguientes (ya avanzadas en el proyecto)
 
@@ -47,16 +47,16 @@ Correspondencia entre las sesiones de *Desarrollo web en entorno servidor* y el 
 |---|---|---|
 | 19–21 | PostgreSQL sin credenciales en el repo, entidades JPA y consultas propias | ✅ perfil `postgres`, `.env`, `model/*`, `@Query` |
 | 22 | Tests de repositorio con `@DataJpaTest` contra PostgreSQL | 🟡 `repository/*Test` hechos con H2 (pasar a una base `pangestion_test`) |
-| 23–25 | Relaciones 1:N y N:M, transacciones e integridad | ✅ Empresa→Categoría→Producto, Pedido→Líneas, Producto↔Ingrediente, `@Transactional` |
+| 23–25 | Relaciones 1:N y N:M, transacciones e integridad | ✅ Empresa→Categoría→Producto, Pedido→Líneas, Producto↔Ingrediente, Zona→Mesas, Servicio↔Mesas (N:M), Servicio→Líneas y Cobros, `@Transactional` (los avisos se envían solo tras confirmar la transacción) |
 | 26–28 | N+1 y versión desplegada | 🟡 `@EntityGraph`, `join fetch`, `batch_fetch_size` · ❌ despliegue |
 | 29 | Relaciones expuestas y filtros | ✅ `search`, `status`, `from`, `to`, `categoryId`, `active` |
 | 30 | Paginación y ordenación | ❌ |
 | 31 | Tests HTTP (MockMvc) y OpenAPI | 🟡 `web/*ApiTest` · ❌ OpenAPI |
 | 32 | Evolucionar el contrato | ❌ |
 | 33–34 | Cliente de navegador y CORS | ✅ Angular + `SecurityConfig.corsConfigurationSource` |
-| 35–39 | Permisos, BCrypt, usuarios y roles, permisos por recurso, JWT | ✅ `SecurityConfig`, `TokenService`, `CurrentUser`; probado en `SecurityApiTest` |
+| 35–39 | Permisos, BCrypt, usuarios y roles, permisos por recurso, JWT | ✅ `SecurityConfig`, `TokenService`, `CurrentUser`; probado en `SecurityApiTest`. Roles CAMARERO y COCINA con permisos por ruta (`/api/service/**`, `/api/kitchen/**`, `/api/reports/**`) |
 | 40 | CSRF, CORS con credenciales y cierre seguro | 🟡 CSRF desactivado por ser API sin estado (JWT) · ❌ cierre de sesión en el servidor |
 | 41–42, 44 | Servicio externo, timeouts y fallos parciales | ❌ |
 | 43 | Ficheros | 🟡 imágenes validadas por su firma (`storage/`); son públicas a propósito |
-| 45–46 | Estrategia de pruebas, logs y documentación | 🟡 202 tests y documentación · ❌ cobertura (JaCoCo) |
-| 47–52 | Ampliación final, Angular, despliegue y defensa | 🟡 Angular conectado · ❌ despliegue |
+| 45–46 | Estrategia de pruebas, logs y documentación | 🟡 279 tests y documentación · ❌ cobertura (JaCoCo) |
+| 47–52 | Ampliación final, Angular, despliegue y defensa | 🟡 Angular conectado; ampliación: sala de bares y restaurantes (mesas, comandas, cocina, avisos en tiempo real con SSE, cobro e informes) · ❌ despliegue |

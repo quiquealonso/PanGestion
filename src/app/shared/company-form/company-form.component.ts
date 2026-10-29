@@ -31,6 +31,7 @@ import { BUSINESS_TYPES, BUSINESS_TYPE_LABELS, BusinessType, Company, CompanyReq
       <label><span>Minutos por franja</span><input type="number" min="10" max="240" formControlName="slotMinutes" /></label>
       <label><span>Pedidos por franja</span><input type="number" min="1" max="100" formControlName="ordersPerSlot" /></label>
       <label class="full check"><input type="checkbox" formControlName="active" /> Acepta pedidos (aparece en la web pública)</label>
+      <label class="full check"><input type="checkbox" formControlName="delivery" /> Hace envíos a domicilio (los pedidos pueden ser «a domicilio» y los repartidores los llevan)</label>
 
       @if (!readonly()) {
         <div class="form-actions full">
@@ -66,6 +67,7 @@ export class CompanyFormComponent {
     slotMinutes: [30, [Validators.required, Validators.min(10), Validators.max(240)]],
     ordersPerSlot: [5, [Validators.required, Validators.min(1), Validators.max(100)]],
     active: [true],
+    delivery: [false],
   });
 
   constructor() {
@@ -75,7 +77,7 @@ export class CompanyFormComponent {
       this.form.reset(
         company
           ? { ...company, email: company.email ?? '', phone: company.phone ?? '' }
-          : { name: '', type: 'PANADERIA' as BusinessType, taxId: '', email: '', phone: '', address: '', openingTime: '08:00', closingTime: '14:00', slotMinutes: 30, ordersPerSlot: 5, active: true },
+          : { name: '', type: 'PANADERIA' as BusinessType, taxId: '', email: '', phone: '', address: '', openingTime: '08:00', closingTime: '14:00', slotMinutes: 30, ordersPerSlot: 5, active: true, delivery: false },
       );
       if (this.readonly()) this.form.disable();
       else this.form.enable();

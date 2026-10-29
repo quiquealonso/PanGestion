@@ -1,3 +1,4 @@
+import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Ingredient } from '../../../core/models/ingredient.model';
@@ -12,7 +13,7 @@ import { ModalComponent } from '../../../shared/modal/modal.component';
 
 /** Ingredientes de los que estan hechos los productos (y sus alergenos). */
 @Component({
-  imports: [FormsModule, ReactiveFormsModule, ModalComponent],
+  imports: [CurrencyPipe, FormsModule, ReactiveFormsModule, ModalComponent],
   selector: 'app-ingredients-page',
   templateUrl: './ingredients-page.component.html',
   styles: '.used-in { margin-top: 1.2rem; } .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }',
@@ -37,6 +38,7 @@ export class IngredientsPageComponent implements OnInit {
     return this.ingredients().filter((i) => !term || i.name.toLowerCase().includes(term));
   });
   readonly withAllergen = computed(() => this.ingredients().filter((i) => i.allergen).length);
+  readonly asExtra = computed(() => this.ingredients().filter((i) => i.extraPrice !== null).length);
   readonly unused = computed(() => this.ingredients().filter((i) => i.productCount === 0).length);
   /** Productos que llevan el ingrediente abierto en el dialogo. */
   readonly usedIn = computed(() => {
@@ -47,6 +49,8 @@ export class IngredientsPageComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(100)]],
     allergen: [''],
+    /** Precio del extra en euros; vacio = no se ofrece como extra */
+    extraPrice: [null as number | null, [Validators.min(0), Validators.max(999999)]],
   });
 
   ngOnInit(): void {
@@ -64,13 +68,13 @@ export class IngredientsPageComponent implements OnInit {
 
   select(ingredient: Ingredient): void {
     this.selectedId.set(ingredient.id);
-    this.form.reset({ name: ingredient.name, allergen: ingredient.allergen ?? '' });
+    this.form.reset({ name: ingredient.name, allergen: ingredient.allergen ?? '', extraPrice: ingredient.extraPrice });
     this.dialogOpen.set(true);
   }
 
   startCreate(): void {
     this.selectedId.set(null);
-    this.form.reset({ name: '', allergen: '' });
+    this.form.reset({ name: '', allergen: '', extraPrice: null });
     this.dialogOpen.set(true);
   }
 
@@ -85,7 +89,8 @@ export class IngredientsPageComponent implements OnInit {
       return;
     }
     const value = this.form.getRawValue();
-    const body = { name: value.name, allergen: value.allergen || null };
+    const extraPrice = value.extraPrice === null || (value.extraPrice as unknown) === '' ? null : Number(value.extraPrice);
+    const body = { name: value.name, allergen: value.allergen || null, extraPrice };
     const id = this.selectedId();
     const request = id ? this.ingredientsService.update(id, body) : this.ingredientsService.create(body);
     request.subscribe({

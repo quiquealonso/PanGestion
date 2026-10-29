@@ -1,0 +1,76 @@
+<section class="kds">
+  <header class="kds__head">
+    <div class="segmented" role="group" aria-label="Pantalla">
+      <button type="button" [class.on]="station() === 'COCINA'" (click)="setStation('COCINA')">Cocina</button>
+      <button type="button" [class.on]="station() === 'BARRA'" (click)="setStation('BARRA')">Barra</button>
+    </div>
+    <span class="live" [class.live--off]="!live.connected()">{{ live.connected() ? 'En directo' : 'Reconectando…' }}</span>
+    <span class="kds__clock">{{ now() | date: 'HH:mm' }}</span>
+    <button type="button" class="btn btn--small" (click)="toggleFullscreen()">⛶ Pantalla completa</button>
+  </header>
+
+  @if (!loaded()) {
+    <p class="muted">Cargando…</p>
+  } @else {
+    <div class="board" [style.grid-template-columns]="boardColumns()">
+      @for (column of columns(); track column.status) {
+        <section class="column column--{{ column.status.toLowerCase() }}">
+          <h3 class="column__title">{{ column.title }} <span>{{ counts()[column.status] }}</span></h3>
+          @for (f of byColumn().get(column.status); track f.ticket.source + f.ticket.refId + '/' + f.ticket.round) {
+            <article class="ticket ticket--{{ f.ticket.source.toLowerCase() }} {{ urgency(f.ticket) }}">
+              <header class="ticket__head">
+                <strong>{{ f.ticket.label }}@if (f.ticket.source === 'LLEVAR') { <small>{{ customer(f.ticket) }}</small>}</strong>
+                @if (column.next && hasSeveral(f.items)) {
+                  <button type="button" class="ticket__all" (click)="move(f.items, column.next)"
+                          [attr.aria-label]="'Pasar todo ' + f.ticket.label">Todo →</button>
+                }
+                @if (f.ticket.source === 'MESA') {
+                  <span class="ticket__time" title="Minutos desde que se pidió">{{ minutes(f.ticket.time) }}'</span>
+                } @else {
+                  <span class="ticket__time" title="Hora de recogida">{{ f.ticket.time | date: 'HH:mm' }}</span>
+                }
+              </header>
+              @if (f.ticket.notes) {
+                <p class="ticket__notes">{{ f.ticket.notes }}</p>
+              }
+              <ul class="items">
+                @for (item of f.items; track item.source + item.id) {
+                  <li class="item" [style.--cat]="item.categoryColor || 'var(--primary)'">
+                    <button type="button" class="item__main" [disabled]="!column.next"
+                            (click)="move([item], column.next, 1)"
+                            [attr.aria-label]="column.next ? 'Pasar uno de ' + item.productName + ' a ' + column.next : item.productName">
+                      <span class="item__qty">{{ item.quantity }}×</span>
+                      <span class="item__name">
+                        {{ item.productName }}
+                        @if (item.extras.length || item.removedIngredients.length) {
+                          <span class="item__mods">
+                            @for (e of item.extras; track e) {
+                              <span class="mod mod--add" [attr.aria-label]="'con ' + e">+ {{ e }}</span>
+                            }
+                            @for (r of item.removedIngredients; track r) {
+                              <span class="mod mod--remove" [attr.aria-label]="'sin ' + r">sin {{ r }}</span>
+                            }
+                          </span>
+                        }
+                        @if (item.notes) {
+                          <em>{{ item.notes }}</em>
+                        }
+                      </span>
+                      <span class="item__cat" [title]="item.categoryName">{{ initial(item) }}</span>
+                    </button>
+                    @if (column.previous) {
+                      <button type="button" class="item__back" (click)="move([item], column.previous, 1)"
+                              [attr.aria-label]="'Devolver uno de ' + item.productName">↩</button>
+                    }
+                  </li>
+                }
+              </ul>
+            </article>
+          } @empty {
+            <p class="column__empty">Nada por aquí</p>
+          }
+        </section>
+      }
+    </div>
+  }
+</section>

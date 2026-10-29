@@ -1,75 +1,79 @@
-<section class="page">
-  <header class="page-head">
-    <div>
-      <p class="eyebrow">{{ today | date: 'EEEE d MMMM' }}</p>
-      <h2>Hola, {{ auth.user()?.name }}</h2>
-      <p>La actividad de la panadería de un vistazo.</p>
-    </div>
-    @if (auth.canEdit()) {
-      <a class="btn btn--primary" routerLink="/orders/new">+ Nuevo pedido</a>
+@if (auth.hasDining()) {
+  <app-dining-home />
+} @else {
+  <section class="page">
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">{{ today | date: 'EEEE d MMMM' }}</p>
+        <h2>Hola, {{ auth.user()?.name }}</h2>
+        <p>La actividad de la panadería de un vistazo.</p>
+      </div>
+      @if (auth.canEdit()) {
+        <a class="btn btn--primary" routerLink="/orders/new">+ Nuevo pedido</a>
+      }
+    </header>
+
+    @if (error(); as message) {
+      <p class="error-box">{{ message }}</p>
     }
-  </header>
 
-  @if (error(); as message) {
-    <p class="error-box">{{ message }}</p>
-  }
+    @if (data(); as d) {
+      <section class="stats-grid">
+        <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'PENDIENTE' }">
+          <span>Pendientes</span>
+          <strong>{{ d.pendingOrders }}</strong>
+          <small>Por empezar</small>
+        </a>
+        <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'EN_PROCESO' }">
+          <span>En proceso</span>
+          <strong>{{ d.inProcessOrders }}</strong>
+          <small>Preparándose ahora</small>
+        </a>
+        <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'LISTO' }">
+          <span>Listos</span>
+          <strong>{{ d.readyOrders }}</strong>
+          <small>Esperando recogida</small>
+        </a>
+        <article class="panel stat-card">
+          <span>Recogidas hoy</span>
+          <strong>{{ d.todayOrders }}</strong>
+          <small>Pedidos para hoy</small>
+        </article>
+        <article class="panel stat-card">
+          <span>Facturado este mes</span>
+          <strong>{{ d.monthRevenue | currency: 'EUR' }}</strong>
+          <small>{{ d.monthOrders }} pedidos · ticket medio {{ d.averageTicket | currency: 'EUR' }}</small>
+        </article>
+        <a class="panel stat-card" routerLink="/customers">
+          <span>Clientes</span>
+          <strong>{{ d.customers }}</strong>
+          <small>{{ d.activeProducts }} productos activos</small>
+        </a>
+      </section>
 
-  @if (data(); as d) {
-    <section class="stats-grid">
-      <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'PENDIENTE' }">
-        <span>Pendientes</span>
-        <strong>{{ d.pendingOrders }}</strong>
-        <small>Por empezar</small>
-      </a>
-      <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'EN_PROCESO' }">
-        <span>En proceso</span>
-        <strong>{{ d.inProcessOrders }}</strong>
-        <small>Preparándose ahora</small>
-      </a>
-      <a class="panel stat-card" [routerLink]="['/orders']" [queryParams]="{ status: 'LISTO' }">
-        <span>Listos</span>
-        <strong>{{ d.readyOrders }}</strong>
-        <small>Esperando recogida</small>
-      </a>
-      <article class="panel stat-card">
-        <span>Recogidas hoy</span>
-        <strong>{{ d.todayOrders }}</strong>
-        <small>Pedidos para hoy</small>
-      </article>
-      <article class="panel stat-card">
-        <span>Facturado este mes</span>
-        <strong>{{ d.monthRevenue | currency: 'EUR' }}</strong>
-        <small>{{ d.monthOrders }} pedidos · ticket medio {{ d.averageTicket | currency: 'EUR' }}</small>
-      </article>
-      <a class="panel stat-card" routerLink="/customers">
-        <span>Clientes</span>
-        <strong>{{ d.customers }}</strong>
-        <small>{{ d.activeProducts }} productos activos</small>
-      </a>
-    </section>
+      <section class="board">
+        <app-weekly-sales-chart class="panel" />
 
-    <section class="board">
-      <app-weekly-sales-chart class="panel" />
-
-      <article class="panel">
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">Ranking</p>
-            <h3>Más vendidos</h3>
-          </div>
-        </div>
-        @for (product of d.topProducts; track product.name) {
-          <div class="bar">
-            <div class="bar__label">
-              <span>{{ product.name }}</span>
-              <strong>{{ product.units }}</strong>
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Ranking</p>
+              <h3>Más vendidos</h3>
             </div>
-            <div class="bar__track"><div class="bar__fill" [style.width.%]="barWidth(product.units)"></div></div>
           </div>
-        } @empty {
-          <p class="empty">Sin ventas todavía.</p>
-        }
-      </article>
-    </section>
-  }
-</section>
+          @for (product of d.topProducts; track product.name) {
+            <div class="bar">
+              <div class="bar__label">
+                <span>{{ product.name }}</span>
+                <strong>{{ product.units }}</strong>
+              </div>
+              <div class="bar__track"><div class="bar__fill" [style.width.%]="barWidth(product.units)"></div></div>
+            </div>
+          } @empty {
+            <p class="empty">Sin ventas todavía.</p>
+          }
+        </article>
+      </section>
+    }
+  </section>
+}

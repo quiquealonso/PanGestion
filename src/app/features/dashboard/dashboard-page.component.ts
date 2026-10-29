@@ -5,10 +5,11 @@ import { Dashboard } from '../../core/models/dashboard.model';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
+import { DiningHomeComponent } from './dining-home.component';
 import { WeeklySalesChartComponent } from './weekly-sales-chart.component';
 
 @Component({
-  imports: [CurrencyPipe, DatePipe, RouterLink, WeeklySalesChartComponent],
+  imports: [CurrencyPipe, DatePipe, RouterLink, WeeklySalesChartComponent, DiningHomeComponent],
   selector: 'app-dashboard-page',
   styleUrl: './dashboard-page.component.scss',
   templateUrl: './dashboard-page.component.html',
@@ -22,6 +23,8 @@ export class DashboardPageComponent implements OnInit {
   readonly today = new Date();
 
   ngOnInit(): void {
+    // Bares y restaurantes tienen su propio inicio (DiningHomeComponent)
+    if (this.auth.hasDining()) return;
     this.dashboardService.summary().subscribe({
       next: (data) => this.data.set(data),
       error: (err) => this.error.set(apiErrorMessage(err)),

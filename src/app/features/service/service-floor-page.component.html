@@ -1,0 +1,107 @@
+<section class="page">
+  <!-- Directo a las mesas: sin titulo ni resumen; vista, avisos y conexion en una sola fila para ahorrar sitio -->
+  <header class="floor-bar">
+    <div class="segmented" role="group" aria-label="Vista">
+      <button type="button" [class.on]="view() === 'map'" (click)="setView('map')">Plano</button>
+      <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">Lista</button>
+    </div>
+    @if (canAskNotifications()) {
+      <button type="button" class="btn btn--small" (click)="askNotifications()">🔔 Avisos</button>
+    }
+    <span class="live" [class.live--off]="!live.connected()">{{ live.connected() ? 'En directo' : 'Reconectando…' }}</span>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Cargando la sala…</p>
+  } @else if (!areas().length) {
+    <article class="panel">
+      <h3>La sala aún no tiene mesas</h3>
+      <p class="muted">Un administrador las crea en «Sala y mesas».</p>
+    </article>
+  } @else {
+    <nav class="zones" aria-label="Zonas">
+      @for (area of areas(); track area.id) {
+        <button type="button" class="zone" [class.is-active]="area.id === active()?.id" (click)="activeId.set(area.id)">
+          {{ area.name }}
+        </button>
+      }
+    </nav>
+
+    @if (active(); as area) {
+      @if (view() === 'map' && plan(); as shown) {
+        <div class="floor-stage">
+          <div class="floor-canvas" [style.aspect-ratio]="shown.width + ' / ' + shown.height" [style.--cols]="shown.width"
+               [style.background-size]="(100 / shown.width) + '% ' + (100 / shown.height) + '%'">
+            @for (table of shown.tables; track table.id) {
+              <button type="button" class="floor-table pick"
+                      [attr.aria-label]="'Mesa ' + table.name + (table.session ? ', ocupada' : ', libre')"
+                      [style.left.%]="(table.x / shown.width) * 100" [style.top.%]="(table.y / shown.height) * 100"
+                      [style.width.%]="(table.width / shown.width) * 100" [style.height.%]="(table.height / shown.height) * 100"
+                      (click)="pick(table)">
+                <app-dining-table [table]="table" [busy]="!!table.session" [ready]="!!table.session?.readyCount" [info]="info(table)" />
+              </button>
+            }
+          </div>
+        </div>
+        <p class="legend muted">
+          <span><i class="dot"></i> Libre</span>
+          <span><i class="dot dot--busy"></i> Ocupada</span>
+          <button type="button" class="btn btn--small rotate" [class.on]="rotated()" (click)="toggleRotated()"
+                  [attr.aria-pressed]="rotated()">↻ Girar</button>
+          <span>· Pulsa una mesa para abrirla o ver su comanda</span>
+        </p>
+      } @else if (view() === 'list') {
+        <div class="table-list">
+          @for (table of area.tables; track table.id) {
+            <button type="button" class="table-card" [class.is-busy]="table.session" (click)="pick(table)">
+              <strong>{{ table.name }}</strong>
+              @if (table.session; as s) {
+                <span>{{ s.guests }} pers · {{ minutes(s.openedAt) }} min</span>
+                <span class="table-card__total">{{ s.total | currency: 'EUR' }}</span>
+                @if (s.readyCount) {
+                  <span class="table-card__ready">{{ s.readyCount }} listos para servir</span>
+                }
+                @if (s.tableLabel !== table.name) {
+                  <small>Junta: {{ s.tableLabel }}</small>
+                }
+              } @else {
+                <span>Libre · {{ table.seats }} {{ table.seats === 1 ? 'plaza' : 'plazas' }}</span>
+              }
+            </button>
+          }
+        </div>
+      }
+    }
+  }
+
+  @if (opening(); as table) {
+    <app-modal [title]="'Abrir mesa ' + table.name" width="440px" (closed)="opening.set(null)">
+      <form class="open-form" (ngSubmit)="open()">
+        <div class="field">
+          <span>Comensales</span>
+          <div class="stepper stepper--big">
+            <button type="button" (click)="changeGuests(-1)" [disabled]="guests <= 1" aria-label="Uno menos">−</button>
+            <strong>{{ guests }}</strong>
+            <button type="button" (click)="changeGuests(1)" [disabled]="guests >= 99" aria-label="Uno más">+</button>
+          </div>
+        </div>
+        @if (joinable().length) {
+          <div class="field">
+            <span>Juntar con</span>
+            <div class="chips">
+              @for (other of joinable(); track other.id) {
+                <button type="button" class="chip" [class.on]="joinIds().has(other.id)" (click)="toggleJoin(other)">
+                  {{ other.name }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+        <label class="field"><span>Notas</span>
+          <input name="notes" [(ngModel)]="notes" maxlength="255" placeholder="Trona, alergia, cumpleaños…" />
+        </label>
+        <button type="submit" class="btn btn--primary">Abrir mesa</button>
+      </form>
+    </app-modal>
+  }
+</section>

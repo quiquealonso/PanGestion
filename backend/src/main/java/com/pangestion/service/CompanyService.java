@@ -10,9 +10,13 @@ import com.pangestion.repository.CustomerRepository;
 import com.pangestion.repository.OrderRepository;
 import com.pangestion.repository.UserRepository;
 import com.pangestion.security.CurrentUser;
+import com.pangestion.storage.ImageStorage;
+import com.pangestion.storage.UploadedImage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,6 +38,10 @@ public class CompanyService {
     private final CustomerRepository customerRepository;
     private final OrderRepository orderRepository;
     private final CurrentUser currentUser;
+    private final ImageStorage imageStorage;
+
+    @Value("${app.uploads.max-bytes}")
+    private long maxImageBytes;
 
     // ----- SUPERADMIN: todas las empresas -----
 
@@ -87,6 +95,26 @@ public class CompanyService {
         CompanyDto.Response response = update(company.getId(), request);
         company.setType(type);
         return CompanyDto.Response.from(company, response.userCount(), response.customerCount());
+    }
+
+    /**
+     * Sube o sustituye el logo de la empresa (JPG, PNG o WEBP, mismo limite que las fotos de producto).
+     * Se guarda en {empresa}/logo/{nombre aleatorio} y se borra el anterior.
+     */
+    public CompanyDto.Response uploadLogo(MultipartFile file) {
+        Company company = current();
+        UploadedImage image = UploadedImage.read(file, maxImageBytes);
+        String previous = company.getLogoPath();
+        company.setLogoPath(imageStorage.save(company.getId() + "/logo", image.data(), image.type()));
+        imageStorage.delete(previous);
+        return toResponse(company);
+    }
+
+    public CompanyDto.Response removeLogo() {
+        Company company = current();
+        imageStorage.delete(company.getLogoPath());
+        company.setLogoPath(null);
+        return toResponse(company);
     }
 
     /** Empresa del usuario logueado. */
@@ -163,6 +191,9 @@ public class CompanyService {
         company.setSlotMinutes(request.slotMinutes());
         company.setOrdersPerSlot(request.ordersPerSlot());
         company.setActive(request.active());
+        if (request.delivery() != null) {
+            company.setDelivery(request.delivery());
+        }
     }
 
     private CompanyDto.Response toResponse(Company company) {

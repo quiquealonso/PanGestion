@@ -1,0 +1,160 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Sala</p>
+      <h2>Barra y cobros</h2>
+      <p>{{ openSessions().length }} {{ openSessions().length === 1 ? 'mesa abierta' : 'mesas abiertas' }}. Toca una para ver su cuenta, cobrarla o imprimir la precuenta.</p>
+    </div>
+  </header>
+
+  @if (openSessions().length) {
+    <div class="chips open-list" aria-label="Mesas abiertas">
+      @for (s of openSessions(); track s.id) {
+        <button type="button" class="chip" [class.on]="session()?.id === s.id" (click)="select(s.id)">
+          {{ s.tableLabel }} · {{ s.total | currency: 'EUR' }}
+        </button>
+      }
+    </div>
+  }
+
+  <div class="bar-layout">
+    <article class="panel">
+      <nav class="zones" aria-label="Zonas">
+        @for (area of areas(); track area.id) {
+          <button type="button" class="zone" [class.is-active]="area.id === activeArea()?.id" (click)="activeAreaId.set(area.id)">
+            {{ area.name }}
+          </button>
+        }
+      </nav>
+      @if (activeArea(); as area) {
+        <div class="floor-stage map">
+          <div class="floor-canvas" [style.aspect-ratio]="area.width + ' / ' + area.height" [style.--cols]="area.width"
+               [style.background-size]="(100 / area.width) + '% ' + (100 / area.height) + '%'">
+            @for (table of area.tables; track table.id) {
+              <button type="button" class="floor-table pick" [disabled]="!table.session"
+                      [attr.aria-label]="'Mesa ' + table.name"
+                      [style.left.%]="(table.x / area.width) * 100" [style.top.%]="(table.y / area.height) * 100"
+                      [style.width.%]="(table.width / area.width) * 100" [style.height.%]="(table.height / area.height) * 100"
+                      (click)="pickTable(table)">
+                <app-dining-table [table]="table" [busy]="!!table.session" [ready]="!!table.session?.readyCount"
+                                  [selected]="!!table.session && table.session.id === session()?.id" [info]="info(table)" />
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </article>
+
+    <!-- Cuenta de la mesa elegida -->
+    <article class="panel account">
+      @if (session(); as s) {
+        <div class="panel-head">
+          <h3>Mesa {{ s.tableLabel }}</h3>
+          <span>{{ s.guests }} pers · {{ minutes(s.openedAt) }} min</span>
+        </div>
+        @if (s.waiterName) {
+          <p class="muted small">Atiende {{ s.waiterName }}</p>
+        }
+        <ul class="account__lines">
+          @for (line of s.lines; track line.id) {
+            <li>
+              <span>{{ line.quantity }} × {{ line.productName }}
+                @if (line.extras.length || line.removedIngredients.length) {
+                  <small class="mods">{{ customization(line) }}</small>
+                }
+              </span>
+              @if (line.status !== 'SERVIDO') {
+                <small class="state state--{{ line.status.toLowerCase() }}">{{ statusLabels[line.status] }}</small>
+              }
+              <strong>{{ line.subtotal | currency: 'EUR' }}</strong>
+            </li>
+          } @empty {
+            <li class="muted">Aún no han pedido nada.</li>
+          }
+        </ul>
+        <dl class="totals">
+          <dt>Total</dt><dd>{{ s.total | currency: 'EUR' }}</dd>
+          @if (s.paid) {
+            <dt>Cobrado</dt><dd>{{ s.paid | currency: 'EUR' }}</dd>
+          }
+          <dt class="pending">Pendiente</dt><dd class="pending">{{ s.pending | currency: 'EUR' }}</dd>
+        </dl>
+        @if (s.payments.length) {
+          <ul class="payments">
+            @for (p of s.payments; track p.id) {
+              <li>
+                <span>{{ p.label }} · {{ p.method === 'EFECTIVO' ? 'Efectivo' : 'Tarjeta' }} · {{ p.paidAt | date: 'HH:mm' }}</span>
+                <strong>{{ p.amount | currency: 'EUR' }}</strong>
+                <button type="button" class="icon-btn" (click)="removePayment(p)" [attr.aria-label]="'Anular cobro ' + p.label">✕</button>
+              </li>
+            }
+          </ul>
+        }
+        <div class="account__actions">
+          <button type="button" class="btn" (click)="printReceipt()" [disabled]="!s.lines.length">🖨 Precuenta</button>
+          @if (s.pending > 0) {
+            <button type="button" class="btn btn--primary" (click)="openPay()">Cobrar {{ s.pending | currency: 'EUR' }}</button>
+          } @else {
+            <button type="button" class="btn btn--primary" (click)="release()">Liberar mesa</button>
+          }
+        </div>
+      } @else {
+        <p class="muted">Elige una mesa ocupada en el plano o en la lista de arriba.</p>
+      }
+    </article>
+  </div>
+
+  <!-- Caja del dia -->
+  @if (day(); as d) {
+    <article class="panel cash">
+      <div class="panel-head">
+        <h3>Caja</h3>
+        <input type="date" [(ngModel)]="dayDate" (change)="loadDay()" aria-label="Día" />
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><span>Total cobrado</span><strong>{{ d.total | currency: 'EUR' }}</strong><small>{{ d.tables }} mesas cerradas</small></div>
+        <div class="stat-card"><span>Efectivo</span><strong>{{ d.cash | currency: 'EUR' }}</strong></div>
+        <div class="stat-card"><span>Tarjeta</span><strong>{{ d.card | currency: 'EUR' }}</strong></div>
+      </div>
+      @if (d.sessions.length) {
+        <ul class="closed">
+          @for (c of d.sessions; track c.id) {
+            <li>
+              <span>{{ c.closedAt | date: 'HH:mm' }} · Mesa {{ c.tableLabel }} · {{ c.guests }} pers
+                @if (c.waiterName) { · {{ c.waiterName }} }</span>
+              <strong>{{ c.paid | currency: 'EUR' }}</strong>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+  }
+
+  @if (paying() && session(); as s) {
+    <app-pay-dialog [session]="s" (paid)="onPaid($event)" (closed)="paying.set(false)" />
+  }
+
+  <!-- Precuenta: solo se ve al imprimir (ver styles.scss, @media print) -->
+  @if (session(); as s) {
+    <div class="receipt" aria-hidden="true">
+      @if (company(); as c) {
+        <p class="receipt__center"><strong>{{ c.name }}</strong><br />{{ c.address }}<br />CIF {{ c.taxId }}@if (c.phone) { · {{ c.phone }} }</p>
+      }
+      <p class="receipt__center"><strong>PRECUENTA</strong></p>
+      <p>Mesa {{ s.tableLabel }} · {{ s.guests }} pers<br />{{ now() | date: 'dd/MM/yyyy HH:mm' }}@if (s.waiterName) { · {{ s.waiterName }} }</p>
+      <table>
+        @for (l of receiptLines(); track l.name + l.unitPrice) {
+          <tr><td>{{ l.quantity }} {{ l.name }}</td><td class="num">{{ l.subtotal | currency: 'EUR' }}</td></tr>
+        }
+      </table>
+      <p class="receipt__total"><span>TOTAL</span><span>{{ s.total | currency: 'EUR' }}</span></p>
+      @for (p of s.payments; track p.id) {
+        <p class="receipt__row"><span>{{ p.label }} ({{ p.method === 'EFECTIVO' ? 'efectivo' : 'tarjeta' }})</span><span>-{{ p.amount | currency: 'EUR' }}</span></p>
+      }
+      @if (s.payments.length) {
+        <p class="receipt__row"><span>Pendiente</span><span>{{ s.pending | currency: 'EUR' }}</span></p>
+      }
+      <p class="receipt__center small">IVA incluido<br />Documento no válido como factura</p>
+    </div>
+  }
+</section>

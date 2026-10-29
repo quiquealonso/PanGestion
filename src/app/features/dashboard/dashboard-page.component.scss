@@ -4,7 +4,7 @@
 }
 
 .stats-grid a:hover {
-  border-color: rgba(125, 211, 252, 0.3);
+  border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .board {
@@ -28,7 +28,7 @@
 .bar__track {
   height: 0.5rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--tint-rgb), 0.06);
 }
 
 .bar__fill {

@@ -24,8 +24,20 @@ El contexto del proyecto y las decisiones tomadas, en [`context.md`](context.md)
 - **Producción del día:** tabla producto × franja horaria que se actualiza sola, pensada para la pantalla del obrador o la cocina.
 - **Nuevo pedido:** productos por categorías con carrito flotante → resumen (quitar ingredientes: "pizza sin cebolla") → cliente → día y franja.
 - **Catálogo:** productos (foto, precio, descripción, abreviatura, color, ingredientes, orden), categorías e ingredientes con alérgenos.
-- **Clientes**, **Mi empresa** (datos y horario de recogida) y **Usuarios** con roles.
+- **Clientes:** estadísticas (nuevos por semana, activos, gasto medio…), filtros por pedidos y gasto, tarjetas con pedidos y total gastado.
+- **Mi empresa** (datos y horario de recogida) y **Usuarios** con roles.
 - **Superadministrador:** alta de empresas (panadería, bar o restaurante) y de sus usuarios.
+- **Modo claro y oscuro** del panel (botón en el menú; por defecto, el del sistema).
+
+**Sala** (solo bares y restaurantes):
+
+- **Sala y mesas:** editor visual del plano por zonas (terraza, interior…): crear, mover, redimensionar y borrar mesas.
+- **Servicio de mesas** (camarero, en el móvil): plano en vivo, abrir mesa juntando otras, comanda por rondas.
+- **Cocina y barra:** pantalla táctil con el estado de cada producto (pendiente → preparando → listo); mesas y pedidos para llevar diferenciados.
+- **Avisos en tiempo real:** cocina recibe las rondas al instante y el camarero un aviso con sonido cuando algo está listo.
+- **Barra y cobros:** cobrar todo, entre comensales o a partes iguales (efectivo con cambio o tarjeta), precuenta de 80 mm y caja del día.
+- **Pedidos a domicilio y reparto:** el cliente elige recoger o a domicilio; el repartidor, desde el móvil, se lleva los pedidos listos (Transportando) y los marca entregados; recibe un aviso cuando cocina termina uno.
+- **Informes de sala:** facturación, ticket medio, horas punta, más vendidos, camareros, mesas y tiempos de cocina.
 
 **Web pública** (`/pedido`, sin login, pensada para el móvil y para cualquier edad): asistente de 5 pasos —
 negocio → productos → revisar (quitar ingredientes) → datos → día y hora + confirmar— con botones grandes,
@@ -105,6 +117,8 @@ Abre http://localhost:4200 y entra con un usuario de prueba (botón **Usar** en 
 | `admin2@admin.es` | `admin1234` | Bar El Mosset (carta completa) |
 | `gestor@pangestion.local` | `gestor123` | Panadería, sin usuarios ni datos de empresa |
 | `visor@pangestion.local` | `visor123` | Panadería, solo lectura |
+| `camarero@pangestion.local` | `camarero123` | Bar El Mosset: servicio de mesas y cobros |
+| `cocina@pangestion.local` | `cocina123` | Bar El Mosset: pantalla de cocina y barra |
 
 Se crean en `backend/src/main/java/com/pangestion/config/DataInitializer.java` y se listan en el login desde
 `src/environments/environment.ts`. El build de producción no los incluye. **Hay que quitarlos antes de publicar.**
@@ -141,11 +155,12 @@ cd backend && ./mvnw package     # backend (jar en backend/target)
 PanGestion/
 ├── src/app/                  Frontend Angular
 │   ├── core/                 modelos, servicios HTTP, guards, interceptor, utilidades
-│   ├── shared/               diálogo, confirmación, formulario de empresa, pipes
-│   ├── layout/shell/         menú lateral según rol
-│   └── features/             una carpeta por pantalla (dashboard, orders, production, catalog, customers…)
+│   ├── shared/               diálogo, confirmación, formulario de empresa, pipes, mesa, avisos, gráfico de barras
+│   ├── layout/shell/         menú lateral según rol y tipo de negocio
+│   └── features/             una carpeta por pantalla (dashboard, orders, production, catalog, customers,
+│                             dining, service, kitchen, bar, dining-report…)
 ├── backend/                  API Spring Boot (ver backend/README.md)
-│   ├── src/main/java/com/pangestion/   config, controller, dto, exception, model, repository, security, service, storage
+│   ├── src/main/java/com/pangestion/   config, controller, dto, events, exception, model, repository, security, service, storage
 │   └── src/main/resources/             application*.properties, seed/ (cartas), seed-images/ (fotos de ejemplo)
 ├── proxy.conf.json           /api y /uploads → localhost:8080 en desarrollo
 └── context.md                contexto y decisiones del proyecto

@@ -63,4 +63,12 @@ public class Company {
     /** Si es false no acepta pedidos ni aparece en la web publica. */
     @Column(nullable = false)
     private boolean active = true;
+
+    /** Hace envios a domicilio: la web y el panel ofrecen "a domicilio" ademas de "recoger". */
+    @Column(nullable = false, columnDefinition = "boolean default false not null")
+    private boolean delivery;
+
+    /** Logo del negocio (ruta relativa en el almacen de imagenes: {empresa}/logo/{aleatorio}); null = sin logo. */
+    @Column(name = "logo_path")
+    private String logoPath;
 }

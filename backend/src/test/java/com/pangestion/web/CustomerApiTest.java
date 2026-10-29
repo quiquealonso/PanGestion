@@ -128,6 +128,26 @@ class CustomerApiTest extends ApiTestSupport {
     }
 
     @Test
+    @DisplayName("listado: cada cliente trae nº de pedidos, total gastado y último pedido (sin cancelados)")
+    void listIncludesOrderSummary() throws Exception {
+        var pa = product(category(forn, "Pans"), "Pa", "1.50");
+        order(lola, TOMORROW, "09:00", OrderStatus.PENDIENTE, pa, 2);
+        order(lola, TOMORROW.plusDays(2), "10:00", OrderStatus.ENTREGADO, pa, 1);
+        order(lola, TOMORROW.plusDays(5), "10:00", OrderStatus.CANCELADO, pa, 4);
+        customer(forn, "Pep", "pep@correo.es");
+
+        mvc.perform(getJson("/api/customers?search=lola").with(as(gestor)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].orderCount").value(2))
+                .andExpect(jsonPath("$[0].totalSpent").value(4.5))
+                .andExpect(jsonPath("$[0].lastOrderDate").value(TOMORROW.plusDays(2).toString()));
+        mvc.perform(getJson("/api/customers?search=pep").with(as(gestor)))
+                .andExpect(jsonPath("$[0].orderCount").value(0))
+                .andExpect(jsonPath("$[0].totalSpent").value(0))
+                .andExpect(jsonPath("$[0].lastOrderDate").doesNotExist());
+    }
+
+    @Test
     @DisplayName("historial de un cliente de otra empresa: 404")
     void ordersOfOtherCompany() throws Exception {
         Customer other = customer(company("Bar"), "Pep", "pep@correo.es");

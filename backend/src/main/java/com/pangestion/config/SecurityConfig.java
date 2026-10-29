@@ -1,10 +1,14 @@
 package com.pangestion.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -53,12 +57,23 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // consola H2
                 .authorizeHttpRequests(auth -> auth
+                        // Envios posteriores de una respuesta asincrona (avisos SSE): la peticion ya se autorizo al abrirla
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/public/**", "/uploads/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/companies/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/company").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
+                        .requestMatchers("/api/company/logo").hasRole("ADMIN")
+                        .requestMatchers("/api/reports/**").hasAnyRole("ADMIN", "GESTOR", "VISOR")
+                        .requestMatchers("/api/kitchen/**").hasAnyRole("ADMIN", "GESTOR", "CAMARERO", "COCINA")
+                        .requestMatchers("/api/delivery/**").hasAnyRole("ADMIN", "GESTOR", "REPARTIDOR")
+                        .requestMatchers("/api/events/**", "/api/auth/**").authenticated()
+                        // Cocina y repartidor solo usan su pantalla: el resto de la API (ni siquiera para leer) no es para ellos
+                        .requestMatchers(HttpMethod.GET, "/api/**").access(AuthorizationManagers.allOf(
+                                AuthenticatedAuthorizationManager.authenticated(),
+                                AuthorizationManagers.not(AuthorityAuthorizationManager.hasAnyRole("COCINA", "REPARTIDOR"))))
+                        .requestMatchers("/api/service/**").hasAnyRole("ADMIN", "GESTOR", "CAMARERO")
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "GESTOR")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));

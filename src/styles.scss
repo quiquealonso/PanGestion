@@ -15,6 +15,63 @@
 	--warning: #fdba74;
 	--danger: #fb7185;
 	--shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+
+	/* Canales RGB para transparencias: rgba(var(--primary-rgb), 0.12) sirve en los dos temas */
+	--tint-rgb: 255, 255, 255;
+	--primary-rgb: 125, 211, 252;
+	--accent-rgb: 251, 191, 36;
+	--danger-rgb: 251, 113, 133;
+	--success-rgb: 94, 234, 212;
+	--muted-rgb: 148, 163, 197;
+	--line-rgb: 173, 191, 224;
+
+	--bg-top: #070d17;
+	--bg-bottom: #060b13;
+	--sidebar-bg: linear-gradient(180deg, rgba(10, 17, 31, 0.94), rgba(10, 17, 31, 0.72));
+	--on-primary: #09111f;
+	--danger-text: #fecdd3;
+	--success-text: #ccfbf1;
+	--tone-blue: #bae6fd;
+	--tone-amber: #fde68a;
+	--tone-green: #99f6e4;
+	--tone-gray: #cbd5e1;
+}
+
+/* Modo claro del panel de gestion (ThemeService pone data-theme en <html>) */
+:root[data-theme='light'] {
+	color-scheme: light;
+	--bg: #f3f5fa;
+	--bg-2: #ffffff;
+	--panel: rgba(255, 255, 255, 0.88);
+	--panel-strong: #ffffff;
+	--border: rgba(15, 23, 42, 0.13);
+	--text: #0f172a;
+	--muted: #526079;
+	--primary: #0369a1;
+	--accent: #b45309;
+	--success: #0f766e;
+	--warning: #c2410c;
+	--danger: #be123c;
+	--shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+
+	--tint-rgb: 15, 23, 42;
+	--primary-rgb: 3, 105, 161;
+	--accent-rgb: 217, 119, 6;
+	--danger-rgb: 190, 18, 60;
+	--success-rgb: 15, 118, 110;
+	--muted-rgb: 82, 96, 121;
+	--line-rgb: 15, 23, 42;
+
+	--bg-top: #eef2f9;
+	--bg-bottom: #f6f7fb;
+	--sidebar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.9));
+	--on-primary: #ffffff;
+	--danger-text: #9f1239;
+	--success-text: #115e59;
+	--tone-blue: #075985;
+	--tone-amber: #92400e;
+	--tone-green: #115e59;
+	--tone-gray: #334155;
 }
 
 * {
@@ -31,9 +88,9 @@ body {
 	font-family: 'IBM Plex Sans', sans-serif;
 	color: var(--text);
 	background:
-		radial-gradient(circle at top left, rgba(251, 191, 36, 0.18), transparent 28%),
-		radial-gradient(circle at top right, rgba(125, 211, 252, 0.18), transparent 32%),
-		linear-gradient(180deg, #070d17 0%, var(--bg) 50%, #060b13 100%);
+		radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.18), transparent 28%),
+		radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.18), transparent 32%),
+		linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 50%, var(--bg-bottom) 100%);
 }
 
 body::before {
@@ -41,8 +98,8 @@ body::before {
 	position: fixed;
 	inset: 0;
 	pointer-events: none;
-	background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+	background-image: linear-gradient(rgba(var(--tint-rgb), 0.03) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(var(--tint-rgb), 0.03) 1px, transparent 1px);
 	background-size: 36px 36px;
 	mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 96%);
 }
@@ -60,7 +117,7 @@ textarea {
 }
 
 ::selection {
-	background: rgba(125, 211, 252, 0.28);
+	background: rgba(var(--primary-rgb), 0.28);
 }
 
 /* ===== Componentes compartidos del backoffice ===== */
@@ -124,14 +181,14 @@ textarea {
 	padding: 0.75rem 1rem;
 	border-radius: 0.95rem;
 	border: 1px solid var(--border);
-	background: rgba(255, 255, 255, 0.04);
+	background: rgba(var(--tint-rgb), 0.04);
 	color: var(--text);
 	cursor: pointer;
 	transition: 160ms ease;
 }
 
 .btn:hover:not(:disabled) {
-	border-color: rgba(125, 211, 252, 0.4);
+	border-color: rgba(var(--primary-rgb), 0.4);
 }
 
 .btn:disabled {
@@ -147,8 +204,8 @@ textarea {
 }
 
 .btn--danger {
-	border-color: rgba(251, 113, 133, 0.4);
-	color: #fecdd3;
+	border-color: rgba(var(--danger-rgb), 0.4);
+	color: var(--danger-text);
 }
 
 .btn--small {
@@ -202,8 +259,8 @@ textarea {
 	width: 100%;
 	padding: 0.9rem 1rem;
 	border-radius: 0.95rem;
-	border: 1px solid rgba(255, 255, 255, 0.06);
-	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(var(--tint-rgb), 0.06);
+	background: rgba(var(--tint-rgb), 0.03);
 	color: var(--text);
 	text-align: left;
 	cursor: pointer;
@@ -211,12 +268,12 @@ textarea {
 }
 
 .list-item:hover {
-	border-color: rgba(125, 211, 252, 0.24);
+	border-color: rgba(var(--primary-rgb), 0.24);
 }
 
 .list-item.is-selected {
-	background: rgba(125, 211, 252, 0.1);
-	border-color: rgba(125, 211, 252, 0.3);
+	background: rgba(var(--primary-rgb), 0.1);
+	border-color: rgba(var(--primary-rgb), 0.3);
 }
 
 .list-item strong {
@@ -282,7 +339,7 @@ textarea {
 	padding: 0.75rem 0.9rem;
 	border-radius: 0.9rem;
 	border: 1px solid var(--border);
-	background: rgba(255, 255, 255, 0.04);
+	background: rgba(var(--tint-rgb), 0.04);
 	color: var(--text);
 }
 
@@ -302,7 +359,7 @@ input[type='color'] {
 input.ng-invalid.ng-touched,
 select.ng-invalid.ng-touched,
 textarea.ng-invalid.ng-touched {
-	border-color: rgba(251, 113, 133, 0.6);
+	border-color: rgba(var(--danger-rgb), 0.6);
 }
 
 .check {
@@ -325,9 +382,9 @@ textarea.ng-invalid.ng-touched {
 	margin-top: 1rem;
 	padding: 0.8rem 1rem;
 	border-radius: 0.9rem;
-	background: rgba(251, 113, 133, 0.12);
-	border: 1px solid rgba(251, 113, 133, 0.3);
-	color: #fecdd3;
+	background: rgba(var(--danger-rgb), 0.12);
+	border: 1px solid rgba(var(--danger-rgb), 0.3);
+	color: var(--danger-text);
 }
 
 /* Etiquetas de estado */
@@ -339,17 +396,18 @@ textarea.ng-invalid.ng-touched {
 	font-weight: 700;
 	white-space: nowrap;
 	background: rgba(148, 163, 184, 0.16);
-	color: #cbd5e1;
+	color: var(--tone-gray);
 }
 
-.tone--pendiente { background: rgba(125, 211, 252, 0.16); color: #bae6fd; }
-.tone--en_proceso { background: rgba(251, 191, 36, 0.16); color: #fde68a; }
-.tone--listo { background: rgba(94, 234, 212, 0.16); color: #99f6e4; }
-.tone--entregado { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
-.tone--cancelado { background: rgba(251, 113, 133, 0.16); color: #fecdd3; }
-.tone--ok { background: rgba(94, 234, 212, 0.16); color: #99f6e4; }
-.tone--off { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
-.tone--danger { background: rgba(251, 113, 133, 0.18); color: #fecdd3; }
+.tone--pendiente { background: rgba(var(--primary-rgb), 0.16); color: var(--tone-blue); }
+.tone--en_proceso { background: rgba(var(--accent-rgb), 0.16); color: var(--tone-amber); }
+.tone--listo { background: rgba(var(--success-rgb), 0.16); color: var(--tone-green); }
+.tone--transportando { background: rgba(167, 139, 250, 0.18); color: var(--tone-violet, #c4b5fd); }
+.tone--entregado { background: rgba(148, 163, 184, 0.16); color: var(--tone-gray); }
+.tone--cancelado { background: rgba(var(--danger-rgb), 0.16); color: var(--danger-text); }
+.tone--ok { background: rgba(var(--success-rgb), 0.16); color: var(--tone-green); }
+.tone--off { background: rgba(148, 163, 184, 0.16); color: var(--tone-gray); }
+.tone--danger { background: rgba(var(--danger-rgb), 0.18); color: var(--danger-text); }
 
 .color-dot {
 	display: inline-block;
@@ -439,15 +497,15 @@ textarea.ng-invalid.ng-touched {
 	gap: 0.6rem;
 	padding: 0.85rem 0.95rem;
 	border-radius: 1rem;
-	border: 1px solid rgba(255, 255, 255, 0.07);
-	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(var(--tint-rgb), 0.07);
+	background: rgba(var(--tint-rgb), 0.03);
 	cursor: pointer;
 	transition: 160ms ease;
 }
 
 .card:hover {
-	border-color: rgba(125, 211, 252, 0.3);
-	background: rgba(125, 211, 252, 0.06);
+	border-color: rgba(var(--primary-rgb), 0.3);
+	background: rgba(var(--primary-rgb), 0.06);
 }
 
 .card--muted {
@@ -543,7 +601,7 @@ textarea.ng-invalid.ng-touched {
 .abbr {
 	padding: 0.05rem 0.4rem;
 	border-radius: 0.4rem;
-	background: rgba(255, 255, 255, 0.08);
+	background: rgba(var(--tint-rgb), 0.08);
 	font-family: monospace;
 	font-size: 0.8rem;
 }
@@ -569,15 +627,15 @@ textarea.ng-invalid.ng-touched {
 .wizard-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
 .wizard-nav button {
   padding: 0.7rem; border-radius: 0.95rem; border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03); color: var(--muted); cursor: pointer;
+  background: rgba(var(--tint-rgb), 0.03); color: var(--muted); cursor: pointer;
 }
-.wizard-nav button.is-active { color: var(--text); border-color: rgba(125, 211, 252, 0.4); background: rgba(125, 211, 252, 0.12); }
+.wizard-nav button.is-active { color: var(--text); border-color: rgba(var(--primary-rgb), 0.4); background: rgba(var(--primary-rgb), 0.12); }
 .wizard-nav button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .slots { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .slot {
   min-width: 4.6rem; padding: 0.6rem; border-radius: 0.8rem; border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04); color: var(--text); cursor: pointer;
+  background: rgba(var(--tint-rgb), 0.04); color: var(--text); cursor: pointer;
 }
 .slot.is-active {
   border-color: transparent; color: #09111f; font-weight: 700;
@@ -603,10 +661,16 @@ textarea.ng-invalid.ng-touched {
 	min-width: 0;
 }
 
-/* ===== Personalizar productos (quitar ingredientes) ===== */
+/* ===== Personalizar productos (quitar ingredientes y anadir extras) ===== */
 .removed {
 	display: block;
 	color: var(--warning);
+	font-size: 0.82rem;
+}
+
+.added {
+	display: block;
+	color: var(--success-text);
 	font-size: 0.82rem;
 }
 
@@ -642,7 +706,7 @@ textarea.ng-invalid.ng-touched {
 	padding: 0.55rem 0.8rem;
 	border-radius: 0.8rem;
 	border: 1px solid var(--border);
-	background: rgba(255, 255, 255, 0.03);
+	background: rgba(var(--tint-rgb), 0.03);
 	cursor: pointer;
 }
 
@@ -664,4 +728,262 @@ textarea.ng-invalid.ng-touched {
 
 .customize-foot {
 	justify-content: space-between;
+}
+
+/* ===== Plano de la sala (editor de mesas y servicio de mesas) ===== */
+/* Marco con margen para que se vean las sillas de las mesas del borde */
+.floor-stage {
+	padding: 14px;
+	border-radius: 1rem;
+	background: rgba(var(--tint-rgb), 0.02);
+	border: 1px solid var(--border);
+}
+
+/* Cuadricula: --cols columnas; el tamano de fondo (una casilla) lo pone la plantilla */
+.floor-canvas {
+	position: relative;
+	width: 100%;
+	background-image:
+		linear-gradient(to right, rgba(var(--line-rgb), 0.13) 1px, transparent 1px),
+		linear-gradient(to bottom, rgba(var(--line-rgb), 0.13) 1px, transparent 1px);
+	border-right: 1px solid rgba(var(--line-rgb), 0.13);
+	border-bottom: 1px solid rgba(var(--line-rgb), 0.13);
+	container-type: inline-size;
+	touch-action: none;
+	user-select: none;
+}
+
+/* Mesa colocada en el plano. --cell = lado de una casilla: sillas, margen y letra escalan con el plano */
+.floor-table {
+	--cell: calc(100cqw / var(--cols));
+	position: absolute;
+	padding: calc(var(--cell) * 0.32);
+	touch-action: none;
+}
+
+/* ===== Controles de sala (editor, servicio de mesas y comanda) ===== */
+/* Pestanas de zonas */
+.zones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zone {
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(var(--tint-rgb), 0.03);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  small {
+    margin-left: 0.35rem;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  &.is-active {
+    border-color: rgba(var(--primary-rgb), 0.5);
+    background: rgba(var(--primary-rgb), 0.14);
+  }
+}
+
+.zones__total {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.stepper {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--border);
+
+  button {
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 0.6rem;
+    background: rgba(var(--tint-rgb), 0.06);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  strong {
+    min-width: 2rem;
+    text-align: center;
+  }
+}
+
+.segmented {
+  display: inline-flex;
+  justify-self: start;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--border);
+
+  button {
+    padding: 0.4rem 0.8rem;
+    border: 0;
+    border-radius: 0.6rem;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button.on {
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--text);
+    font-weight: 600;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(var(--tint-rgb), 0.03);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+
+  &.on {
+    border-color: rgba(var(--primary-rgb), 0.55);
+    background: rgba(var(--primary-rgb), 0.18);
+    font-weight: 600;
+  }
+}
+
+/* Contador grande, para el movil */
+.stepper--big {
+  button {
+    width: 2.8rem;
+    height: 2.8rem;
+    font-size: 1.4rem;
+  }
+
+  strong {
+    min-width: 2.6rem;
+    font-size: 1.3rem;
+  }
+}
+
+/* Indicador de la conexion de avisos en tiempo real */
+.live {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	color: var(--success-text);
+	font-size: 0.82rem;
+	font-weight: 600;
+
+	&::before {
+		content: '';
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 50%;
+		background: var(--success);
+		box-shadow: 0 0 0 3px rgba(var(--success-rgb), 0.25);
+	}
+}
+
+.live--off {
+	color: var(--muted);
+
+	&::before {
+		background: var(--muted);
+		box-shadow: none;
+	}
+}
+
+/* ===== Precuenta (Barra y cobros): oculta en pantalla; al imprimir solo sale ella, a 80 mm ===== */
+.receipt {
+	display: none;
+}
+
+@media print {
+	@page {
+		size: 80mm auto;
+		margin: 4mm;
+	}
+
+	body * {
+		visibility: hidden;
+	}
+
+	.receipt,
+	.receipt * {
+		visibility: visible;
+	}
+
+	.receipt {
+		display: block;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 72mm;
+		background: #fff;
+		color: #000;
+		font: 11px/1.35 'Courier New', monospace;
+
+		p {
+			margin: 0 0 2mm;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-bottom: 2mm;
+		}
+
+		td {
+			padding: 0.5mm 0;
+			vertical-align: top;
+		}
+
+		.num {
+			text-align: right;
+			white-space: nowrap;
+		}
+	}
+
+	.receipt__center {
+		text-align: center;
+	}
+
+	.receipt__row,
+	.receipt__total {
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.receipt__total {
+		padding-top: 1mm;
+		border-top: 1px dashed #000;
+		font-size: 13px;
+		font-weight: 700;
+	}
 }

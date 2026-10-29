@@ -3,22 +3,27 @@ package com.pangestion.service;
 import com.pangestion.dto.ProductDto;
 import com.pangestion.exception.BusinessException;
 import com.pangestion.exception.NotFoundException;
+import com.pangestion.model.Ingredient;
+import com.pangestion.model.LineExtra;
 import com.pangestion.model.Product;
+import com.pangestion.repository.IngredientRepository;
 import com.pangestion.repository.OrderLineRepository;
 import com.pangestion.repository.ProductRepository;
 import com.pangestion.security.CurrentUser;
 import com.pangestion.storage.ImageStorage;
-import com.pangestion.storage.ImageType;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
+import com.pangestion.storage.UploadedImage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.TreeSet;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +37,7 @@ public class ProductService {
     private final CompanyService companyService;
     private final CurrentUser currentUser;
     private final ImageStorage imageStorage;
+    private final IngredientRepository ingredientRepository;
 
     @Value("${app.uploads.max-bytes}")
     private long maxImageBytes;
@@ -109,21 +115,9 @@ public class ProductService {
      */
     public ProductDto.Response uploadImage(Long id, MultipartFile file) {
         Product product = getEntity(id);
-        byte[] data;
-        try {
-            data = file.getBytes();
-        } catch (IOException e) {
-            throw new BusinessException("No se pudo leer la imagen");
-        }
-        if (data.length == 0 || data.length > maxImageBytes) {
-            throw new BusinessException("La imagen debe ocupar como maximo " + (maxImageBytes / 1024 / 1024) + " MB");
-        }
-        ImageType type = ImageType.detect(data);
-        if (type == null) {
-            throw new BusinessException("Formato no valido: sube una imagen JPG, PNG o WEBP");
-        }
+        UploadedImage image = UploadedImage.read(file, maxImageBytes);
         String previous = product.getImagePath();
-        product.setImagePath(imageStorage.save(product.getCompany().getId() + "/products", data, type));
+        product.setImagePath(imageStorage.save(product.getCompany().getId() + "/products", image.data(), image.type()));
         imageStorage.delete(previous);
         return toResponse(product);
     }
@@ -156,7 +150,38 @@ public class ProductService {
         product.setPrice(request.price());
         product.setActive(request.active());
         product.setCategory(categoryService.getEntity(request.categoryId()));
+        if (product.getCategory().getStation() != null) {
+            // La categoria manda (Bebidas → barra)
+            product.setStation(product.getCategory().getStation());
+        } else if (request.station() != null) {
+            product.setStation(request.station());
+        }
         setIngredients(product, request.ingredientIds() == null ? List.of() : request.ingredientIds());
+    }
+
+    /**
+     * Extras a anadir a un producto (nombre y precio del momento). Tienen que ser ingredientes de la misma empresa
+     * con precio de extra, y el producto tiene que llevar ingredientes (una bebida no admite extras).
+     * Tambien lo usan los pedidos para llevar y la web publica.
+     */
+    List<LineExtra> extras(Product product, Collection<Long> ingredientIds) {
+        if (ingredientIds == null || ingredientIds.isEmpty()) {
+            return List.of();
+        }
+        if (product.getIngredients().isEmpty()) {
+            throw new BusinessException("El producto " + product.getName() + " no admite extras");
+        }
+        List<LineExtra> extras = new ArrayList<>();
+        for (Long id : new TreeSet<>(ingredientIds)) {
+            Ingredient ingredient = ingredientRepository.findByIdAndCompanyId(id, product.getCompany().getId())
+                    .orElseThrow(() -> new NotFoundException("Ingrediente", id));
+            if (ingredient.getExtraPrice() == null) {
+                throw new BusinessException(ingredient.getName() + " no se puede anadir como extra");
+            }
+            extras.add(new LineExtra(ingredient.getName(), ingredient.getExtraPrice()));
+        }
+        extras.sort(Comparator.comparing(LineExtra::getName, String.CASE_INSENSITIVE_ORDER));
+        return extras;
     }
 
     private static String blankToNull(String value) {

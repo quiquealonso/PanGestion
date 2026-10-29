@@ -1,0 +1,162 @@
+/* Mesa del plano pulsable: el boton no pinta nada, solo la mesa */
+.pick {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+}
+
+.dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--primary-rgb), 0.45);
+  background: var(--panel-strong);
+
+  &--busy {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.35);
+  }
+}
+
+/* "Girar": activo cuando el plano esta girado */
+.rotate.on {
+  border-color: rgba(var(--primary-rgb), 0.55);
+  background: rgba(var(--primary-rgb), 0.16);
+  color: var(--text);
+}
+
+/* Vista de lista: botones grandes, comodos en el movil */
+.table-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.6rem;
+}
+
+.table-card {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 92px;
+  align-content: start;
+  padding: 0.8rem 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: rgba(var(--tint-rgb), 0.03);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  strong {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.35rem;
+  }
+
+  span,
+  small {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  &.is-busy {
+    border-color: rgba(var(--accent-rgb), 0.6);
+    background: rgba(var(--accent-rgb), 0.14);
+  }
+}
+
+.table-card .table-card__total {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.table-card .table-card__ready {
+  color: var(--success-text);
+  font-weight: 700;
+}
+
+.open-form {
+  display: grid;
+  gap: 1rem;
+
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .field > span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}
+
+/* Una sola fila: Plano/Lista a la izquierda, avisos y "En directo" a la derecha */
+.floor-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .live {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .btn {
+    white-space: nowrap;
+  }
+}
+
+/* Movil: el plano sin marco ni relleno y de borde a borde (se come el margen de la pantalla) para que las mesas se vean mas grandes */
+@media (max-width: 720px) {
+  .floor-stage {
+    margin: 0 -1rem;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .legend {
+    padding: 0 0.2rem;
+  }
+
+  /* Controles mas pequenos: el sitio, para el plano */
+  .page {
+    gap: 0.6rem;
+  }
+
+  .floor-bar {
+    .segmented {
+      padding: 0.15rem;
+
+      button {
+        padding: 0.25rem 0.65rem;
+        font-size: 0.82rem;
+      }
+    }
+
+    .live,
+    .btn {
+      font-size: 0.78rem;
+    }
+  }
+
+  .zones {
+    gap: 0.35rem;
+  }
+
+  .zone {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+  }
+}

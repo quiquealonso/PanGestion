@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   imports: [RouterOutlet, ConfirmDialogComponent],
@@ -9,4 +10,6 @@ import { ConfirmDialogComponent } from './shared/confirm-dialog.component';
   templateUrl: './app.html',
 })
 export class App {
+  /** Se crea al arrancar para aplicar el tema (claro u oscuro) tambien en el login. */
+  private readonly theme = inject(ThemeService);
 }

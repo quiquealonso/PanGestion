@@ -1,0 +1,115 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Sala</p>
+      <h2>Informes de sala</h2>
+      <p>Mesas cerradas, lo cobrado y cómo ha ido el servicio en el periodo elegido.</p>
+    </div>
+  </header>
+
+  <div class="panel toolbar range">
+    <div class="segmented" role="group" aria-label="Periodo">
+      <button type="button" [class.on]="preset() === 'today'" (click)="setPreset('today')">Hoy</button>
+      <button type="button" [class.on]="preset() === 'week'" (click)="setPreset('week')">7 días</button>
+      <button type="button" [class.on]="preset() === 'month'" (click)="setPreset('month')">30 días</button>
+      <button type="button" [class.on]="preset() === 'thisMonth'" (click)="setPreset('thisMonth')">Este mes</button>
+    </div>
+    <label><span class="sr">Desde</span><input type="date" [(ngModel)]="from" (change)="changeDates()" aria-label="Desde" /></label>
+    <label><span class="sr">Hasta</span><input type="date" [(ngModel)]="to" (change)="changeDates()" aria-label="Hasta" /></label>
+  </div>
+
+  @if (report(); as r) {
+    <section class="stats-grid">
+      <article class="panel stat-card">
+        <span>Cobrado</span><strong>{{ r.revenue | currency: 'EUR' }}</strong>
+        <small>{{ r.cash | currency: 'EUR' }} efectivo · {{ r.card | currency: 'EUR' }} tarjeta</small>
+      </article>
+      <article class="panel stat-card">
+        <span>Mesas</span><strong>{{ r.tables }}</strong><small>{{ r.guests }} comensales</small>
+      </article>
+      <article class="panel stat-card">
+        <span>Ticket medio por mesa</span><strong>{{ r.avgTicket | currency: 'EUR' }}</strong>
+        <small>{{ r.avgPerGuest | currency: 'EUR' }} por comensal</small>
+      </article>
+      <article class="panel stat-card">
+        <span>Duración media</span><strong>{{ r.avgMinutes }} min</strong><small>de abrir a cerrar la mesa</small>
+      </article>
+    </section>
+
+    @if (!r.tables) {
+      <article class="panel"><p class="muted">No hay mesas cerradas en este periodo.</p></article>
+    } @else {
+      <div class="charts">
+        <article class="panel">
+          <h3>Facturado por día</h3>
+          <app-simple-bar-chart [data]="byDay()" [format]="euroTicks" ariaLabel="Facturado por día"
+                                labelHeader="Día" valueHeader="Facturado" />
+        </article>
+        <article class="panel">
+          <h3>Mesas por hora de llegada</h3>
+          <app-simple-bar-chart [data]="byHour()" [format]="countTicks" ariaLabel="Mesas abiertas por hora"
+                                labelHeader="Hora" valueHeader="Mesas" />
+        </article>
+      </div>
+
+      <div class="charts">
+        <article class="panel">
+          <h3>Lo más vendido</h3>
+          <ul class="ranking">
+            @for (p of r.topProducts; track p.name) {
+              <li>
+                <span class="ranking__name">{{ p.name }}</span>
+                <span class="ranking__bar"><i [style.width.%]="(p.quantity / topMax()) * 100"></i></span>
+                <strong>{{ p.quantity }}</strong>
+                <small>{{ p.revenue | currency: 'EUR' }}</small>
+              </li>
+            }
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>Camareros</h3>
+          <table class="data">
+            <thead><tr><th>Camarero</th><th>Mesas</th><th>Comensales</th><th>Facturado</th><th>Ticket medio</th></tr></thead>
+            <tbody>
+              @for (w of r.byWaiter; track w.name) {
+                <tr><td>{{ w.name }}</td><td>{{ w.tables }}</td><td>{{ w.guests }}</td>
+                  <td>{{ w.revenue | currency: 'EUR' }}</td><td>{{ w.avgTicket | currency: 'EUR' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </article>
+      </div>
+
+      <div class="charts">
+        <article class="panel">
+          <h3>Mesas</h3>
+          <table class="data">
+            <thead><tr><th>Mesa</th><th>Veces ocupada</th><th>Facturado</th></tr></thead>
+            <tbody>
+              @for (t of r.byTable; track t.table) {
+                <tr><td>{{ t.table }}</td><td>{{ t.uses }}</td><td>{{ t.revenue | currency: 'EUR' }}</td></tr>
+              }
+            </tbody>
+          </table>
+          <p class="muted small">Si una mesa se juntó con otras, lo facturado se reparte entre ellas.</p>
+        </article>
+        <article class="panel">
+          <h3>Tiempos de cocina y barra</h3>
+          @if (r.kitchen.length) {
+            <table class="data">
+              <thead><tr><th>Dónde</th><th>Productos</th><th>Media</th><th>Máximo</th></tr></thead>
+              <tbody>
+                @for (k of r.kitchen; track k.station) {
+                  <tr><td>{{ stationLabels[k.station] }}</td><td>{{ k.items }}</td><td>{{ k.avgMinutes }} min</td><td>{{ k.maxMinutes }} min</td></tr>
+                }
+              </tbody>
+            </table>
+            <p class="muted small">Desde que el camarero lo pide hasta que se marca listo en la pantalla.</p>
+          } @else {
+            <p class="muted">Sin datos: los tiempos se guardan desde que cocina usa su pantalla.</p>
+          }
+        </article>
+      </div>
+    }
+  }
+</section>

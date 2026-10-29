@@ -3,7 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Category } from '../../../core/models/category.model';
 import { Ingredient } from '../../../core/models/ingredient.model';
-import { Product } from '../../../core/models/product.model';
+import { Product, STATION_LABELS, Station } from '../../../core/models/product.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CategoriesService } from '../../../core/services/categories.service';
 import { IngredientsService } from '../../../core/services/ingredients.service';
@@ -21,7 +21,7 @@ import { ModalComponent } from '../../../shared/modal/modal.component';
   styles: `
     .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .chip { cursor: pointer; border: 1px solid transparent; }
-    .chip.is-on { border-color: rgba(125, 211, 252, 0.6); background: rgba(125, 211, 252, 0.18); color: var(--text); }
+    .chip.is-on { border-color: rgba(var(--primary-rgb), 0.6); background: rgba(var(--primary-rgb), 0.18); color: var(--text); }
     .groups { display: grid; gap: 1rem; }
     .photo { display: flex; align-items: center; gap: 1rem; }
     .photo__preview {
@@ -83,7 +83,15 @@ export class ProductsPageComponent implements OnInit {
     description: [''],
     /** Ingredientes que lleva (ids). */
     ingredientIds: [[] as number[]],
+    /** Donde se prepara (solo bares y restaurantes) */
+    station: ['COCINA' as Station],
   });
+  readonly stationLabels = STATION_LABELS;
+  /** Estacion que impone la categoria elegida (Bebidas → barra); null = la decide el producto */
+  categoryStation(): Station | null {
+    return this.categories().find((c) => c.id === this.form.controls.categoryId.value)?.station ?? null;
+  }
+  readonly stations = Object.keys(STATION_LABELS) as Station[];
 
 
   constructor() {
@@ -125,6 +133,7 @@ export class ProductsPageComponent implements OnInit {
       active: product.active,
       description: product.description ?? '',
       ingredientIds: product.ingredients.map((i) => i.id),
+      station: product.station,
     });
     this.resetImage(product.imageUrl);
     if (!this.auth.canEdit()) this.form.disable();
@@ -133,7 +142,7 @@ export class ProductsPageComponent implements OnInit {
 
   startCreate(): void {
     this.selectedId.set(null);
-    this.form.reset({ name: '', abbreviation: '', ownColor: false, color: '#F59E0B', categoryId: this.categories()[0]?.id ?? 0, price: 0, active: true, description: '', ingredientIds: [] });
+    this.form.reset({ name: '', abbreviation: '', ownColor: false, color: '#F59E0B', categoryId: this.categories()[0]?.id ?? 0, price: 0, active: true, description: '', ingredientIds: [], station: 'COCINA' });
     this.resetImage(null);
     this.dialogOpen.set(true);
   }

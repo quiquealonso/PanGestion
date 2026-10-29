@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -63,6 +64,8 @@ class OrderServiceRulesTest {
     ProductService productService;
     @Mock
     CurrentUser currentUser;
+    @Mock
+    ApplicationEventPublisher events;
     @InjectMocks
     OrderService orderService;
 

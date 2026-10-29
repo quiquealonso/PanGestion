@@ -30,6 +30,41 @@ export class AuthService {
     return role === 'ADMIN' || role === 'GESTOR';
   });
 
+  /** Bares y restaurantes tienen plano de mesas. */
+  readonly hasDining = computed(() => {
+    const type = this.userSignal()?.companyType;
+    return type === 'BAR' || type === 'RESTAURANTE';
+  });
+
+  /** Camarero: solo trabaja en el servicio de mesas. */
+  readonly isWaiter = computed(() => this.userSignal()?.role === 'CAMARERO');
+  /** Puede abrir mesas y tomar comandas (bares y restaurantes). */
+  readonly canServe = computed(() => {
+    const role = this.userSignal()?.role;
+    return this.hasDining() && (role === 'ADMIN' || role === 'GESTOR' || role === 'CAMARERO');
+  });
+
+  /** Cocina: solo trabaja en la pantalla de cocina y barra. */
+  readonly isKitchen = computed(() => this.userSignal()?.role === 'COCINA');
+  /** Repartidor: solo ve los pedidos a domicilio */
+  readonly isDriver = computed(() => this.userSignal()?.role === 'REPARTIDOR');
+  /** Pantalla de reparto: repartidores, gestores y admins */
+  readonly canDeliver = computed(() => {
+    const role = this.userSignal()?.role;
+    return role === 'REPARTIDOR' || role === 'ADMIN' || role === 'GESTOR';
+  });
+  /** Puede usar la pantalla de cocina y barra (bares y restaurantes). */
+  readonly canKitchen = computed(() => {
+    const role = this.userSignal()?.role;
+    return this.hasDining() && (role === 'ADMIN' || role === 'GESTOR' || role === 'COCINA');
+  });
+
+  /** Puede ver los informes de sala (la facturacion): admins, gestores y visores de bares y restaurantes. */
+  readonly canReport = computed(() => {
+    const role = this.userSignal()?.role;
+    return this.hasDining() && (role === 'ADMIN' || role === 'GESTOR' || role === 'VISOR');
+  });
+
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${environment.apiBaseUrl}/auth/login`, { email, password }).pipe(
       tap((response) => {
@@ -38,6 +73,18 @@ export class AuthService {
         this.userSignal.set(response.user);
       }),
     );
+  }
+
+  /** Vuelve a pedir el usuario (/auth/me) y lo guarda: p. ej. tras cambiar el logo, o sesiones guardadas antes de un dato nuevo. */
+  refreshUser(): void {
+    if (!this.token()) return;
+    this.http.get<User>(`${environment.apiBaseUrl}/auth/me`).subscribe({
+      next: (user) => {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        this.userSignal.set(user);
+      },
+      error: () => undefined, // sin conexion: se sigue con el guardado
+    });
   }
 
   logout(): void {

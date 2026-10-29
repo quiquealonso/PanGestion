@@ -1,5 +1,7 @@
 package com.pangestion.service;
 
+import com.pangestion.model.OrderType;
+import com.pangestion.events.LiveEvent;
 import com.pangestion.dto.OrderDto;
 import com.pangestion.exception.BusinessException;
 import com.pangestion.exception.NotFoundException;
@@ -7,10 +9,12 @@ import com.pangestion.model.*;
 import com.pangestion.repository.OrderRepository;
 import com.pangestion.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +35,7 @@ public class OrderService {
     private final CompanyService companyService;
     private final ProductService productService;
     private final CurrentUser currentUser;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<OrderDto.Response> search(String search, OrderStatus status, LocalDate from, LocalDate to) {
@@ -63,15 +68,18 @@ public class OrderService {
         order.setPickupDate(request.pickupDate());
         order.setPickupTime(request.pickupTime());
         order.setNotes(request.notes());
+        setDelivery(order, request.type(), request.deliveryAddress());
         setLines(order, request.lines(), Set.of());
-        return OrderDto.Response.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        changed(saved, null);
+        return OrderDto.Response.from(saved);
     }
 
     /** Alta anidada bajo un cliente: primero se comprueba que el cliente es de esta empresa (404 si no). */
     public OrderDto.Response createForCustomer(Long customerId, OrderDto.CustomerOrderRequest request) {
         customerService.getEntity(customerId);
         return create(new OrderDto.Request(customerId, request.pickupDate(), request.pickupTime(),
-                request.notes(), request.lines()));
+                request.notes(), request.lines(), request.type(), request.deliveryAddress()));
     }
 
     /** Edicion desde el panel. Si cambia la franja se vuelve a comprobar la disponibilidad. */
@@ -95,14 +103,54 @@ public class OrderService {
         order.setPickupDate(request.pickupDate());
         order.setPickupTime(request.pickupTime());
         order.setNotes(request.notes());
+        setDelivery(order, request.type(), request.deliveryAddress());
         setLines(order, request.lines(), previousProducts);
+        changed(order, order.getStatus());
         return OrderDto.Response.from(order);
     }
 
+    /**
+     * Cambio de estado desde el panel. TRANSPORTANDO solo para pedidos a domicilio; al salir de TRANSPORTANDO hacia atras
+     * se quita el repartidor. Si un pedido a domicilio queda LISTO, se avisa a los repartidores.
+     */
     public OrderDto.Response changeStatus(Long id, OrderStatus status) {
         Order order = getEntity(id);
+        OrderStatus before = order.getStatus();
+        if (status == OrderStatus.TRANSPORTANDO && order.getType() != OrderType.DOMICILIO) {
+            throw new BusinessException("Solo los pedidos a domicilio se transportan");
+        }
+        if (status == OrderStatus.TRANSPORTANDO && before != OrderStatus.TRANSPORTANDO) {
+            order.setDispatchedAt(LocalDateTime.now());
+        } else if (status.compareTo(OrderStatus.TRANSPORTANDO) < 0) {
+            order.setDriver(null);
+            order.setDispatchedAt(null);
+        }
         order.setStatus(status);
+        changed(order, before);
         return OrderDto.Response.from(order);
+    }
+
+    /** Recoger o a domicilio. A domicilio exige direccion y que el negocio haga envios. */
+    private static void setDelivery(Order order, OrderType type, String address) {
+        OrderType value = type == null ? OrderType.RECOGER : type;
+        if (value == OrderType.DOMICILIO) {
+            if (!order.getCompany().isDelivery()) {
+                throw new BusinessException(order.getCompany().getName() + " no hace envios a domicilio");
+            }
+            if (address == null || address.isBlank()) {
+                throw new BusinessException("Falta la direccion de entrega");
+            }
+            order.setDeliveryAddress(address.trim());
+        } else {
+            order.setDeliveryAddress(null);
+        }
+        order.setType(value);
+    }
+
+    /** Avisa a las pantallas (pedidos, cocina y reparto) y, si un pedido a domicilio acaba de quedar listo, a los repartidores. */
+    private void changed(Order order, OrderStatus before) {
+        events.publishEvent(LiveEvent.change(order.getCompany().getId(), "orders", "kitchen", "delivery"));
+        LiveEvent.deliveryReady(order, before).ifPresent(events::publishEvent);
     }
 
     /**
@@ -134,16 +182,18 @@ public class OrderService {
                         .thenComparing(l -> l.getProduct().getSortOrder())
                         .thenComparing(l -> l.getProduct().getName())
                         .thenComparing(l -> String.join(",", l.getRemovedIngredients()))
+                        .thenComparing(l -> String.join(",", LineExtra.names(l.getExtras())))
                         .thenComparing(l -> l.getOrder().getPickupTime()))
                 .forEach(line -> {
                     Product product = line.getProduct();
-                    String key = product.getId() + "|" + line.getRemovedIngredients() + "|" + line.getOrder().getPickupTime();
+                    List<String> extras = LineExtra.names(line.getExtras());
+                    String key = product.getId() + "|" + line.getRemovedIngredients() + "|" + extras + "|" + line.getOrder().getPickupTime();
                     rows.merge(key,
                             new OrderDto.ProductionRow(product.getId(), product.getName(), product.getAbbreviation(),
                                     product.getCategory().getName(), product.getCategory().getColor(),
-                                    List.copyOf(line.getRemovedIngredients()), line.getOrder().getPickupTime(), line.getQuantity()),
+                                    List.copyOf(line.getRemovedIngredients()), extras, line.getOrder().getPickupTime(), line.getQuantity()),
                             (a, b) -> new OrderDto.ProductionRow(a.productId(), a.productName(), a.abbreviation(),
-                                    a.categoryName(), a.categoryColor(), a.removedIngredients(), a.pickupTime(),
+                                    a.categoryName(), a.categoryColor(), a.removedIngredients(), a.extras(), a.pickupTime(),
                                     a.quantity() + b.quantity()));
                 });
         return List.copyOf(rows.values());
@@ -164,22 +214,27 @@ public class OrderService {
         order.setPickupDate(request.pickupDate());
         order.setPickupTime(request.pickupTime());
         order.setNotes(request.notes());
+        setDelivery(order, request.type(), request.deliveryAddress());
         setLines(order, request.lines(), Set.of());
-        return OrderDto.Response.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        changed(saved, null);
+        return OrderDto.Response.from(saved);
     }
 
     /**
      * Sustituye las lineas. Las lineas del mismo producto con la misma personalizacion se suman;
-     * con distinta personalizacion ("pizza" y "pizza sin cebolla") quedan separadas.
-     * Solo se aceptan productos de la misma empresa que el pedido, y solo se pueden quitar ingredientes que lleva el producto.
+     * con distinta personalizacion ("pizza", "pizza sin cebolla" y "pizza con huevo") quedan separadas.
+     * Solo se aceptan productos de la misma empresa que el pedido, solo se pueden quitar ingredientes que lleva
+     * el producto y solo se anaden extras con precio de extra (ver ProductService.extras).
      */
     private void setLines(Order order, List<OrderDto.Line> lines, Set<Long> allowedInactive) {
         Map<String, LineDraft> drafts = new LinkedHashMap<>();
         for (OrderDto.Line line : lines) {
             Set<Long> removed = line.removedIngredientIds() == null ? Set.of() : new TreeSet<>(line.removedIngredientIds());
-            String key = line.productId() + ":" + removed;
-            drafts.merge(key, new LineDraft(line.productId(), removed, line.quantity()),
-                    (a, b) -> new LineDraft(a.productId(), a.removedIds(), a.quantity() + b.quantity()));
+            Set<Long> added = line.addedIngredientIds() == null ? Set.of() : new TreeSet<>(line.addedIngredientIds());
+            String key = line.productId() + ":" + removed + ":" + added;
+            drafts.merge(key, new LineDraft(line.productId(), removed, added, line.quantity()),
+                    (a, b) -> new LineDraft(a.productId(), a.removedIds(), a.addedIds(), a.quantity() + b.quantity()));
         }
 
         order.clearLines();
@@ -188,12 +243,13 @@ public class OrderService {
             if (!product.isActive() && !allowedInactive.contains(draft.productId())) {
                 throw new BusinessException("El producto " + product.getName() + " no esta disponible");
             }
-            order.addLine(product, draft.quantity(), removedNames(product, draft.removedIds()));
+            order.addLine(product, draft.quantity(), removedNames(product, draft.removedIds()),
+                    productService.extras(product, draft.addedIds()));
         }
     }
 
-    /** Nombres de los ingredientes a quitar, comprobando que el producto los lleva. */
-    private List<String> removedNames(Product product, Set<Long> removedIds) {
+    /** Nombres de los ingredientes a quitar, comprobando que el producto los lleva. Tambien lo usa el servicio de mesas. */
+    static List<String> removedNames(Product product, Set<Long> removedIds) {
         List<String> names = new ArrayList<>();
         for (Long id : removedIds) {
             Ingredient ingredient = product.getIngredients().stream()
@@ -207,7 +263,7 @@ public class OrderService {
     }
 
     /** Linea pedida antes de convertirla en OrderLine. */
-    private record LineDraft(Long productId, Set<Long> removedIds, int quantity) {
+    private record LineDraft(Long productId, Set<Long> removedIds, Set<Long> addedIds, int quantity) {
     }
 
     Order getEntity(Long id) {

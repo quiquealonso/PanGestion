@@ -1,3 +1,12 @@
+/** Donde se prepara (bares y restaurantes): cocina, barra o no se prepara. */
+export type Station = 'COCINA' | 'BARRA' | 'NINGUNA';
+
+export const STATION_LABELS: Record<Station, string> = {
+  COCINA: 'Cocina',
+  BARRA: 'Barra',
+  NINGUNA: 'No se prepara',
+};
+
 /** Ingrediente dentro de un producto. */
 export interface ProductIngredient {
   id: number;
@@ -25,6 +34,7 @@ export interface Product {
   /** URL de la foto (/uploads/...); null = sin foto. */
   imageUrl: string | null;
   ingredients: ProductIngredient[];
+  station: Station;
 }
 
 export interface ProductRequest {
@@ -36,6 +46,8 @@ export interface ProductRequest {
   active: boolean;
   categoryId: number;
   ingredientIds: number[];
+  /** null = cocina (o no cambiarla al editar) */
+  station: Station | null;
 }
 
 /** Producto tal y como lo ve el cliente en la parte publica. */

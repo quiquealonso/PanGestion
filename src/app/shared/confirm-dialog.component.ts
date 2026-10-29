@@ -41,7 +41,7 @@ import { ConfirmService } from '../core/services/confirm.service';
       max-width: 420px;
       padding: 1.5rem;
       border-radius: 1.4rem;
-      border: 1px solid rgba(251, 113, 133, 0.3);
+      border: 1px solid rgba(var(--danger-rgb), 0.3);
       background: var(--panel-strong);
       box-shadow: var(--shadow);
       text-align: center;
@@ -54,7 +54,7 @@ import { ConfirmService } from '../core/services/confirm.service';
       height: 3rem;
       margin: 0 auto 0.8rem;
       border-radius: 50%;
-      background: rgba(251, 113, 133, 0.16);
+      background: rgba(var(--danger-rgb), 0.16);
       color: var(--danger);
       font-family: 'Space Grotesk', sans-serif;
       font-size: 1.4rem;
@@ -79,11 +79,11 @@ import { ConfirmService } from '../core/services/confirm.service';
     }
 
     .dialog--normal {
-      border-color: rgba(125, 211, 252, 0.3);
+      border-color: rgba(var(--primary-rgb), 0.3);
     }
 
     .dialog--normal .icon {
-      background: rgba(125, 211, 252, 0.16);
+      background: rgba(var(--primary-rgb), 0.16);
       color: var(--primary);
     }
 

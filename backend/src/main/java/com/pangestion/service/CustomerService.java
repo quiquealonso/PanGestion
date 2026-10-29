@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Clientes de la empresa del usuario logueado. */
 @Service
@@ -27,14 +30,15 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public List<CustomerDto.Response> search(String search) {
+        Map<Long, OrderRepository.CustomerOrderStats> stats = statsByCustomer();
         return customerRepository.search(currentUser.companyId(), SearchUtils.likePattern(search)).stream()
-                .map(CustomerDto.Response::from)
+                .map(customer -> CustomerDto.Response.from(customer, stats.get(customer.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public CustomerDto.Response findById(Long id) {
-        return CustomerDto.Response.from(getEntity(id));
+        return toResponse(getEntity(id));
     }
 
     public CustomerDto.Response create(CustomerDto.Request request) {
@@ -45,7 +49,7 @@ public class CustomerService {
         Customer customer = new Customer();
         customer.setCompany(companyService.current());
         apply(customer, request);
-        return CustomerDto.Response.from(customerRepository.save(customer));
+        return CustomerDto.Response.from(customerRepository.save(customer), null);
     }
 
     public CustomerDto.Response update(Long id, CustomerDto.Request request) {
@@ -54,7 +58,7 @@ public class CustomerService {
             throw new BusinessException("Ya existe un cliente con el email " + request.email());
         }
         apply(customer, request);
-        return CustomerDto.Response.from(customer);
+        return toResponse(customer);
     }
 
     public void delete(Long id) {
@@ -87,6 +91,15 @@ public class CustomerService {
     Customer getEntity(Long id) {
         return customerRepository.findByIdAndCompanyId(id, currentUser.companyId())
                 .orElseThrow(() -> new NotFoundException("Cliente", id));
+    }
+
+    private CustomerDto.Response toResponse(Customer customer) {
+        return CustomerDto.Response.from(customer, statsByCustomer().get(customer.getId()));
+    }
+
+    private Map<Long, OrderRepository.CustomerOrderStats> statsByCustomer() {
+        return orderRepository.customerStats(currentUser.companyId()).stream()
+                .collect(Collectors.toMap(OrderRepository.CustomerOrderStats::getCustomerId, Function.identity()));
     }
 
     private void apply(Customer customer, CustomerDto.Request request) {

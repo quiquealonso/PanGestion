@@ -174,4 +174,19 @@ class PublicApiTest extends ApiTestSupport {
                 .andExpect(jsonPath("$.fieldErrors['customer.name']").exists())
                 .andExpect(jsonPath("$.fieldErrors.lines").exists());
     }
+
+    @Test
+    @DisplayName("extras de un negocio: solo los ingredientes con precio de extra")
+    void extras() throws Exception {
+        Company bar = company("Bar de extras");
+        Ingredient huevo = ingredient(bar, "Huevo", "Huevo");
+        huevo.setExtraPrice(new java.math.BigDecimal("1.00"));
+        ingredientRepository.save(huevo);
+        ingredient(bar, "Sal", null);
+        mvc.perform(getJson("/api/public/companies/{id}/extras", bar.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Huevo"))
+                .andExpect(jsonPath("$[0].price").value(1.00));
+    }
 }
