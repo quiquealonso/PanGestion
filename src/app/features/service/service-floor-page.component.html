@@ -1,22 +1,14 @@
 <section class="page">
-  <header class="page-head">
-    <div>
-      <p class="eyebrow">Sala</p>
-      <h2>Servicio de mesas</h2>
-      @if (!loading()) {
-        <p>{{ stats().busy }} de {{ stats().tables }} mesas ocupadas · {{ stats().guests }} comensales</p>
-      }
-    </div>
-    <div class="head-tools">
-      <span class="live" [class.live--off]="!live.connected()">{{ live.connected() ? 'En directo' : 'Reconectando…' }}</span>
-      @if (canAskNotifications()) {
-        <button type="button" class="btn btn--small" (click)="askNotifications()">🔔 Activar avisos</button>
-      }
+  <!-- Directo a las mesas: sin titulo ni resumen; vista, avisos y conexion en una sola fila para ahorrar sitio -->
+  <header class="floor-bar">
     <div class="segmented" role="group" aria-label="Vista">
       <button type="button" [class.on]="view() === 'map'" (click)="setView('map')">Plano</button>
       <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">Lista</button>
     </div>
-    </div>
+    @if (canAskNotifications()) {
+      <button type="button" class="btn btn--small" (click)="askNotifications()">🔔 Avisos</button>
+    }
+    <span class="live" [class.live--off]="!live.connected()">{{ live.connected() ? 'En directo' : 'Reconectando…' }}</span>
   </header>
 
   @if (loading()) {
@@ -36,15 +28,15 @@
     </nav>
 
     @if (active(); as area) {
-      @if (view() === 'map') {
+      @if (view() === 'map' && plan(); as shown) {
         <div class="floor-stage">
-          <div class="floor-canvas" [style.aspect-ratio]="area.width + ' / ' + area.height" [style.--cols]="area.width"
-               [style.background-size]="(100 / area.width) + '% ' + (100 / area.height) + '%'">
-            @for (table of area.tables; track table.id) {
+          <div class="floor-canvas" [style.aspect-ratio]="shown.width + ' / ' + shown.height" [style.--cols]="shown.width"
+               [style.background-size]="(100 / shown.width) + '% ' + (100 / shown.height) + '%'">
+            @for (table of shown.tables; track table.id) {
               <button type="button" class="floor-table pick"
                       [attr.aria-label]="'Mesa ' + table.name + (table.session ? ', ocupada' : ', libre')"
-                      [style.left.%]="(table.x / area.width) * 100" [style.top.%]="(table.y / area.height) * 100"
-                      [style.width.%]="(table.width / area.width) * 100" [style.height.%]="(table.height / area.height) * 100"
+                      [style.left.%]="(table.x / shown.width) * 100" [style.top.%]="(table.y / shown.height) * 100"
+                      [style.width.%]="(table.width / shown.width) * 100" [style.height.%]="(table.height / shown.height) * 100"
                       (click)="pick(table)">
                 <app-dining-table [table]="table" [busy]="!!table.session" [ready]="!!table.session?.readyCount" [info]="info(table)" />
               </button>
@@ -54,9 +46,11 @@
         <p class="legend muted">
           <span><i class="dot"></i> Libre</span>
           <span><i class="dot dot--busy"></i> Ocupada</span>
+          <button type="button" class="btn btn--small rotate" [class.on]="rotated()" (click)="toggleRotated()"
+                  [attr.aria-pressed]="rotated()">↻ Girar</button>
           <span>· Pulsa una mesa para abrirla o ver su comanda</span>
         </p>
-      } @else {
+      } @else if (view() === 'list') {
         <div class="table-list">
           @for (table of area.tables; track table.id) {
             <button type="button" class="table-card" [class.is-busy]="table.session" (click)="pick(table)">

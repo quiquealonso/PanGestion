@@ -553,7 +553,7 @@ Cambios pedidos al usar la app. Cada apartado dice qué hace, cómo está hecho,
 **Móvil: menú inferior (todas las personas)**
 
 - En pantallas de 960 px o menos **no hay menú lateral**: el menú va **abajo, fijo** (al alcance del pulgar), con iconos:
-  - Camarero: 🍽️ Mesas, 💶 Cobrar y su cuenta («Yo»).
+  - Camarero: ya no tiene menú inferior (ver «Camarero con cabecera» más abajo). Antes: 🍽️ Mesas, 💶 Cobrar y «Yo».
   - Cocina: 🍳 Cocina y «Yo».
   - Admin y gestor de bar: Inicio, Mesas, Pedidos y «☰ Menú». Panadería: Inicio, Pedidos, Producción y «☰ Menú».
     Superadministrador: Empresas, Usuarios y «☰ Menú».
@@ -561,7 +561,7 @@ Cambios pedidos al usar la app. Cada apartado dice qué hace, cómo está hecho,
   Se cierra al tocar fuera o al cambiar de pantalla. Los enlaces del menú son los mismos que el lateral (`ng-template #navLinks`).
 - Lo que estaba fijo abajo sube para no quedar tapado: la barra «Enviar» de la comanda, el carrito del nuevo pedido y los avisos.
 - **Repartidor (móvil y ordenador): sin menú lateral ni menú inferior**, porque solo usa su pantalla. Arriba hay una cabecera
-  (`.driver-bar` en el shell) con sus iniciales y su nombre; al tocar las iniciales sale su menú (modo claro/oscuro y cerrar
+  (`.single-bar` en el shell; antes `.driver-bar`) con sus iniciales y su nombre; (ahora sin menú: ver «Cabecera sin clics extra») modo claro/oscuro y cerrar
   sesión). En la pantalla de reparto el título «Reparto» solo lo ven gestores y administradores; el repartidor ve solo «En directo».
 - **Camarero en el móvil:** el servicio de mesas abre en **Lista** (el plano queda diminuto en un teléfono; se puede cambiar y se
   recuerda) y los botones de la mesa en la comanda van en una sola fila deslizable.
@@ -580,6 +580,122 @@ cocina lo deja listo, permisos); `SeedDataTest` entra con el repartidor.
 
 **Pendiente / ideas:** coste de envío y pedido mínimo a domicilio; zona de reparto; varios pedidos por viaje con ruta; Web Push
 para avisar con el móvil bloqueado (hoy el aviso llega con la app abierta, aunque esté en segundo plano).
+
+#### 10. Camarero en el móvil: directo a las mesas y carta a pantalla completa
+
+**Entrar:** tras iniciar sesión, cada persona va a la pantalla de su rol (`/`, que redirige según el rol): el camarero entra
+**directo a las mesas** (`/service`), cocina a `/kitchen`, el repartidor a `/delivery` y el resto al inicio. Antes el login
+mandaba siempre a `/dashboard` y el camarero veía primero el resumen de la sala. El superadministrador sigue yendo a `/companies`.
+(`features/auth/auth-page.component.ts`)
+
+**Mesas (`/service`) sin cabecera:** fuera el título «Servicio de mesas» y el resumen («X de Y mesas ocupadas · Z comensales»).
+En **una sola fila** (`.floor-bar`): «Plano | Lista», «🔔 Avisos» (solo si el navegador aún no ha dado permiso) y «En directo»
+a la derecha. Debajo, las zonas y las mesas.
+- **Plano en el móvil (≤720 px) de borde a borde:** sin marco, fondo ni relleno del contenedor y comiéndose el margen de la
+  pantalla (`margin: 0 -1rem`). En un móvil de 375 px el plano pasa de 315 a 371 px de ancho (+18 %); las mesas, sillas y
+  textos crecen en proporción porque escalan con el plano.
+- **Botón «↻ Girar»** junto a «Libre / Ocupada» (debajo del plano): gira el plano 90° en el sentido de las agujas del reloj.
+  Un plano apaisado (p. ej. 16×8) en el móvil pasa a vertical y las mesas salen más del doble de grandes (se hace scroll si no
+  cabe). No se gira la imagen: se recolocan las mesas (`plan` en `service-floor-page.component.ts`: `x' = alto − y − alto_mesa`,
+  `y' = x`, ancho y alto intercambiados), así los nombres y las sillas siguen derechos. Se recuerda en el navegador
+  (`pangestion.service-rotated`) y vale también en ordenador. El plano guardado (`/dining`) no cambia.
+
+**Menú inferior más pequeño y scroll:**
+- El menú de abajo es más bajo (iconos y texto más pequeños). Su alto está en la variable CSS `--tabbar-h` (3,3 rem en ≤960 px,
+  0 en ordenador, definida en el `:host` del shell); lo que va encima la usa: hueco inferior del contenido, avisos (toasts), hoja
+  «Menú/Yo» y el carrito del nuevo pedido.
+- **Arreglo:** en ≤720 px una regla `padding: 1rem` del contenido pisaba el hueco de abajo del menú, así que lo último de cada
+  pantalla quedaba tapado y no se llegaba con el scroll. Ahora a ese ancho solo se cambian los lados y el de arriba.
+
+**Comanda de una mesa (`/service/:id`) en el móvil (≤860 px):**
+- Al pulsar una mesa **ya abierta** se ve **lo que tiene** (lo pedido, con su estado y «Servir»), no la carta. Si no hay nada
+  apuntado sin enviar, el bloque «Por enviar» no se muestra, para que lo pedido salga arriba.
+- Botón grande **«+ Añadir productos»** (con «N sin enviar» si hay algo apuntado) que abre la carta.
+- **La carta va a pantalla completa**, por encima de todo (tapa el menú inferior y la cabecera de la mesa; no se ve nada detrás):
+  barra de arriba con «←» (vuelve a la mesa), «Mesa X» y el total con lo apuntado; buscador; categorías; productos; y abajo la
+  barra «N apuntados · total · Ver · Enviar». Al enviar la ronda se vuelve a lo que tiene la mesa.
+- **Mesa nueva:** primero se piden los comensales (como antes) y, al abrirla, entra **directa a la carta a pantalla completa**
+  (regla: mesa abierta sin nada pedido ni apuntado → carta).
+- Las ventanas (`app-modal`, p. ej. notas e ingredientes de un producto) suben de capa (`z-index` 58) para verse encima de la carta.
+- En ordenador (>860 px) no cambia: carta y comanda una al lado de la otra.
+
+**Al tocar un producto con ingredientes** (pizzas, hamburguesas…) en la carta de la mesa, sale **primero su diálogo**, con el
+mismo estilo que el pedido de los clientes:
+- **Ingredientes** en lista, uno por fila con casilla marcada; se desmarca lo que no quiera (sale tachado y «Sin cebolla»).
+- **Extras plegados**: arriba de la sección, un **lápiz «Añadir ingredientes»** que despliega la lista de extras posibles con su
+  precio (casillas; «Listo» la pliega). Plegado, solo se ven los extras elegidos («+ Huevo +1,00 €», con ✕ para quitarlo) o
+  «Sin extras».
+- Notas para cocina y botones «Añadir 9,50 €» (precio con los extras) o «Cancelar» (no se apunta nada).
+- Sin cambios, se apunta como un toque normal y se junta con la misma línea sin cambios; con cambios, va en su propia línea.
+  Los productos sin ingredientes (bebidas…) se apuntan directamente con un toque. Las líneas ya apuntadas se editan tocándolas
+  en «Por enviar» con el mismo diálogo («Guardar» / «Quitar»).
+- (`add`, `editingNew`, `showExtras` en `table-session-page.component.ts`; estilos `.ing-list`, `.ing-row`, `.link-btn`.)
+
+**Logo de la empresa (arriba a la izquierda en la cabecera):**
+- **BD:** columna nueva `companies.logo_path` (nullable; Hibernate la añade sola en las BD ya creadas). Guarda la ruta en el
+  almacén de imágenes: `{empresa}/logo/{nombre aleatorio}.png|jpg|webp`, igual que las fotos de producto.
+- **API:** `POST /api/company/logo` (multipart, campo `file`) sube o sustituye el logo y borra el anterior del disco;
+  `DELETE /api/company/logo` lo quita. **Solo ADMIN** (resto 403). Misma validación que las fotos: JPG, PNG o WEBP por contenido
+  y 2 MB como máximo (si no, 409). La validación está ahora en `storage/UploadedImage` (la usan productos y logo).
+- La URL sale en la empresa (`logoUrl` en `/api/company` y en la web pública) y en el usuario (`companyLogoUrl` en el login y
+  `/api/auth/me`), así cualquier rol la tiene sin pedir la empresa.
+- **Mi empresa:** bloque «Logo» encima de los datos: vista previa, «Subir logo» / «Cambiar logo» y «Quitar» (solo el ADMIN; el
+  resto lo ve). Al cambiarlo se refresca el usuario guardado.
+- **Cabecera del camarero y del repartidor:** el logo va arriba a la izquierda (2 rem de alto, hasta 9 rem de ancho, sin
+  deformar). Sin logo, el nombre del negocio como hasta ahora. El shell pide `/api/auth/me` al entrar (`refreshUser`), así las
+  sesiones ya abiertas lo reciben sin volver a iniciar sesión.
+- **Tests:** `CompanyLogoApiTest` (subir y verlo en empresa y usuario, quitar y borrar del disco, solo ADMIN y formato).
+
+**Categorías de la carta sin «Todo»:** ya no hay chip «Todo»; se empieza en la primera categoría (`selectedCategory`). Al buscar
+se busca en toda la carta, como antes.
+
+**Lo ya pedido («Pedido»), como en cocina** (`sentLines`, `categoryColor`):
+- Orden: por **rondas** (R1, R2… se mantienen) y, dentro de cada ronda, en el **orden de cocina** de su categoría («Orden en
+  cocina», `kitchenOrder`: entrantes primero…). La comanda carga las categorías (`GET /api/categories`) solo para ese orden.
+- Cada fila es una **tarjeta blanca** (fondo de panel; oscuro en modo oscuro) con el **borde izquierdo del color de su categoría**,
+  el mismo color que en cocina. El fondo no se tiñe.
+- **Sin precio por línea**: el total de la mesa va arriba y en la cabecera de «Pedido».
+- **Sin «1 ×»**: la cantidad solo se ve cuando hay varios («**2 ×** Guindilla»); con uno, solo el nombre («Barbacoa»).
+- La carta no cambia: sus colores, orden y precios siguen como estaban.
+- En el móvil, lo de la mesa («Por enviar» y «Pedido») va **sin caja**, directamente sobre el fondo de la pantalla, para
+  aprovechar el ancho.
+
+**Sin «Liberar mesa» en la comanda:** la mesa queda libre sola al cobrarla entera en «Barra y cobros» (la opción «Liberar la mesa
+si queda pagada», `closeWhenPaid`, viene marcada). Arriba quedan solo «Comensales y notas» y «Juntar o cambiar mesa».
+`POST /api/service/sessions/{id}/close` sigue existiendo (lo usa la barra).
+
+**Cobrar desde la mesa (el camarero ya no tiene «Barra y cobros»):**
+- En la comanda, **debajo de todo lo pedido**, sale el botón grande **«Cobrar 26,50 €»** solo cuando **todo está servido**
+  (`canCharge`: hay algo pedido, todas las líneas en `SERVIDO`, nada apuntado sin enviar y queda dinero por cobrar). Si aún hay
+  algo sin servir, en su lugar: «Se podrá cobrar cuando esté todo servido».
+- Abre el **mismo flujo de cobro** que la barra: todo / entre comensales / a partes iguales, efectivo (con «Exacto», billetes
+  típicos y cambio) o tarjeta, y «Liberar la mesa si queda pagada» marcado. Está en un componente compartido,
+  `shared/pay-dialog.component.ts` (`app-pay-dialog`), que usan la comanda y `features/bar`.
+- Al cobrarla entera la mesa queda libre y se vuelve a la sala («Mesa 2 cobrada y libre»). Con un pago parcial (un comensal,
+  una parte) se queda en la mesa con lo que falta.
+- **Camarero sin «Barra y cobros»:** fuera del menú inferior («Cobrar») y del lateral; si entra a `/bar` le lleva a `/service`
+  (`barGuard`). Gestores y admins siguen teniendo «Barra y cobros» (plano para cobrar, precuenta y caja del día).
+
+**Camarero con cabecera, como el repartidor:** como ya solo usa las mesas (y cobra desde la mesa), no tiene menú lateral ni menú
+inferior en ninguna pantalla. Arriba, una cabecera con sus iniciales y su nombre; al tocar las iniciales sale su menú con
+«Modo oscuro/claro» y «Cerrar sesión». En el shell: `singleScreen` (repartidor o camarero) pone `.shell--single` (sin lateral)
+y `.single-bar` (la cabecera), quita el menú inferior y, con la clase `no-tabbar` en el `:host`, deja `--tabbar-h` a 0 para
+que lo fijo abajo (avisos, barra de enviar) no deje hueco. La cabecera del repartidor sigue centrada a 640 px.
+
+**Cabecera sin clics extra (camarero y repartidor):** todo a la vista y a la derecha, sin menú desplegable:
+icono de **modo claro/oscuro** (sol o luna, cambia al momento) · separador · **avatar redondo con las iniciales** · **nombre** y,
+debajo, el **rol** («Camarero», «Repartidor») · icono de **cerrar sesión**. Iconos en SVG dentro del shell (`.icon-action`).
+- **Barra de app fina:** de borde a borde, fija arriba al hacer scroll (`sticky`), fondo de panel y línea abajo; unos 3 rem de
+  alto. A la izquierda el **nombre del negocio** en mayúsculas pequeñas; a la derecha lo de arriba en pequeño (avatar 1,9 rem,
+  nombre 0,85 rem, rol 0,7 rem, iconos 1,1 rem). Es poco importante: el sitio es para el contenido.
+- **Todo más junto en el móvil** para que quepan más líneas del pedido: en la comanda, «Mesa X» y el total más pequeños, la
+  información de la mesa en 0,78 rem, botón «←» y botones de la mesa más pequeños, «+ Añadir productos» más bajo, menos hueco
+  entre bloques y filas de «Pedido» más bajas (el hueco de «anular» marcaba el alto: ahora 1,5 rem). En mesas, «Plano/Lista»,
+  zonas y «En directo» más pequeños.
+
+**Ficheros:** `features/service/service-floor-page.component.{html,scss,ts}`, `features/service/table-session-page.component.{html,scss,ts}`,
+`layout/shell/shell.component.scss`, `features/orders/create-order/create-order-page.component.scss`, `shared/modal/modal.component.ts`,
+`features/auth/auth-page.component.ts`.
 
 ### Qué no se ha hecho (y por qué)
 
@@ -638,7 +754,7 @@ para avisar con el móvil bloqueado (hoy el aviso llega con la app abierta, aunq
 
 ## Tests del backend (`backend/src/test/java/com/pangestion`)
 
-`./mvnw verify` en `backend/`: **276 tests**, cada funcionalidad probada una a una. El CI solo ejecuta los 58 de la S17
+`./mvnw verify` en `backend/`: **279 tests**, cada funcionalidad probada una a una. El CI solo ejecuta los 58 de la S17
 (`./mvnw verify -Dgroups=reglas-negocio`). Siguen los tipos de prueba del temario (S17 unidad con Mockito, S22 repositorios
 con `@DataJpaTest`, S31 HTTP con MockMvc). Correspondencia sesión ↔ código en `backend/docs/sesiones.md` y lo comprobado
 (regresiones provocadas, colección Postman) en `backend/docs/comprobaciones.md`.
@@ -698,22 +814,23 @@ con `@DataJpaTest`, S31 HTTP con MockMvc). Correspondencia sesión ↔ código e
 | 2026-10-26 | `07255f2` | Se trabaja en la rama `dev`; `context.md` con guía de la web pública, guía rápida e historial |
 | 2026-10-26 | `f7a999a` | Tests del backend por capas (202) y arreglo del orden de arranque (`DataInitializer` con `@Order(1)`) |
 | 2026-10-26 | `d13dc3d` | Backend adaptado a las sesiones 5–17 (JSON estricto, 201 + Location, creación anidada, validación propia, errores, colección Postman) y CI solo con los tests de la S17 |
-| 2026-10-27 | *sin commit* | **Modo claro** del panel: variables de color, `ThemeService`, botón en el menú |
-| 2026-10-27 | *sin commit* | **Clientes:** estadísticas, filtros, tarjetas con pedidos y gasto (el backend devuelve `orderCount`, `totalSpent`, `lastOrderDate`), Particular/Negocio en la ficha |
-| 2026-10-27 | *sin commit* | **Sala, fase 1:** zonas y mesas con editor visual |
-| 2026-10-27 | *sin commit* | **Fase 2:** rol CAMARERO, servicio de mesas (abrir, juntar/cambiar, comensales, liberar) y comanda móvil por rondas |
-| 2026-10-27 | *sin commit* | **Fase 3:** estación por producto, estado por producto, rol COCINA y pantalla táctil de cocina/barra |
-| 2026-10-27 | *sin commit* | **Fase 4:** avisos en tiempo real (SSE): rondas a cocina, «listo» al camarero, pantallas que se refrescan solas |
-| 2026-10-27 | *sin commit* | **Fase 5:** barra y cobros (todo, por comensal, partes iguales; efectivo/tarjeta), precuenta 80 mm, caja del día |
-| 2026-10-27 | *sin commit* | **Fase 6:** informes de sala y hora de «listo» por producto |
-| 2026-10-28 | *sin commit* | **Menú e inicio según el tipo de negocio:** inicio de sala (`GET /api/dashboard/dining`), menú Sala / Para llevar en bares y restaurantes, sin «Producción del día»; textos sin «panadería» fija |
-| 2026-10-28 | *sin commit* | **Panel y cocina:** menú lateral plegable (flecha, se recuerda), menú del usuario en sus iniciales (modo claro/oscuro y cerrar sesión); cocina a todo el alto con tickets compactos, columnas de ancho variable, una unidad por toque, color e inicial de categoría; el rol COCINA solo ve su pantalla |
-| 2026-10-28 | *sin commit* | **Sin comensales por producto:** los comensales solo dividen la cuenta («Entre comensales», a partes iguales); fuera de la comanda, la cocina y la API; no se cambia el nº de comensales si alguno ya pagó |
-| 2026-10-28 | *sin commit* | **Bebidas en barra, orden en cocina y extras:** estación por categoría (Bebidas → barra), página «Orden en cocina» (`PUT /api/categories/kitchen-order`), precio de extra en ingredientes y extras con precio en comanda, pedidos y web pública; en cocina, «+ Huevo» en verde y «sin Cebolla» en rojo |
-| 2026-10-28 | *sin commit* | **Barra sin «Preparando»** (de pendiente a listo para servir) y «pax» → «pers» |
-| 2026-10-28 | *sin commit* | **Pedidos a domicilio y repartidor:** tipo de pedido (recoger / a domicilio con dirección), envíos por negocio, estado Transportando, rol REPARTIDOR con su pantalla y `/api/delivery`, aviso al repartidor cuando un pedido queda listo; **móvil:** menú inferior fijo, hoja «Menú/Yo», lista de mesas por defecto |
-| 2026-10-28 | *sin commit* | **Repartidor, versión final:** cabecera con iniciales y nombre sin menú lateral ni inferior, pestaña «Entregados» (solo lo entregado hoy), icono de moto 🏍️, pestañas sin el fondo que cortaba el degradado |
-| 2026-10-27 | *sin commit* | Arreglos: `--panel-strong` del tema oscuro se refería a sí mismo (modales y tarjetas sin fondo) y `SchemaUpgrade` para los roles nuevos en BD ya creadas |
+| 2026-10-27 | `233894a` | **Modo claro** del panel: variables de color, `ThemeService`, botón en el menú |
+| 2026-10-27 | `233894a` | **Clientes:** estadísticas, filtros, tarjetas con pedidos y gasto (el backend devuelve `orderCount`, `totalSpent`, `lastOrderDate`), Particular/Negocio en la ficha |
+| 2026-10-27 | `233894a` | **Sala, fase 1:** zonas y mesas con editor visual |
+| 2026-10-27 | `233894a` | **Fase 2:** rol CAMARERO, servicio de mesas (abrir, juntar/cambiar, comensales, liberar) y comanda móvil por rondas |
+| 2026-10-27 | `233894a` | **Fase 3:** estación por producto, estado por producto, rol COCINA y pantalla táctil de cocina/barra |
+| 2026-10-27 | `233894a` | **Fase 4:** avisos en tiempo real (SSE): rondas a cocina, «listo» al camarero, pantallas que se refrescan solas |
+| 2026-10-27 | `233894a` | **Fase 5:** barra y cobros (todo, por comensal, partes iguales; efectivo/tarjeta), precuenta 80 mm, caja del día |
+| 2026-10-27 | `233894a` | **Fase 6:** informes de sala y hora de «listo» por producto |
+| 2026-10-28 | `233894a` | **Menú e inicio según el tipo de negocio:** inicio de sala (`GET /api/dashboard/dining`), menú Sala / Para llevar en bares y restaurantes, sin «Producción del día»; textos sin «panadería» fija |
+| 2026-10-28 | `233894a` | **Panel y cocina:** menú lateral plegable (flecha, se recuerda), menú del usuario en sus iniciales (modo claro/oscuro y cerrar sesión); cocina a todo el alto con tickets compactos, columnas de ancho variable, una unidad por toque, color e inicial de categoría; el rol COCINA solo ve su pantalla |
+| 2026-10-28 | `233894a` | **Sin comensales por producto:** los comensales solo dividen la cuenta («Entre comensales», a partes iguales); fuera de la comanda, la cocina y la API; no se cambia el nº de comensales si alguno ya pagó |
+| 2026-10-28 | `233894a` | **Bebidas en barra, orden en cocina y extras:** estación por categoría (Bebidas → barra), página «Orden en cocina» (`PUT /api/categories/kitchen-order`), precio de extra en ingredientes y extras con precio en comanda, pedidos y web pública; en cocina, «+ Huevo» en verde y «sin Cebolla» en rojo |
+| 2026-10-28 | `233894a` | **Barra sin «Preparando»** (de pendiente a listo para servir) y «pax» → «pers» |
+| 2026-10-28 | `233894a` | **Pedidos a domicilio y repartidor:** tipo de pedido (recoger / a domicilio con dirección), envíos por negocio, estado Transportando, rol REPARTIDOR con su pantalla y `/api/delivery`, aviso al repartidor cuando un pedido queda listo; **móvil:** menú inferior fijo, hoja «Menú/Yo», lista de mesas por defecto |
+| 2026-10-28 | `233894a` | **Repartidor, versión final:** cabecera con iniciales y nombre sin menú lateral ni inferior, pestaña «Entregados» (solo lo entregado hoy), icono de moto 🏍️, pestañas sin el fondo que cortaba el degradado |
+| 2026-10-28 | *sin commit* | **Camarero en el móvil:** entra directo a las mesas, cabecera de mesas en una fila, menú inferior más pequeño y arreglo del scroll tapado, mesa abierta muestra lo pedido, carta a pantalla completa, sin «Todo» en categorías; lo pedido con orden y colores de cocina, sin precio por línea, sin «1 ×» y sin caja; sin «Liberar mesa» (se libera al cobrar); plano de borde a borde en el móvil y botón «Girar»; cobrar desde la mesa cuando todo está servido (`app-pay-dialog` compartido) y el camarero sin «Barra y cobros»; camarero con cabecera y sin menús; cabecera sin clics: tema, avatar, nombre y rol, cerrar sesión; barra fina y todo más junto; diálogo de ingredientes al añadir (lista y extras tras el lápiz); logo de la empresa (`companies.logo_path`, `/api/company/logo`) en la cabecera |
+| 2026-10-27 | `233894a` | Arreglos: `--panel-strong` del tema oscuro se refería a sí mismo (modales y tarjetas sin fondo) y `SchemaUpgrade` para los roles nuevos en BD ya creadas |
 
 ## Pendiente / ideas
 

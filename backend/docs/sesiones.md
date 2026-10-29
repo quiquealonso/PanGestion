@@ -58,5 +58,5 @@ Correspondencia entre las sesiones de *Desarrollo web en entorno servidor* y el 
 | 40 | CSRF, CORS con credenciales y cierre seguro | 🟡 CSRF desactivado por ser API sin estado (JWT) · ❌ cierre de sesión en el servidor |
 | 41–42, 44 | Servicio externo, timeouts y fallos parciales | ❌ |
 | 43 | Ficheros | 🟡 imágenes validadas por su firma (`storage/`); son públicas a propósito |
-| 45–46 | Estrategia de pruebas, logs y documentación | 🟡 276 tests y documentación · ❌ cobertura (JaCoCo) |
+| 45–46 | Estrategia de pruebas, logs y documentación | 🟡 279 tests y documentación · ❌ cobertura (JaCoCo) |
 | 47–52 | Ampliación final, Angular, despliegue y defensa | 🟡 Angular conectado; ampliación: sala de bares y restaurantes (mesas, comandas, cocina, avisos en tiempo real con SSE, cobro e informes) · ❌ despliegue |

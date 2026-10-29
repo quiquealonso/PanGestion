@@ -25,6 +25,8 @@ interface Tab {
   selector: 'app-shell',
   styleUrl: './shell.component.scss',
   templateUrl: './shell.component.html',
+  // Sin menu inferior (repartidor, camarero): lo que va fijo abajo no tiene que dejarle hueco
+  host: { '[class.no-tabbar]': 'singleScreen()' },
 })
 export class ShellComponent {
   protected readonly auth = inject(AuthService);
@@ -50,12 +52,8 @@ export class ShellComponent {
         { label: 'Usuarios', icon: '👥', route: '/users' },
       ];
     }
-    if (auth.isWaiter()) {
-      return [
-        { label: 'Mesas', icon: '🍽️', route: '/service' },
-        { label: 'Cobrar', icon: '💶', route: '/bar' },
-      ];
-    }
+    // El camarero cobra desde la propia mesa ("Cobrar" cuando esta todo servido): no tiene "Barra y cobros"
+    if (auth.isWaiter()) return [{ label: 'Mesas', icon: '🍽️', route: '/service' }];
     if (auth.isKitchen()) return [{ label: 'Cocina', icon: '🍳', route: '/kitchen' }];
     if (auth.isDriver()) return [{ label: 'Reparto', icon: '🏍️', route: '/delivery' }];
     if (auth.hasDining()) {
@@ -72,6 +70,11 @@ export class ShellComponent {
     ];
   });
   /** Hay mas pantallas que las del menu inferior (el ultimo boton es "Menu" y no solo la cuenta) */
+  /**
+   * Roles con una sola pantalla (repartidor: reparto; camarero: mesas, y cobra desde la mesa): sin menus,
+   * solo una cabecera con sus iniciales (abren cerrar sesion y modo claro/oscuro) y su nombre.
+   */
+  readonly singleScreen = computed(() => this.auth.isDriver() || this.auth.isWaiter());
   readonly hasMore = computed(() => !(this.auth.isWaiter() || this.auth.isKitchen() || this.auth.isDriver()));
   /** Iniciales del usuario (dos como mucho) para el boton de su menu. */
   readonly initials = computed(() =>
@@ -91,6 +94,8 @@ export class ShellComponent {
       else this.live.stop();
     });
     inject(DestroyRef).onDestroy(() => this.live.stop());
+    // Datos frescos del usuario al entrar (logo de la empresa, etc.): lo guardado puede ser de antes de un cambio
+    this.auth.refreshUser();
     // Al cambiar de pantalla se cierra la hoja del menu del movil
     inject(Router)
       .events.pipe(filter((e) => e instanceof NavigationEnd))

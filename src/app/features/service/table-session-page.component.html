@@ -1,7 +1,7 @@
 <section class="page comanda">
   @if (session(); as s) {
     <header class="head">
-      <a routerLink="/service" class="back" aria-label="Volver a la sala">←</a>
+      <a routerLink="/service" class="back" aria-label="Volver a la sala"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" /></svg></a>
       <div class="head__title">
         <h2>Mesa {{ s.tableLabel }}</h2>
         <p class="muted">
@@ -20,30 +20,31 @@
     @if (s.status === 'CLOSED') {
       <p class="panel closed">Esta mesa ya está cerrada. <a routerLink="/service">Volver a la sala</a></p>
     } @else {
+      <!-- Sin "Liberar mesa": la mesa queda libre sola al cobrarla entera en "Barra y cobros" -->
       <div class="head__actions">
         <button type="button" class="btn btn--small" (click)="openGuests()">Comensales y notas</button>
         <button type="button" class="btn btn--small" (click)="openTables()">Juntar o cambiar mesa</button>
-        <button type="button" class="btn btn--small" (click)="close()">Liberar mesa</button>
       </div>
 
-      <div class="segmented tabs" role="group" aria-label="Parte de la comanda">
-        <button type="button" [class.on]="tab() === 'menu'" (click)="tab.set('menu')">Carta</button>
-        <button type="button" [class.on]="tab() === 'ticket'" (click)="tab.set('ticket')">
-          Comanda @if (draftCount()) { <span class="count">{{ draftCount() }}</span> }
-          @if (readyLines().length) { <span class="count count--ready" title="Listos para servir">✓ {{ readyLines().length }}</span> }
-        </button>
-      </div>
+      <!-- Movil: se ve lo que ya tiene la mesa; la carta se abre a pantalla completa con este boton -->
+      <button type="button" class="btn btn--primary add-products" (click)="tab.set('menu')">
+        + Añadir productos @if (draftCount()) { <span class="count">{{ draftCount() }} sin enviar</span> }
+      </button>
 
       <div class="layout-comanda">
-        <!-- Carta -->
-        <article class="panel menu" [class.is-hidden]="tab() !== 'menu'">
+        <!-- Carta (en el movil, a pantalla completa por encima de todo) -->
+        <article class="panel menu" [class.is-hidden]="tab() !== 'menu'" [class.menu--open]="tab() === 'menu'">
+          <div class="menu__top">
+            <button type="button" class="back" (click)="tab.set('ticket')" aria-label="Volver a la mesa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6" /></svg></button>
+            <strong>Mesa {{ s.tableLabel }}</strong>
+            <span class="muted">{{ s.total + draftTotal() | currency: 'EUR' }}</span>
+          </div>
           <input type="search" class="menu__search" placeholder="Buscar producto"
                  [ngModel]="search()" (ngModelChange)="search.set($event)" />
           @if (!search()) {
             <div class="cats">
-              <button type="button" class="chip" [class.on]="categoryId() === null" (click)="categoryId.set(null)">Todo</button>
               @for (c of categories(); track c.id) {
-                <button type="button" class="chip" [class.on]="categoryId() === c.id" (click)="categoryId.set(c.id)"
+                <button type="button" class="chip" [class.on]="selectedCategory() === c.id" (click)="categoryId.set(c.id)"
                         [style.border-left-color]="c.color">{{ c.name }}</button>
               }
             </div>
@@ -65,6 +66,8 @@
 
         <!-- Comanda: por enviar y ya pedido -->
         <article class="panel ticket" [class.is-hidden]="tab() !== 'ticket'">
+          <!-- En el movil, si no hay nada apuntado, este bloque no se ve: primero lo pedido -->
+          <div class="draft-block" [class.is-empty]="!draft().length">
           <div class="panel-head"><h3>Por enviar</h3><span>{{ draftTotal() | currency: 'EUR' }}</span></div>
           @for (line of draft(); track line.key) {
             <div class="line">
@@ -89,6 +92,7 @@
           <button type="button" class="btn btn--primary send" [disabled]="!draftCount() || sending()" (click)="send()">
             Enviar a cocina @if (draftCount()) { · {{ draftCount() }} }
           </button>
+          </div>
 
           <div class="panel-head sent-head"><h3>Pedido</h3><span>{{ s.itemCount }} uds · {{ s.total | currency: 'EUR' }}</span></div>
           @if (readyLines().length) {
@@ -96,11 +100,13 @@
               ✓ Servir todo lo listo ({{ readyLines().length }})
             </button>
           }
-          @for (line of s.lines; track line.id) {
-            <div class="line line--sent">
+          <!-- Como en cocina: orden y color de categoria; sin precio por linea (el total va arriba) -->
+          @for (line of sentLines(); track line.id) {
+            <div class="line line--sent" [style.--cat]="categoryColor(line)">
               <span class="round" title="Ronda {{ line.round }}">R{{ line.round }}</span>
               <div class="line__body">
-                <span>{{ line.quantity }} × {{ line.productName }}</span>
+                <!-- "1 ×" no se pone: casi siempre es uno; solo se ve la cantidad cuando hay varios -->
+                <span>@if (line.quantity > 1) {<strong class="qty-mark">{{ line.quantity }} ×</strong> }{{ line.productName }}</span>
                 @if (extras(line.removedIngredients, line.notes, extraNames(line.extras)); as text) {
                   <small>{{ text }}</small>
                 }
@@ -111,7 +117,6 @@
               } @else {
                 <span class="status status--{{ line.status.toLowerCase() }}">{{ statusLabels[line.status] }}</span>
               }
-              <span class="line__price">{{ line.subtotal | currency: 'EUR' }}</span>
               @if (cancellable(line)) {
                 <button type="button" class="icon-btn" (click)="removeSent(line)" [attr.aria-label]="'Anular ' + line.productName">✕</button>
               } @else {
@@ -121,10 +126,18 @@
           } @empty {
             <p class="empty">Aún no se ha enviado nada.</p>
           }
+          <!-- Cobrar solo cuando ya esta todo servido; al cobrarla entera la mesa queda libre -->
+          @if (canCharge()) {
+            <button type="button" class="btn btn--primary charge" (click)="paying.set(true)">
+              Cobrar {{ s.pending | currency: 'EUR' }}
+            </button>
+          } @else if (s.lines.length && s.pending > 0) {
+            <p class="muted charge-hint">Se podrá cobrar cuando esté todo servido.</p>
+          }
         </article>
       </div>
 
-      <!-- Barra fija del movil para enviar sin cambiar de pestana -->
+      <!-- Barra fija de la carta del movil para enviar sin salir -->
       @if (draftCount() && tab() === 'menu') {
         <div class="send-bar">
           <span>{{ draftCount() }} apuntados · {{ draftTotal() | currency: 'EUR' }}</span>
@@ -137,30 +150,80 @@
     <p class="muted">Cargando la mesa…</p>
   }
 
+  @if (paying() && session(); as s) {
+    <app-pay-dialog [session]="s" (paid)="onPaid($event)" (closed)="paying.set(false)" />
+  }
+
   @if (editing(); as line) {
     <app-modal [title]="line.name" width="440px" (closed)="editing.set(null)">
       <div class="edit">
+        <!-- Como en el pedido de los clientes: lista de lo que lleva (desmarcar = quitar); los extras, plegados tras el lapiz -->
         @if (editingProduct()?.ingredients?.length) {
           <div class="field">
-            <span>Ingredientes (toca para quitar)</span>
-            <div class="chips">
+            <span>Ingredientes · desmarca lo que no quiera</span>
+            <div class="ing-list">
               @for (i of editingProduct()!.ingredients; track i.id) {
-                <button type="button" class="chip" [class.removed]="editRemoved().has(i.id)" (click)="toggleIngredient(i.id)">
-                  {{ editRemoved().has(i.id) ? 'sin ' : '' }}{{ i.name }}
-                </button>
+                <label class="ing-row" [class.is-off]="editRemoved().has(i.id)">
+                  <input type="checkbox" [checked]="!editRemoved().has(i.id)" (change)="toggleIngredient(i.id)" />
+                  <span>{{ i.name }}</span>
+                  @if (editRemoved().has(i.id)) {
+                    <small>Sin {{ i.name.toLowerCase() }}</small>
+                  }
+                </label>
               }
             </div>
           </div>
-        }
-        @if (editingProduct()?.ingredients?.length) {
-          <app-extras-picker [extras]="extrasList()" [selected]="editAdded()" (toggled)="toggleExtra($event)" />
+
+          @if (extrasList().length) {
+            <div class="field">
+              <div class="extras-head">
+                <span>Extras</span>
+                <button type="button" class="link-btn" (click)="showExtras.set(!showExtras())" [attr.aria-expanded]="showExtras()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" /><path d="M14 6l4 4" /></svg>
+                  {{ showExtras() ? 'Listo' : 'Añadir ingredientes' }}
+                </button>
+              </div>
+              @if (showExtras()) {
+                <div class="ing-list">
+                  @for (e of extrasList(); track e.id) {
+                    @let on = editAdded().includes(e.id);
+                    <label class="ing-row" [class.is-added]="on">
+                      <input type="checkbox" [checked]="on" (change)="toggleExtra(e.id)" />
+                      <span>{{ e.name }}</span>
+                      <small>{{ e.price ? '+' + (e.price | currency: 'EUR') : 'gratis' }}</small>
+                    </label>
+                  }
+                </div>
+              } @else if (editAdded().length) {
+                <div class="ing-list">
+                  @for (e of extrasList(); track e.id) {
+                    @if (editAdded().includes(e.id)) {
+                      <div class="ing-row is-added">
+                        <span>+ {{ e.name }}</span>
+                        <small>{{ e.price ? '+' + (e.price | currency: 'EUR') : 'gratis' }}</small>
+                        <button type="button" class="icon-btn" (click)="toggleExtra(e.id)" [attr.aria-label]="'Quitar extra ' + e.name">✕</button>
+                      </div>
+                    }
+                  }
+                </div>
+              } @else {
+                <p class="muted extras-empty">Sin extras.</p>
+              }
+            </div>
+          }
         }
         <label class="field"><span>Notas para cocina</span>
           <input [(ngModel)]="editNotes" maxlength="120" placeholder="Poco hecha, sin sal…" />
         </label>
         <div class="form-actions">
-          <button type="button" class="btn btn--primary" (click)="saveEdit()">Guardar</button>
-          <button type="button" class="btn btn--danger" (click)="removeDraft(line)">Quitar</button>
+          @if (editingNew()) {
+            <!-- Producto recien tocado en la carta: se apunta al confirmar; si se cierra, no se apunta -->
+            <button type="button" class="btn btn--primary" (click)="saveEdit()">Añadir {{ unitPriceWith(line) | currency: 'EUR' }}</button>
+            <button type="button" class="btn" (click)="editing.set(null)">Cancelar</button>
+          } @else {
+            <button type="button" class="btn btn--primary" (click)="saveEdit()">Guardar</button>
+            <button type="button" class="btn btn--danger" (click)="removeDraft(line)">Quitar</button>
+          }
         </div>
       </div>
     </app-modal>

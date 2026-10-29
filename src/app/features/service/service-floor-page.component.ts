@@ -15,6 +15,7 @@ const REFRESH_MS = 60_000;
 /** Cada cuanto se actualizan los minutos de cada mesa. */
 const CLOCK_MS = 30_000;
 const VIEW_KEY = 'pangestion.service-view';
+const ROTATED_KEY = 'pangestion.service-rotated';
 
 /**
  * Servicio de mesas: plano en vivo de la sala. Las mesas ocupadas se ven en color con sus comensales
@@ -40,20 +41,24 @@ export class ServiceFloorPageComponent implements OnInit {
   readonly activeId = signal<number | null>(null);
   readonly active = computed(() => this.areas().find((a) => a.id === this.activeId()) ?? this.areas()[0] ?? null);
   readonly view = signal<'map' | 'list'>(readView());
-  /** Hora actual, para los minutos que lleva cada mesa */
-  readonly now = signal(Date.now());
-
-  readonly stats = computed(() => {
-    const tables = this.areas().flatMap((a) => a.tables);
-    const busy = tables.filter((t) => t.session);
-    // Mesas juntas comparten servicio: los comensales se cuentan una vez por servicio
-    const sessions = new Map(busy.map((t) => [t.session!.id, t.session!]));
+  /** Plano girado 90 grados (en el movil, uno apaisado aprovecha mejor la pantalla en vertical). Se recuerda. */
+  readonly rotated = signal(readFlag(ROTATED_KEY));
+  /**
+   * Lo que se pinta de la zona activa. Girado en el sentido de las agujas del reloj: se recolocan las mesas
+   * (no se gira la imagen), asi los nombres y las sillas siguen derechos.
+   */
+  readonly plan = computed(() => {
+    const area = this.active();
+    if (!area || !this.rotated()) return area;
     return {
-      tables: tables.length,
-      busy: busy.length,
-      guests: [...sessions.values()].reduce((sum, s) => sum + s.guests, 0),
+      ...area,
+      width: area.height,
+      height: area.width,
+      tables: area.tables.map((t) => ({ ...t, x: area.height - t.y - t.height, y: t.x, width: t.height, height: t.width })),
     };
   });
+  /** Hora actual, para los minutos que lleva cada mesa */
+  readonly now = signal(Date.now());
 
   // Abrir mesa
   readonly opening = signal<FloorTable | null>(null);
@@ -107,6 +112,15 @@ export class ServiceFloorPageComponent implements OnInit {
     }
   }
 
+  toggleRotated(): void {
+    this.rotated.update((r) => !r);
+    try {
+      localStorage.setItem(ROTATED_KEY, String(this.rotated()));
+    } catch {
+      // sin almacenamiento: vale para esta visita
+    }
+  }
+
   /** Mesa libre: abrirla. Ocupada: ir a su comanda. */
   pick(table: FloorTable): void {
     if (table.session) {
@@ -154,6 +168,14 @@ export class ServiceFloorPageComponent implements OnInit {
 
   minutes(openedAt: string): number {
     return Math.max(0, Math.floor((this.now() - new Date(openedAt).getTime()) / 60_000));
+  }
+}
+
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === 'true';
+  } catch {
+    return false;
   }
 }
 

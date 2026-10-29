@@ -28,7 +28,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
     .backdrop {
       position: fixed;
       inset: 0;
-      z-index: 40;
+      z-index: 58; /* por encima del menu inferior y de la carta a pantalla completa del movil */
       display: grid;
       place-items: center;
       padding: 1rem;

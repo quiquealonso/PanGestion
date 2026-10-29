@@ -29,7 +29,7 @@ export class AuthPageComponent {
 
   constructor() {
     if (this.auth.isLoggedIn()) {
-      this.router.navigate([this.auth.isSuperAdmin() ? '/companies' : '/dashboard']);
+      this.router.navigate([this.auth.isSuperAdmin() ? '/companies' : '/']);
     }
   }
 
@@ -57,7 +57,8 @@ export class AuthPageComponent {
     this.loading.set(true);
     this.error.set(null);
     this.auth.login(email, password).subscribe({
-      next: () => this.router.navigate([this.auth.isSuperAdmin() ? '/companies' : '/dashboard']),
+      // "/" lleva a la pantalla de cada rol: el camarero entra directo a las mesas, cocina a cocina, etc.
+      next: () => this.router.navigate([this.auth.isSuperAdmin() ? '/companies' : '/']),
       error: (err) => {
         this.error.set(apiErrorMessage(err));
         this.loading.set(false);

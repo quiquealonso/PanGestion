@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
-import { authGuard, companyGuard, diningGuard, deliveryGuard, kitchenGuard, kitchenOnlyGuard, reportGuard, serviceGuard, superAdminGuard, usersGuard } from './core/guards/auth.guard';
+import { authGuard, barGuard, companyGuard, diningGuard, deliveryGuard, kitchenGuard, kitchenOnlyGuard, reportGuard, serviceGuard, superAdminGuard, usersGuard } from './core/guards/auth.guard';
 import { ShellComponent } from './layout/shell/shell.component';
 
 /**
@@ -109,7 +109,7 @@ export const routes: Routes = [
           },
           {
             path: 'bar',
-            canActivate: [serviceGuard],
+            canActivate: [barGuard],
             loadComponent: () => import('./features/bar/bar-page.component').then((m) => m.BarPageComponent),
             title: 'Barra y cobros · PanGestión',
           },

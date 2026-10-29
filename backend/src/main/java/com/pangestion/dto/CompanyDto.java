@@ -3,6 +3,7 @@ package com.pangestion.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.pangestion.model.BusinessType;
 import com.pangestion.model.Company;
+import com.pangestion.storage.ImageStorage;
 import com.pangestion.validation.ValidOpeningHours;
 import jakarta.validation.constraints.*;
 
@@ -36,13 +37,15 @@ public final class CompanyDto {
                            @JsonFormat(pattern = "HH:mm") LocalTime openingTime,
                            @JsonFormat(pattern = "HH:mm") LocalTime closingTime,
                            int slotMinutes, int ordersPerSlot, boolean active, boolean delivery,
-                           long userCount, long customerCount) {
+                           long userCount, long customerCount,
+                           /** URL del logo (/uploads/...); null = sin logo */
+                           String logoUrl) {
 
         public static Response from(Company company, long userCount, long customerCount) {
             return new Response(company.getId(), company.getName(), company.getType(), company.getTaxId(), company.getEmail(),
                     company.getPhone(), company.getAddress(), company.getOpeningTime(), company.getClosingTime(),
                     company.getSlotMinutes(), company.getOrdersPerSlot(), company.isActive(), company.isDelivery(),
-                    userCount, customerCount);
+                    userCount, customerCount, ImageStorage.uploadsUrl(company.getLogoPath()));
         }
     }
 

@@ -24,6 +24,8 @@ export interface User {
   companyName: string | null;
   /** Tipo de negocio de su empresa (bar y restaurante tienen plano de mesas); null para SUPERADMIN. */
   companyType: BusinessType | null;
+  /** Logo de su empresa (/uploads/...) para la cabecera; null = sin logo. Puede faltar en sesiones guardadas antes del logo. */
+  companyLogoUrl?: string | null;
 }
 
 export interface UserRequest {

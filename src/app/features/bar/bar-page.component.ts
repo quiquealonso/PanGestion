@@ -3,13 +3,11 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { FormsModule } from '@angular/forms';
 import { Company } from '../../core/models/company.model';
 import {
-  Bill,
   CashDay,
   FloorArea,
   FloorTable,
   ITEM_STATUS_LABELS,
   Payment,
-  PaymentMethod,
   ServiceLine,
   TableSession,
 } from '../../core/models/table-service.model';
@@ -21,12 +19,10 @@ import { TableServiceService } from '../../core/services/table-service.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
 import { DiningTableComponent } from '../../shared/dining-table.component';
 import { customizationText } from '../../shared/extras-picker.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { PayDialogComponent } from '../../shared/pay-dialog.component';
 
 /** Respaldo por si se corta la conexion de avisos en tiempo real. */
 const REFRESH_MS = 60_000;
-
-type PayMode = 'total' | 'guest' | 'parts';
 
 /** Linea de la precuenta: mismo producto y precio, juntos. */
 interface ReceiptLine {
@@ -42,7 +38,7 @@ interface ReceiptLine {
  * La precuenta no es una factura: no sustituye al ticket fiscal de la caja registradora.
  */
 @Component({
-  imports: [CurrencyPipe, DatePipe, FormsModule, DiningTableComponent, ModalComponent],
+  imports: [CurrencyPipe, DatePipe, FormsModule, DiningTableComponent, PayDialogComponent],
   selector: 'app-bar-page',
   templateUrl: './bar-page.component.html',
   styleUrl: './bar-page.component.scss',
@@ -74,36 +70,8 @@ export class BarPageComponent implements OnInit {
   dayDate = today();
   readonly now = signal(new Date());
 
-  // Cobro
+  /** Dialogo de cobro abierto (`app-pay-dialog`, compartido con la comanda de la mesa) */
   readonly paying = signal(false);
-  readonly bill = signal<Bill | null>(null);
-  readonly mode = signal<PayMode>('total');
-  readonly method = signal<PaymentMethod>('EFECTIVO');
-  readonly guest = signal<number | null>(null);
-  readonly parts = signal(2);
-  readonly cashGiven = signal<number | null>(null);
-  closeWhenPaid = true;
-  readonly amount = computed(() => {
-    const bill = this.bill();
-    if (!bill) return 0;
-    if (this.mode() === 'total') return bill.pending;
-    if (this.mode() === 'guest') return bill.guests.find((g) => g.guest === this.guest())?.amount ?? 0;
-    return Math.min(bill.pending, Math.round((bill.pending / this.parts()) * 100) / 100);
-  });
-  readonly change = computed(() => {
-    const given = this.cashGiven();
-    return this.method() === 'EFECTIVO' && given !== null ? Math.round((given - this.amount()) * 100) / 100 : null;
-  });
-  /** Importes tipicos que entrega el cliente: el total redondeado hacia arriba a 5, 10, 20, 50 o 100 */
-  readonly cashOptions = computed(() => {
-    const amount = this.amount();
-    const options = [5, 10, 20, 50, 100].map((step) => Math.ceil(amount / step) * step).filter((v) => v > amount);
-    return [...new Set(options)].slice(0, 3);
-  });
-  readonly canPay = computed(() => {
-    const change = this.change();
-    return this.amount() > 0 && (change === null || change >= 0);
-  });
 
   /** Precuenta: mismos productos (con los mismos extras) juntos; "Pizza + huevo" */
   readonly receiptLines = computed<ReceiptLine[]>(() => {
@@ -189,60 +157,13 @@ export class BarPageComponent implements OnInit {
   // ----- Cobro -----
 
   openPay(): void {
-    const session = this.session();
-    if (!session) return;
-    this.service.bill(session.id).subscribe({
-      next: (bill) => {
-        this.bill.set(bill);
-        this.mode.set('total');
-        this.method.set('EFECTIVO');
-        this.guest.set(bill.guests.find((g) => !g.paid)?.guest ?? null);
-        this.parts.set(Math.max(2, session.guests));
-        this.cashGiven.set(null);
-        this.closeWhenPaid = true;
-        this.paying.set(true);
-      },
-      error: (err) => this.notify.error(apiErrorMessage(err)),
-    });
+    if (this.session()) this.paying.set(true);
   }
 
-  changeParts(delta: number): void {
-    this.parts.set(Math.min(20, Math.max(2, this.parts() + delta)));
-  }
-
-  setCash(value: number | null): void {
-    this.cashGiven.set(value);
-  }
-
-  pay(): void {
-    const session = this.session();
-    if (!session || !this.canPay()) return;
-    const mode = this.mode();
-    const label = mode === 'total' ? 'Total' : mode === 'parts' ? `Parte de ${this.parts()}` : null;
-    this.service
-      .pay(session.id, {
-        amount: this.amount(),
-        method: this.method(),
-        cashGiven: this.method() === 'EFECTIVO' ? this.cashGiven() : null,
-        guest: mode === 'guest' ? this.guest() : null,
-        label,
-        closeWhenPaid: this.closeWhenPaid,
-      })
-      .subscribe({
-        next: (updated) => {
-          this.paying.set(false);
-          const change = this.change();
-          const changeText = change ? ` · cambio ${change.toFixed(2).replace('.', ',')} €` : '';
-          if (updated.status === 'CLOSED') {
-            this.notify.success(`Mesa ${updated.tableLabel} cobrada y libre${changeText}`);
-            this.session.set(null);
-          } else {
-            this.notify.success(`Cobrados ${this.amountText(updated.paid)} de ${this.amountText(updated.total)}${changeText}`);
-            this.session.set(updated);
-          }
-        },
-        error: (err) => this.notify.error(apiErrorMessage(err)),
-      });
+  /** Cobro hecho: si la mesa ha quedado libre, se deja de mostrar. */
+  onPaid(updated: TableSession): void {
+    this.paying.set(false);
+    this.session.set(updated.status === 'CLOSED' ? null : updated);
   }
 
   async removePayment(payment: Payment): Promise<void> {

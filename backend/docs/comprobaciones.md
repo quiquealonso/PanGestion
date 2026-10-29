@@ -86,7 +86,7 @@ El CI ejecuta solo estos: `./mvnw -B verify -Dgroups=reglas-negocio`.
 
 ## Batería completa (en local)
 
-`./mvnw verify`: **276 tests, 0 fallos** (202 al adaptar las sesiones + 74 de clientes, sala, extras, orden en cocina y reparto). Además de los 58 de la S17 incluye
+`./mvnw verify`: **279 tests, 0 fallos** (202 al adaptar las sesiones + 77 de clientes, sala, extras, orden en cocina, reparto y logo de la empresa). Además de los 58 de la S17 incluye
 repositorios (S22), HTTP con MockMvc (S31), permisos y aislamiento entre empresas (S38) y el arranque con datos de ejemplo. No se ejecutan en el CI.
 
 Los tests destaparon un fallo: `DataInitializer` no tenía `@Order(1)` y, con la base de datos vacía y los pedidos

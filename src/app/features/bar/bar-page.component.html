@@ -130,63 +130,8 @@
     </article>
   }
 
-  @if (paying() && bill(); as b) {
-    <app-modal [title]="'Cobrar mesa ' + session()?.tableLabel" width="480px" (closed)="paying.set(false)">
-      <div class="pay">
-        <div class="segmented" role="group" aria-label="Cómo se paga">
-          <button type="button" [class.on]="mode() === 'total'" (click)="mode.set('total')">Todo</button>
-          <button type="button" [class.on]="mode() === 'guest'" (click)="mode.set('guest')">Entre comensales</button>
-          <button type="button" [class.on]="mode() === 'parts'" (click)="mode.set('parts')">A partes iguales</button>
-        </div>
-
-        @if (mode() === 'guest') {
-          <div class="guest-list">
-            @for (g of b.guests; track g.guest) {
-              <button type="button" class="guest-row" [class.on]="guest() === g.guest" [disabled]="g.paid" (click)="guest.set(g.guest)">
-                <span>Comensal {{ g.guest }}</span>
-                <strong>{{ g.paid ? 'Pagado' : (g.amount | currency: 'EUR') }}</strong>
-              </button>
-            }
-          </div>
-          <p class="muted small">El total a partes iguales entre los {{ b.guests.length }} comensales; cada uno queda marcado al pagar.</p>
-        } @else if (mode() === 'parts') {
-          <div class="field-row">
-            <span>Partes de lo pendiente</span>
-            <div class="stepper">
-              <button type="button" (click)="changeParts(-1)" [disabled]="parts() <= 2">−</button>
-              <strong>{{ parts() }}</strong>
-              <button type="button" (click)="changeParts(1)" [disabled]="parts() >= 20">+</button>
-            </div>
-          </div>
-        }
-
-        <p class="pay__amount">{{ amount() | currency: 'EUR' }}</p>
-
-        <div class="segmented" role="group" aria-label="Forma de pago">
-          <button type="button" [class.on]="method() === 'EFECTIVO'" (click)="method.set('EFECTIVO')">💶 Efectivo</button>
-          <button type="button" [class.on]="method() === 'TARJETA'" (click)="method.set('TARJETA'); setCash(null)">💳 Tarjeta</button>
-        </div>
-
-        @if (method() === 'EFECTIVO') {
-          <div class="cash-row">
-            <button type="button" class="chip" [class.on]="cashGiven() === amount()" (click)="setCash(amount())">Exacto</button>
-            @for (note of cashOptions(); track note) {
-              <button type="button" class="chip" [class.on]="cashGiven() === note" (click)="setCash(note)">{{ note }} €</button>
-            }
-            <input type="number" min="0" step="0.01" placeholder="Entregado" aria-label="Efectivo entregado"
-                   [ngModel]="cashGiven()" (ngModelChange)="setCash($event === '' || $event === null ? null : +$event)" />
-          </div>
-          @if (change() !== null) {
-            <p class="change" [class.change--bad]="change()! < 0">
-              {{ change()! < 0 ? 'Falta ' + (-change()! | currency: 'EUR') : 'Cambio: ' + (change()! | currency: 'EUR') }}
-            </p>
-          }
-        }
-
-        <label class="check"><input type="checkbox" [(ngModel)]="closeWhenPaid" /> Liberar la mesa si queda pagada</label>
-        <button type="button" class="btn btn--primary" [disabled]="!canPay()" (click)="pay()">Cobrar {{ amount() | currency: 'EUR' }}</button>
-      </div>
-    </app-modal>
+  @if (paying() && session(); as s) {
+    <app-pay-dialog [session]="s" (paid)="onPaid($event)" (closed)="paying.set(false)" />
   }
 
   <!-- Precuenta: solo se ve al imprimir (ver styles.scss, @media print) -->

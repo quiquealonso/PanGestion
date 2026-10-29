@@ -49,7 +49,7 @@ public class LocalImageStorage implements ImageStorage {
 
     @Override
     public String url(String path) {
-        return path == null ? null : "/uploads/" + path;
+        return ImageStorage.uploadsUrl(path);
     }
 
     /** Ruta en disco, comprobando que no se sale de la carpeta de imagenes. */

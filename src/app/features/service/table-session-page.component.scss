@@ -42,13 +42,27 @@
 .back {
   display: grid;
   place-items: center;
+  flex: none;
   width: 2.4rem;
   height: 2.4rem;
+  padding: 0;
   border-radius: 0.8rem;
   border: 1px solid var(--border);
+  background: none;
   color: var(--text);
-  font-size: 1.2rem;
   text-decoration: none;
+  cursor: pointer;
+
+  /* Flecha en SVG: el caracter "←" quedaba descentrado segun la fuente */
+  svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 }
 
 .head__actions {
@@ -74,6 +88,101 @@
   padding: 1rem;
 }
 
+/* Dialogo del producto: lista de ingredientes (desmarcar = quitar) y extras plegados */
+.ing-list {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.ing-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.6rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--panel-strong);
+  cursor: pointer;
+
+  input {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--primary);
+  }
+
+  small {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .icon-btn {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  &.is-off {
+    color: var(--muted);
+    text-decoration: line-through;
+
+    small {
+      color: var(--danger-text);
+      text-decoration: none;
+    }
+  }
+
+  &.is-added {
+    border-color: rgba(var(--success-rgb), 0.5);
+    background: rgba(var(--success-rgb), 0.1);
+
+    small {
+      color: var(--success-text);
+    }
+  }
+}
+
+.extras-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.5rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+  }
+}
+
+.extras-empty {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
 .chip.removed {
   border-color: rgba(var(--danger-rgb), 0.55);
   background: rgba(var(--danger-rgb), 0.14);
@@ -81,7 +190,9 @@
   text-decoration: line-through;
 }
 
-.tabs {
+/* Solo en el movil: boton para abrir la carta y su barra de arriba */
+.add-products,
+.menu__top {
   display: none;
 }
 
@@ -94,9 +205,6 @@
   font-size: 0.78rem;
 }
 
-.count--ready {
-  background: var(--success);
-}
 
 .layout-comanda {
   display: grid;
@@ -159,6 +267,22 @@
 .product__price {
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+/* Lo ya pedido: tarjeta blanca (fondo de panel) con el borde izquierdo del color de su categoria */
+.line--sent {
+  margin-bottom: 0.3rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--cat);
+  border-radius: 0.6rem;
+  background: var(--panel-strong);
+}
+
+.qty-mark {
+  margin-right: 0.3rem;
+  white-space: nowrap;
+  color: var(--tone-amber);
 }
 
 .product__count {
@@ -306,6 +430,19 @@ button.line__body {
   margin-top: 1.6rem;
 }
 
+.charge {
+  width: 100%;
+  min-height: 3.2rem;
+  margin-top: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.charge-hint {
+  margin-top: 0.8rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
 .send-bar {
   display: none;
 }
@@ -325,14 +462,131 @@ button.line__body {
   }
 }
 
-/* Movil: una parte cada vez (pestanas) y barra fija para enviar */
+/* Movil: primero lo que tiene la mesa; la carta, a pantalla completa y sin nada detras, con su barra para enviar */
 @media (max-width: 860px) {
-  .tabs {
-    display: inline-flex;
-    justify-self: stretch;
+  /* Todo mas junto y textos algo mas pequenos: el sitio, para las lineas del pedido */
+  .comanda {
+    gap: 0.6rem;
+  }
 
-    button {
+  .head {
+    align-items: center;
+    gap: 0.6rem;
+
+    h2 {
+      font-size: 1.2rem;
+    }
+
+    p {
+      margin-top: 0;
+      font-size: 0.78rem;
+    }
+  }
+
+  .back {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    font-size: 1rem;
+  }
+
+  .head__total {
+    font-size: 1.1rem;
+  }
+
+  .head__actions .btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .panel-head {
+    margin-bottom: 0.45rem;
+
+    h3 {
+      font-size: 1rem;
+    }
+
+    span {
+      font-size: 0.8rem;
+    }
+  }
+
+  .line--sent {
+    margin-bottom: 0.25rem;
+    padding: 0.3rem 0.4rem 0.3rem 0.5rem;
+    font-size: 0.9rem;
+
+    /* El hueco de "anular" marcaba el alto de la fila */
+    .icon-btn {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  .add-products {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 2.6rem;
+    font-size: 0.95rem;
+
+    .count {
+      background: var(--on-primary);
+      color: var(--primary);
+    }
+  }
+
+  /* Lo de la mesa sin caja: directamente sobre el fondo de la pantalla, para aprovechar el ancho */
+  .ticket {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .draft-block.is-empty {
+    display: none;
+
+    + .sent-head {
+      margin-top: 0;
+    }
+  }
+
+  .menu--open {
+    position: fixed;
+    inset: 0;
+    z-index: 50; /* tapa el menu inferior */
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 0.9rem calc(5rem + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    background: var(--bg);
+  }
+
+  .menu__top {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0 -0.9rem 0.6rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+
+    strong {
       flex: 1;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.15rem;
+    }
+
+    .muted {
+      margin: 0;
+      font-weight: 600;
     }
   }
 
@@ -347,9 +601,9 @@ button.line__body {
   .send-bar {
     position: fixed;
     right: 0.8rem;
-    bottom: calc(4.9rem + env(safe-area-inset-bottom)); /* encima del menu inferior */
+    bottom: calc(0.8rem + env(safe-area-inset-bottom)); /* la carta tapa el menu inferior */
     left: 0.8rem;
-    z-index: 20;
+    z-index: 51;
     display: flex;
     align-items: center;
     gap: 0.5rem;

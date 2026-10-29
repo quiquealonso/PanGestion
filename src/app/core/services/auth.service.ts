@@ -75,6 +75,18 @@ export class AuthService {
     );
   }
 
+  /** Vuelve a pedir el usuario (/auth/me) y lo guarda: p. ej. tras cambiar el logo, o sesiones guardadas antes de un dato nuevo. */
+  refreshUser(): void {
+    if (!this.token()) return;
+    this.http.get<User>(`${environment.apiBaseUrl}/auth/me`).subscribe({
+      next: (user) => {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        this.userSignal.set(user);
+      },
+      error: () => undefined, // sin conexion: se sigue con el guardado
+    });
+  }
+
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);

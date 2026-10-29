@@ -18,4 +18,9 @@ public interface ImageStorage {
 
     /** URL publica con la que el navegador pide la imagen. */
     String url(String path);
+
+    /** URL de una imagen guardada en el disco del servidor (se sirve en /uploads/**, ver WebConfig). */
+    static String uploadsUrl(String path) {
+        return path == null ? null : "/uploads/" + path;
+    }
 }

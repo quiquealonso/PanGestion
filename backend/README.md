@@ -154,7 +154,7 @@ En un pedido para llevar de un bar, el estado del pedido sigue al de sus product
 | Recurso | Endpoints |
 |---|---|
 | Auth | `POST /api/auth/login`, `GET /api/auth/me` |
-| Mi empresa | `GET /api/company`, `PUT /api/company` (ADMIN), `GET /api/company/slots?date=yyyy-MM-dd` |
+| Mi empresa | `GET /api/company`, `PUT /api/company` (ADMIN), `POST`/`DELETE /api/company/logo` (ADMIN, multipart `file`: JPG, PNG o WEBP ≤ 2 MB), `GET /api/company/slots?date=yyyy-MM-dd` |
 | Empresas | CRUD `/api/companies` (SUPERADMIN) |
 | Inicio | `GET /api/dashboard`, `GET /api/dashboard/weekly-sales?date=yyyy-MM-dd` (unidades por día de esa semana y de la anterior), `GET /api/dashboard/dining` (bares y restaurantes: mesas ocupadas, comensales, listos, colas de cocina y barra, para llevar de hoy y caja de hoy; una panadería recibe 409) |
 | Pedidos | `GET /api/orders?search&status&from&to`, `GET/PUT/DELETE /api/orders/{id}`, `POST /api/orders`, `PATCH /api/orders/{id}/status`, `POST /api/orders/start-day?date=` (pasa los pendientes de ese día a EN_PROCESO), `GET /api/orders/production?date=&pending=` (unidades por producto, personalización y hora de recogida; sin cancelados, y con `pending=true` sin entregados) |
@@ -206,7 +206,7 @@ En un pedido para llevar de un bar, el estado del pedido sigue al de sus product
 - Los tests de la sesión 17 (reglas de negocio con JUnit + Mockito, sin base de datos) llevan `@Tag("reglas-negocio")`:
   `OrderServiceRulesTest`, `CompanyServiceSlotsTest`, `UserServiceRulesTest`, `OrderModelTest` y, de la sala, `DiningModelTest`,
   `TableSessionModelTest` y `KitchenModelTest` (58 en total). El CI (`.github/workflows/ci.yml`) compila todo pero solo ejecuta estos.
-- Batería completa en local: **276 tests**. Los de la sala: `DiningApiTest`, `TableServiceApiTest`, `KitchenApiTest`, `EventsApiTest`,
+- Batería completa en local: **279 tests**. Los de la sala: `DiningApiTest`, `TableServiceApiTest`, `KitchenApiTest`, `EventsApiTest`,
   `PaymentApiTest`, `ReportApiTest` y `DiningDashboardApiTest`.
 - Colección Postman repetible en `pruebas/` (prepara sus datos, comprueba y limpia). Con el backend arrancado:
   `npx newman run pruebas/PanGestion.postman_collection.json -e pruebas/Local.postman_environment.json`

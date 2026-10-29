@@ -18,6 +18,17 @@ export class MyCompanyService {
     return this.http.put<Company>(this.url, body);
   }
 
+  /** Sube o sustituye el logo (JPG, PNG o WEBP de hasta 2 MB). Solo ADMIN. */
+  uploadLogo(file: File): Observable<Company> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.post<Company>(`${this.url}/logo`, body);
+  }
+
+  removeLogo(): Observable<Company> {
+    return this.http.delete<Company>(`${this.url}/logo`);
+  }
+
   /** Franjas de recogida de un dia (yyyy-MM-dd). */
   slots(date: string): Observable<TimeSlot[]> {
     return this.http.get<TimeSlot[]>(`${this.url}/slots`, { params: { date } });

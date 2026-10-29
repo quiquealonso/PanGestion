@@ -30,9 +30,11 @@ export interface Company {
   delivery: boolean;
   userCount: number;
   customerCount: number;
+  /** Logo (/uploads/...); null = sin logo. Se sube aparte (POST /api/company/logo). */
+  logoUrl: string | null;
 }
 
-export type CompanyRequest = Omit<Company, 'id' | 'userCount' | 'customerCount'>;
+export type CompanyRequest = Omit<Company, 'id' | 'userCount' | 'customerCount' | 'logoUrl'>;
 
 /** Franja de recogida de un dia. */
 export interface TimeSlot {

@@ -32,6 +32,13 @@ export const serviceGuard: CanActivateFn = () => {
   return auth.canServe() ? true : inject(Router).createUrlTree(['/dashboard']);
 };
 
+/** Barra y cobros (plano para cobrar y caja del dia): gestores y admins. El camarero cobra desde la mesa. */
+export const barGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isWaiter()) return inject(Router).createUrlTree(['/service']);
+  return auth.canServe() ? true : inject(Router).createUrlTree(['/dashboard']);
+};
+
 /** Pantalla de cocina y barra: cocina, gestores y admins de bares y restaurantes. */
 export const kitchenGuard: CanActivateFn = () => {
   const auth = inject(AuthService);

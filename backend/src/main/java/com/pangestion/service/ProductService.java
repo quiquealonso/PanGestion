@@ -11,14 +11,13 @@ import com.pangestion.repository.OrderLineRepository;
 import com.pangestion.repository.ProductRepository;
 import com.pangestion.security.CurrentUser;
 import com.pangestion.storage.ImageStorage;
-import com.pangestion.storage.ImageType;
+import com.pangestion.storage.UploadedImage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -116,21 +115,9 @@ public class ProductService {
      */
     public ProductDto.Response uploadImage(Long id, MultipartFile file) {
         Product product = getEntity(id);
-        byte[] data;
-        try {
-            data = file.getBytes();
-        } catch (IOException e) {
-            throw new BusinessException("No se pudo leer la imagen");
-        }
-        if (data.length == 0 || data.length > maxImageBytes) {
-            throw new BusinessException("La imagen debe ocupar como maximo " + (maxImageBytes / 1024 / 1024) + " MB");
-        }
-        ImageType type = ImageType.detect(data);
-        if (type == null) {
-            throw new BusinessException("Formato no valido: sube una imagen JPG, PNG o WEBP");
-        }
+        UploadedImage image = UploadedImage.read(file, maxImageBytes);
         String previous = product.getImagePath();
-        product.setImagePath(imageStorage.save(product.getCompany().getId() + "/products", data, type));
+        product.setImagePath(imageStorage.save(product.getCompany().getId() + "/products", image.data(), image.type()));
         imageStorage.delete(previous);
         return toResponse(product);
     }

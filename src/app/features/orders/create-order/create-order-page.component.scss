@@ -91,6 +91,6 @@ h3 { margin: 0 0 1rem; font-family: 'Space Grotesk', sans-serif; }
 /* En el movil, el carrito queda encima del menu inferior */
 @media (max-width: 960px) {
   .cart-fab {
-    bottom: calc(5.4rem + env(safe-area-inset-bottom));
+    bottom: calc(var(--tabbar-h, 0px) + 0.6rem + env(safe-area-inset-bottom));
   }
 }
