@@ -42,9 +42,10 @@ interface CustomizeState {
   removed: number[];
   added: number[];
 }
+import { AssetUrlPipe } from '../../../shared/asset-url.pipe';
 
 @Component({
-  imports: [CurrencyPipe, DatePipe, FormsModule, RouterLink, ModalComponent, ExtrasPickerComponent],
+  imports: [CurrencyPipe, DatePipe, FormsModule, RouterLink, ModalComponent, ExtrasPickerComponent, AssetUrlPipe],
   selector: 'app-create-order-page',
   styleUrl: './create-order-page.component.scss',
   templateUrl: './create-order-page.component.html',

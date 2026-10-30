@@ -13,9 +13,10 @@ import { ProductsService } from '../../../core/services/products.service';
 import { apiErrorMessage } from '../../../core/utils/api-error';
 import { Observable, of, switchMap } from 'rxjs';
 import { ModalComponent } from '../../../shared/modal/modal.component';
+import { AssetUrlPipe } from '../../../shared/asset-url.pipe';
 
 @Component({
-  imports: [CurrencyPipe, FormsModule, ReactiveFormsModule, ModalComponent],
+  imports: [CurrencyPipe, FormsModule, ReactiveFormsModule, ModalComponent, AssetUrlPipe],
   selector: 'app-products-page',
   templateUrl: './products-page.component.html',
   styles: `

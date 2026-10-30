@@ -28,7 +28,7 @@
       <header class="single-bar">
         <!-- Arriba a la izquierda, el logo del negocio (de "Mi empresa"); sin logo, su nombre -->
         @if (user.companyLogoUrl) {
-          <span class="single-bar__brand"><img class="single-bar__logo" [src]="user.companyLogoUrl" [alt]="user.companyName ?? 'Logo'" /></span>
+          <span class="single-bar__brand"><img class="single-bar__logo" [src]="user.companyLogoUrl | assetUrl" [alt]="user.companyName ?? 'Logo'" /></span>
         } @else {
           <span class="single-bar__company">{{ user.companyName }}</span>
         }

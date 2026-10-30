@@ -1,0 +1,57 @@
+# Despliegue en la VM: PostgreSQL + API + Caddy (HTTPS con Let's Encrypt).
+# Lee las variables del fichero .env de esta carpeta (ver .env.example).
+# Arranque: docker compose up -d --build
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pangestion
+      POSTGRES_USER: ${DB_USER:?Falta DB_USER en .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en .env}
+    # Sin "ports": la base de datos solo es accesible desde la red interna de Docker
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d pangestion"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      DB_URL: jdbc:postgresql://db:5432/pangestion
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env}
+      SEED_DATA: ${SEED_DATA:-false}
+      APP_CORS_ALLOWED_ORIGINS: ${CORS_ORIGINS:?Falta CORS_ORIGINS en .env}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Falta API_DOMAIN en .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
+  caddy-config:

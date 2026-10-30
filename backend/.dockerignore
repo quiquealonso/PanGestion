@@ -1,0 +1,9 @@
+target/
+data/
+uploads/
+pruebas/
+docs/
+deploy/
+.env
+.env.*
+*.log

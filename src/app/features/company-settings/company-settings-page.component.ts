@@ -5,10 +5,11 @@ import { MyCompanyService } from '../../core/services/my-company.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
 import { CompanyFormComponent } from '../../shared/company-form/company-form.component';
+import { AssetUrlPipe } from '../../shared/asset-url.pipe';
 
 /** Datos y horario de recogida de la empresa del usuario. Solo el ADMIN puede cambiarlos. */
 @Component({
-  imports: [CompanyFormComponent],
+  imports: [CompanyFormComponent, AssetUrlPipe],
   selector: 'app-company-settings-page',
   template: `
     <section class="page">
@@ -29,7 +30,7 @@ import { CompanyFormComponent } from '../../shared/company-form/company-form.com
         <article class="panel settings logo-panel">
           <div class="logo-box">
             @if (c.logoUrl) {
-              <img [src]="c.logoUrl" alt="Logo de {{ c.name }}" />
+              <img [src]="c.logoUrl | assetUrl" alt="Logo de {{ c.name }}" />
             } @else {
               <span class="muted">Sin logo</span>
             }

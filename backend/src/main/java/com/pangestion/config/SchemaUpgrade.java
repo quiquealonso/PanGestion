@@ -39,6 +39,7 @@ public class SchemaUpgrade implements CommandLineRunner {
                 join information_schema.check_constraints cc on cc.constraint_name = tc.constraint_name
                 where lower(tc.table_name) = ? and tc.constraint_type = 'CHECK'
                   and lower(cc.check_clause) like ? and cc.check_clause not like ?
+                  and lower(cc.check_clause) not like '% is not null'
                 """, String.class, table, "%" + column + "%", "%" + newestValue + "%");
         for (String name : outdated) {
             jdbc.execute("alter table " + table + " drop constraint \"" + name.replace("\"", "") + "\"");

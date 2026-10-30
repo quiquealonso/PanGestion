@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+  /** Servidor de la API; vacio = mismo origen (proxy de ng serve). */
+  apiOrigin: '',
   apiBaseUrl: '/api',
   appName: 'PanGestión',
   /**
