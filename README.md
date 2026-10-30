@@ -149,6 +149,18 @@ cd backend && ./mvnw test        # test del backend (BD en memoria)
 cd backend && ./mvnw package     # backend (jar en backend/target)
 ```
 
+## Seguridad
+
+- **Autenticación en el servidor:** JWT HS256 en la cabecera `Authorization` (sin cookies, porque el frontend y la API están en dominios distintos). Las reglas de acceso por rol están en `SecurityConfig`, y cada servicio filtra por el `companyId` del token. Pedir datos de otra empresa devuelve 404.
+- **Contraseñas:** se guardan con BCrypt y deben tener 8 caracteres como mínimo. El login tarda lo mismo exista o no el email, así que el tiempo de respuesta no revela qué cuentas existen.
+- **Límite de intentos:** el login admite 20 intentos cada 5 minutos por IP y 10 cada 15 minutos por email. La web pública admite 10 pedidos por hora y por IP. Al superar el límite, la API responde con 429 y `Retry-After`.
+- **Bots:** el formulario público incluye un campo trampa oculto (`website`); si llega relleno, la API rechaza el pedido.
+- **Datos personales cifrados (AES-256-GCM):** el teléfono y el CIF de los clientes y la dirección de entrega se cifran con la clave `ENCRYPTION_KEY`. Guarda una copia de esa clave: si se pierde, esos datos no se pueden leer.
+- **Entradas y respuestas:** los DTO tienen Bean Validation y la API rechaza los campos que no existen. Las consultas usan JPQL con parámetros. La web pública solo recibe los datos que necesita.
+- **Subida de imágenes:** solo JPEG, PNG o WebP, comprobados por su firma, de 2 MB como máximo y con un nombre aleatorio.
+- **HTTPS y cabeceras:** Caddy redirige a HTTPS y añade HSTS, CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy` (`backend/deploy/Caddyfile`). El frontend de producción lleva su propia CSP (`src/index.prod.html`); si cambia la URL de la API, hay que cambiarla también allí.
+- **Secretos y dependencias:** el workflow "Seguridad" pasa gitleaks sobre el historial, `npm audit` y OSV-Scanner en cada PR y cada lunes. Dependabot abre PR semanales contra `dev`.
+
 ## Estructura
 
 ```
