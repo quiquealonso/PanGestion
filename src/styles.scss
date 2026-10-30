@@ -987,3 +987,13 @@ textarea.ng-invalid.ng-touched {
 		font-weight: 700;
 	}
 }
+
+/* Campo trampa para bots (web publica de pedidos): invisible para las personas, presente en el HTML */
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}

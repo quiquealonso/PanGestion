@@ -223,6 +223,10 @@
               }
             </label>
 
+            <!-- Trampa para bots: invisible y fuera del tabulador; si llega relleno, la API rechaza el pedido -->
+            <input class="hp-field" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"
+                   [value]="website" (input)="website = $any($event.target).value" />
+
             <label class="field" [class.has-error]="showErrors() && (customerErrors().phone || customerErrors().deliveryPhone)">
               <span>Teléfono <small>{{ isDelivery() ? '(para avisarte al llegar)' : '(opcional, para avisarte)' }}</small></span>
               <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Por ejemplo: 612 345 678"

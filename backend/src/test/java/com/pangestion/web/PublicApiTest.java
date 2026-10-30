@@ -10,6 +10,8 @@ import com.pangestion.support.ApiTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 
@@ -26,6 +28,9 @@ class PublicApiTest extends ApiTestSupport {
     private Category pizzas;
     private Product vegetal;
     private Ingredient cebolla;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @BeforeEach
     void setUp() {
@@ -58,7 +63,12 @@ class PublicApiTest extends ApiTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name == 'Cerrado')]").isEmpty())
                 .andExpect(jsonPath("$[0].name").value("Agua Forn"))
-                .andExpect(jsonPath("$[1].name").value("Bar Mosset"));
+                .andExpect(jsonPath("$[1].name").value("Bar Mosset"))
+                // Datos internos del negocio: no salen en la web publica
+                .andExpect(jsonPath("$[0].taxId").doesNotExist())
+                .andExpect(jsonPath("$[0].email").doesNotExist())
+                .andExpect(jsonPath("$[0].userCount").doesNotExist())
+                .andExpect(jsonPath("$[0].customerCount").doesNotExist());
     }
 
     @Test
@@ -109,26 +119,62 @@ class PublicApiTest extends ApiTestSupport {
                 .andExpect(header().string("Location", org.hamcrest.Matchers.matchesRegex("http://localhost/api/orders/\\d+")))
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.status").value("PENDIENTE"))
-                .andExpect(jsonPath("$.customerEmail").value("lola@correo.es"))
+                .andExpect(jsonPath("$.customerName").value("Lola"))
+                .andExpect(jsonPath("$.customerId").doesNotExist())
+                .andExpect(jsonPath("$.customerEmail").doesNotExist())
+                .andExpect(jsonPath("$.customerPhone").doesNotExist())
                 .andExpect(jsonPath("$.total").value(16.00))
                 .andExpect(jsonPath("$.lines[0].removedIngredients[0]").value("Cebolla"));
 
-        assertThat(customerRepository.findByCompanyIdAndEmailIgnoreCase(bar.getId(), "lola@correo.es")).isPresent();
+        assertThat(customerRepository.findByCompanyIdAndEmailIgnoreCase(bar.getId(), "lola@correo.es"))
+                .hasValueSatisfying(c -> assertThat(c.getPhone()).isEqualTo("600000000"));
+        // En la base de datos el telefono se guarda cifrado
+        customerRepository.flush();
+        assertThat(jdbc.queryForObject("select phone from customers where email = 'lola@correo.es'", String.class))
+                .startsWith("enc:v1:").doesNotContain("600000000");
     }
 
     @Test
-    @DisplayName("un cliente que repite (mismo email) no se duplica: se actualizan su nombre y teléfono")
+    @DisplayName("un cliente que repite (mismo email) no se duplica ni se cambian sus datos: solo se completa el teléfono si no tenía")
     void returningCustomer() throws Exception {
         Customer existing = customer(bar, "Lola", "lola@correo.es");
 
         mvc.perform(postJson("/api/public/orders",
                         order(bar.getId(), TOMORROW, "13:00", "LOLA@correo.es", "Lola Ferrer", line(vegetal, 1, ""))))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.customerId").value(existing.getId()));
+                .andExpect(jsonPath("$.customerName").value("Lola Ferrer"));
 
         assertThat(customerRepository.countByCompanyId(bar.getId())).isEqualTo(1);
-        assertThat(existing.getName()).isEqualTo("Lola Ferrer");
+        assertThat(orderRepository.findAll()).allMatch(o -> o.getCustomer().getId().equals(existing.getId()));
+        assertThat(existing.getName()).isEqualTo("Lola");
         assertThat(existing.getPhone()).isEqualTo("600000000");
+    }
+
+    @Test
+    @DisplayName("quien conoce el email de un cliente no puede cambiar su teléfono ni leerlo en la respuesta")
+    void customerTampering() throws Exception {
+        Customer existing = customer(bar, "Lola", "lola@correo.es");
+        existing.setPhone("611111111");
+        customerRepository.save(existing);
+
+        mvc.perform(postJson("/api/public/orders",
+                        order(bar.getId(), TOMORROW, "13:00", "lola@correo.es", "Otra", line(vegetal, 1, ""))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.customerPhone").doesNotExist());
+
+        Customer reloaded = customerRepository.findById(existing.getId()).orElseThrow();
+        assertThat(reloaded.getName()).isEqualTo("Lola");
+        assertThat(reloaded.getPhone()).isEqualTo("611111111");
+    }
+
+    @Test
+    @DisplayName("bots: si llega relleno el campo trampa 'website', 400")
+    void honeypot() throws Exception {
+        String body = order(bar.getId(), TOMORROW, "13:00", "bot@spam.es", "Bot", line(vegetal, 1, ""))
+                .replace("\"lines\"", "\"website\": \"http://spam\", \"lines\"");
+        mvc.perform(postJson("/api/public/orders", body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.website").exists());
     }
 
     @Test
@@ -139,8 +185,10 @@ class PublicApiTest extends ApiTestSupport {
 
         mvc.perform(postJson("/api/public/orders",
                         order(bar.getId(), TOMORROW, "13:00", "lola@correo.es", "Lola", line(vegetal, 1, ""))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.customerId").value(org.hamcrest.Matchers.not(fornLola.getId().intValue())));
+                .andExpect(status().isCreated());
+
+        assertThat(customerRepository.countByCompanyId(bar.getId())).isEqualTo(1);
+        assertThat(customerRepository.findById(fornLola.getId()).orElseThrow().getCompany().getId()).isEqualTo(forn.getId());
     }
 
     @Test

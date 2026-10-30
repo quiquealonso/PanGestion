@@ -1,0 +1,11 @@
+# Configuracion de gitleaks (workflow "Seguridad"): reglas por defecto + excepciones revisadas a mano.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Claves de desarrollo y tests, y usuarios de ejemplo de la base de datos local (no son de produccion)"
+paths = [
+  '''backend/src/test/resources/application-test\.properties''',
+  '''backend/src/main/resources/application-h2\.properties''',
+  '''src/environments/environment\.ts''',
+]

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Category } from '../../core/models/category.model';
 import { BUSINESS_TYPE_LABELS, Company, TimeSlot } from '../../core/models/company.model';
-import { Order } from '../../core/models/order.model';
+import { PublicOrder } from '../../core/models/order.model';
 import { PublicProduct } from '../../core/models/product.model';
 import { PublicApiService } from '../../core/services/public-api.service';
 import { Extra } from '../../core/models/ingredient.model';
@@ -90,6 +90,8 @@ export class PublicOrderPageComponent implements OnInit {
   /** Se marcan los errores del formulario solo despues de intentar continuar. */
   readonly showErrors = signal(false);
   notes = '';
+  /** Campo trampa para bots: esta oculto, asi que una persona nunca lo rellena. */
+  website = '';
 
   /** Proximos 7 dias. */
   readonly days = Array.from({ length: 7 }, (_, i) => addDays(i));
@@ -103,7 +105,7 @@ export class PublicOrderPageComponent implements OnInit {
   readonly loading = signal(true);
   readonly sending = signal(false);
   readonly error = signal<string | null>(null);
-  readonly confirmed = signal<Order | null>(null);
+  readonly confirmed = signal<PublicOrder | null>(null);
   /** Panel final "Revisa y confirma" abierto. */
   readonly reviewing = signal(false);
 
@@ -440,6 +442,7 @@ export class PublicOrderPageComponent implements OnInit {
           removedIngredientIds: l.removed,
           addedIngredientIds: l.added,
         })),
+        website: this.website || null,
       })
       .subscribe({
         next: (order) => {

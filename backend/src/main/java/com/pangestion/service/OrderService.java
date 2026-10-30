@@ -204,7 +204,7 @@ public class OrderService {
     }
 
     /** Pedido hecho por un cliente desde la web publica a la panaderia que ha elegido. */
-    public OrderDto.Response createPublic(OrderDto.PublicRequest request) {
+    public OrderDto.PublicResponse createPublic(OrderDto.PublicRequest request) {
         Company company = companyService.getEntity(request.companyId());
         companyService.validateSlot(company, request.pickupDate(), request.pickupTime(), -1L);
 
@@ -218,7 +218,7 @@ public class OrderService {
         setLines(order, request.lines(), Set.of());
         Order saved = orderRepository.save(order);
         changed(saved, null);
-        return OrderDto.Response.from(saved);
+        return OrderDto.PublicResponse.from(saved, request.customer().name().trim());
     }
 
     /**

@@ -75,9 +75,12 @@ public class CustomerService {
      */
     Customer findOrCreate(Company company, CustomerDto.Request request) {
         return customerRepository.findByCompanyIdAndEmailIgnoreCase(company.getId(), request.email().trim())
+                // Un pedido anonimo no cambia los datos de un cliente que ya existe (cualquiera puede escribir su email):
+                // solo se completa el telefono si no lo tenia. Los datos los corrige el negocio.
                 .map(existing -> {
-                    existing.setName(request.name().trim());
-                    existing.setPhone(request.phone());
+                    if (existing.getPhone() == null && request.phone() != null && !request.phone().isBlank()) {
+                        existing.setPhone(request.phone().trim());
+                    }
                     return existing;
                 })
                 .orElseGet(() -> {

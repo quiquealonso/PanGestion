@@ -29,6 +29,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Falta ENCRYPTION_KEY en .env}
       SEED_DATA: ${SEED_DATA:-false}
       APP_CORS_ALLOWED_ORIGINS: ${CORS_ORIGINS:?Falta CORS_ORIGINS en .env}
       UPLOADS_DIR: /app/uploads

@@ -50,6 +50,19 @@ public final class CompanyDto {
     }
 
     /** Franja de recogida de un dia. */
+    /** Lo que ve cualquiera en la web publica de pedidos: sin CIF, email interno ni contadores. */
+    public record PublicResponse(Long id, String name, BusinessType type, String phone, String address,
+                                 @JsonFormat(pattern = "HH:mm") LocalTime openingTime,
+                                 @JsonFormat(pattern = "HH:mm") LocalTime closingTime,
+                                 boolean delivery, String logoUrl) {
+
+        public static PublicResponse from(Company company) {
+            return new PublicResponse(company.getId(), company.getName(), company.getType(), company.getPhone(),
+                    company.getAddress(), company.getOpeningTime(), company.getClosingTime(), company.isDelivery(),
+                    ImageStorage.uploadsUrl(company.getLogoPath()));
+        }
+    }
+
     public record Slot(@JsonFormat(pattern = "HH:mm") LocalTime time, boolean available, int remaining) {
     }
 }

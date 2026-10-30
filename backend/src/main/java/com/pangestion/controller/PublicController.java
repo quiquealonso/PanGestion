@@ -5,17 +5,20 @@ import com.pangestion.dto.CompanyDto;
 import com.pangestion.dto.IngredientDto;
 import com.pangestion.dto.OrderDto;
 import com.pangestion.dto.ProductDto;
+import com.pangestion.security.RateLimiter;
 import com.pangestion.service.CategoryService;
 import com.pangestion.service.CompanyService;
 import com.pangestion.service.IngredientService;
 import com.pangestion.service.OrderService;
 import com.pangestion.service.ProductService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -33,10 +36,11 @@ public class PublicController {
     private final ProductService productService;
     private final OrderService orderService;
     private final IngredientService ingredientService;
+    private final RateLimiter rateLimiter;
 
     /** Panaderias que aceptan pedidos. */
     @GetMapping("/companies")
-    public List<CompanyDto.Response> companies() {
+    public List<CompanyDto.PublicResponse> companies() {
         return companyService.findActive();
     }
 
@@ -64,10 +68,15 @@ public class PublicController {
         return ingredientService.findExtras(id);
     }
 
-    /** 201 con Location al detalle canonico del pedido (/api/orders/{id}, que consulta el negocio). */
+    /**
+     * 201 con Location al detalle canonico del pedido (/api/orders/{id}, que consulta el negocio).
+     * Contra bots: como mucho 10 pedidos por hora desde una IP, y el campo trampa "website" debe llegar vacio.
+     */
     @PostMapping("/orders")
-    public ResponseEntity<OrderDto.Response> createOrder(@Valid @RequestBody OrderDto.PublicRequest request) {
-        OrderDto.Response created = orderService.createPublic(request);
+    public ResponseEntity<OrderDto.PublicResponse> createOrder(@Valid @RequestBody OrderDto.PublicRequest request,
+                                                               HttpServletRequest http) {
+        rateLimiter.check("public-order-ip:" + http.getRemoteAddr(), 10, Duration.ofHours(1));
+        OrderDto.PublicResponse created = orderService.createPublic(request);
         return ResponseEntity.created(Locations.of("/api/orders/{id}", created.id())).body(created);
     }
 }

@@ -1,0 +1,45 @@
+name: Seguridad
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+  schedule:
+    # Cada lunes: avisa de vulnerabilidades nuevas aunque no se toque el codigo
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secretos en el historial de Git
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 \
+            git /repo --redact --no-banner --config /repo/.gitleaks.toml
+
+  dependencies:
+    name: Dependencias con vulnerabilidades
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # Falla con vulnerabilidades criticas en las dependencias de produccion del frontend; las altas solo se listan
+      # (Dependabot propone la actualizacion; npm espera unos dias antes de instalar versiones recien publicadas)
+      - run: npm audit --omit=dev --audit-level=critical
+      # package-lock.json y backend/pom.xml contra la base de datos de vulnerabilidades OSV (Google)
+      - name: OSV-Scanner (frontend y backend)
+        run: |
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.2.2 \
+            scan source --recursive /src

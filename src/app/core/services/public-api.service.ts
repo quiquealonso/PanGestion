@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { Category } from '../models/category.model';
 import { Company, TimeSlot } from '../models/company.model';
 import { Extra } from '../models/ingredient.model';
-import { Order } from '../models/order.model';
+import { PublicOrder } from '../models/order.model';
 import { PublicProduct } from '../models/product.model';
 
 export interface PublicOrderRequest {
@@ -19,6 +19,8 @@ export interface PublicOrderRequest {
   deliveryAddress: string | null;
   /** removedIngredientIds: ingredientes que el cliente quita ("sin cebolla"); addedIngredientIds: extras ("con huevo"). */
   lines: { productId: number; quantity: number; removedIngredientIds: number[]; addedIngredientIds: number[] }[];
+  /** Campo trampa para bots (oculto en el formulario): una persona lo deja vacio. */
+  website: string | null;
 }
 
 /** Endpoints sin login de la web publica: el cliente elige la panaderia y pide a ella. */
@@ -49,7 +51,7 @@ export class PublicApiService {
     return this.http.get<Extra[]>(`${this.url}/companies/${companyId}/extras`);
   }
 
-  createOrder(body: PublicOrderRequest): Observable<Order> {
-    return this.http.post<Order>(`${this.url}/orders`, body);
+  createOrder(body: PublicOrderRequest): Observable<PublicOrder> {
+    return this.http.post<PublicOrder>(`${this.url}/orders`, body);
   }
 }
