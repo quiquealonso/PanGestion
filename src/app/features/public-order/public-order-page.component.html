@@ -7,9 +7,15 @@
       @if (company(); as c) {
         <small>· {{ c.address }}</small>
       }
+      @if (customerAuth.account(); as account) {
+        <span class="po__account">
+          <span aria-hidden="true">👤</span> {{ account.name }}
+          <button type="button" (click)="logoutCustomer()">Salir</button>
+        </span>
+      }
     </div>
 
-    @if (!confirmed() && !loading()) {
+    @if (!confirmed() && !loading() && customerAuth.isLoggedIn()) {
       <nav class="po__progress" aria-label="Pasos del pedido">
         <ol>
           @for (s of steps; track s.number) {
@@ -29,6 +35,13 @@
   <main class="po__main">
     @if (loading()) {
       <p class="po__status">Cargando…</p>
+    } @else if (!customerAuth.isLoggedIn()) {
+      <!-- ===== 0. Cuenta: para pedir hay que entrar (o crearla) antes de empezar ===== -->
+      <section class="po__welcome">
+        <h1>Haz tu pedido</h1>
+        <p>Entra en tu cuenta o créala en un minuto. Así guardamos tus datos y tus pedidos.</p>
+        <app-customer-auth-panel (loggedIn)="onLoggedIn()" />
+      </section>
     } @else if (confirmed(); as order) {
       <!-- ===== Pedido hecho ===== -->
       <section class="done" aria-live="polite">
@@ -191,9 +204,6 @@
 
         <!-- ===== 4. Datos ===== -->
         @case (4) {
-          @if (!customerAuth.isLoggedIn()) {
-            <app-customer-auth-panel (loggedIn)="onLoggedIn()" />
-          } @else {
           <form class="form" (ngSubmit)="next()" novalidate>
             @if (company()?.delivery) {
               <div class="field">
@@ -241,7 +251,6 @@
             <p class="po__hint">🔒 Solo usamos estos datos para tus pedidos.</p>
             <button type="submit" hidden></button>
           </form>
-          }
         }
 
         <!-- ===== 5. Dia y hora ===== -->
@@ -286,7 +295,7 @@
   </main>
 
   <!-- Barra inferior fija: carrito y botones Atras / Continuar -->
-  @if (!loading() && !confirmed() && step() > 1) {
+  @if (!loading() && !confirmed() && customerAuth.isLoggedIn() && step() > 1) {
     <footer class="po__bar">
       @if (step() === 2 && justAdded()) {
         <p class="po__bar-added" role="status">✓ Añadido: {{ justAdded() }}</p>

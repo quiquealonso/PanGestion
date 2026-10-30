@@ -1029,3 +1029,38 @@ textarea.ng-invalid.ng-touched {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Web publica de pedidos: cuenta en la cabecera y pantalla de acceso al empezar (aqui y no en el componente,
+   cuyo SCSS esta al limite del presupuesto de tamano) */
+.po__account {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: var(--p-muted);
+  white-space: nowrap;
+}
+.po__account button {
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: var(--p-primary-dark);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.po__welcome {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.po__welcome h1 {
+  font-size: 1.6rem;
+}
+.po__welcome > p {
+  margin: 0 0 4px;
+  color: var(--p-muted);
+}

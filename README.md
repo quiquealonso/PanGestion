@@ -180,7 +180,7 @@ La web se puede instalar en el móvil o en el ordenador desde el navegador: en C
 
 ## Cuentas de cliente y emails
 
-Para pedir en la web pública hay que tener una cuenta. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
+Para pedir en la web pública hay que tener una cuenta: es lo primero que se pide, antes de elegir el establecimiento. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
 
 Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`). Mientras no haya SMTP, las cuentas se activan sin confirmar el email.
 

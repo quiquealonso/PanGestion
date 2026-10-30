@@ -63,7 +63,7 @@ export class PublicOrderPageComponent implements OnInit {
     { number: 1, title: '¿Dónde quieres pedir?', help: 'Toca el establecimiento al que quieres hacer el pedido.' },
     { number: 2, title: 'Elige tus productos', help: 'Toca un producto para ver lo que lleva y añadirlo. Arriba puedes cambiar de categoría.' },
     { number: 3, title: 'Revisa tu pedido', help: 'Comprueba las cantidades. Con el lápiz quitas ingredientes y con la papelera eliminas el producto.' },
-    { number: 4, title: 'Tus datos', help: 'Entra en tu cuenta (o créala) para hacer el pedido. Solo usamos tus datos para avisarte.' },
+    { number: 4, title: 'Tus datos', help: 'Los usamos solo para avisarte si hay algún problema con tu pedido.' },
     { number: 5, title: '¿Cuándo lo recoges?', help: 'Elige el día y la hora a la que pasarás a recogerlo. Después, confirma el pedido.' },
   ];
   readonly typeLabels = BUSINESS_TYPE_LABELS;
