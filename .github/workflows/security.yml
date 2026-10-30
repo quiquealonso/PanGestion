@@ -35,9 +35,8 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      # Falla con vulnerabilidades criticas en las dependencias de produccion del frontend; las altas solo se listan
-      # (Dependabot propone la actualizacion; npm espera unos dias antes de instalar versiones recien publicadas)
-      - run: npm audit --omit=dev --audit-level=critical
+      # Falla si hay vulnerabilidades altas o criticas en las dependencias de produccion del frontend
+      - run: npm audit --omit=dev --audit-level=high
       # package-lock.json y backend/pom.xml contra la base de datos de vulnerabilidades OSV (Google)
       - name: OSV-Scanner (frontend y backend)
         run: |

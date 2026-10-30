@@ -41,8 +41,9 @@ class FieldEncryptorTest {
     @DisplayName("un texto cifrado manipulado no se descifra")
     void tampered() {
         String encrypted = FieldEncryptor.encrypt("600000000");
-        char last = encrypted.charAt(encrypted.length() - 3);
-        String tampered = encrypted.substring(0, encrypted.length() - 3) + (last == 'A' ? 'B' : 'A') + encrypted.substring(encrypted.length() - 2);
+        byte[] bytes = Base64.getDecoder().decode(encrypted.substring(FieldEncryptor.PREFIX.length()));
+        bytes[bytes.length - 1] ^= 1; // un bit del texto cifrado
+        String tampered = FieldEncryptor.PREFIX + Base64.getEncoder().encodeToString(bytes);
         assertThatThrownBy(() -> FieldEncryptor.decrypt(tampered)).isInstanceOf(IllegalStateException.class);
     }
 
