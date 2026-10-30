@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
 import { environment } from '../../../environments/environment';
+import { APP_VERSION } from '../../../environments/version';
 
 @Component({
   imports: [ReactiveFormsModule, RouterLink],
@@ -20,6 +21,7 @@ export class AuthPageComponent {
   protected readonly loading = signal(false);
   /** Usuarios de prueba (solo en desarrollo, ver environment.ts). */
   protected readonly testUsers = environment.testUsers;
+  protected readonly version = APP_VERSION;
   protected readonly copied = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({

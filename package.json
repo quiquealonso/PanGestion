@@ -1,6 +1,6 @@
 {
   "name": "gestion-pedidos",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "ng": "node ./node_modules/@angular/cli/bin/ng.js",
     "start": "node ./node_modules/@angular/cli/bin/ng.js serve",

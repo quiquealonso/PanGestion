@@ -8,3 +8,11 @@ try {
     document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Pedir';
   }
 } catch (e) {}
+
+// Android/Chrome avisa de que la app se puede instalar (beforeinstallprompt) a veces antes de que arranque Angular:
+// se guarda el aviso para que el boton "Instalar" (PwaInstallService) lo use cuando quiera.
+window.addEventListener('beforeinstallprompt', function (event) {
+  event.preventDefault();
+  window.__pgInstallPrompt = event;
+  window.dispatchEvent(new Event('pg-installable'));
+});
