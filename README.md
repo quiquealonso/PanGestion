@@ -173,7 +173,31 @@ La web se puede instalar en el móvil o en el ordenador desde el navegador: en C
 - **PanGestión** (`/PanGestion/`): la de gestión.
 - **Pedir** (`/PanGestion/pedido`): la de pedidos de clientes.
 
-El service worker guarda la app para que abra rápido. Cada versión nueva se descarga sola y se aplica al cambiar de pantalla. Los datos siempre se piden a la API: nada se guarda sin conexión.
+- **Instalar:** en el móvil sale un aviso «Instala la app». En Android se instala con el botón; en iPhone, Apple solo permite hacerlo a mano, así que el aviso explica cómo.
+- **Versiones:** cada despliegue tiene una versión (`1.0.<número de despliegue>`), que aparece en la pantalla de acceso. Para subir la versión mayor o menor, cambia `version` en `package.json`.
+- **Actualizar:** las apps abiertas o instaladas detectan la versión nueva (al abrirlas, al volver a ellas y cada 5 minutos) y muestran el botón «Actualizar», que la activa y recarga.
+- **Datos:** siempre se piden a la API; nada se guarda sin conexión.
+
+## Cuentas de cliente y emails
+
+Para pedir en la web pública hay que tener una cuenta. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
+
+Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`). Mientras no haya SMTP, las cuentas se activan sin confirmar el email.
+
+1. **Gmail** (gratis, unos 500 emails al día):
+   - Activa la verificación en 2 pasos en tu cuenta de Google.
+   - Crea una contraseña de aplicación en https://myaccount.google.com/apppasswords.
+   - Pon esto en el `.env`, con tus datos:
+     ```
+     SMTP_HOST=smtp.gmail.com
+     SMTP_PORT=587
+     SMTP_USERNAME=tu correo de Gmail
+     SMTP_PASSWORD=la contraseña de aplicación (16 letras, sin espacios)
+     MAIL_FROM="PanGestión <tu correo de Gmail>"
+     ```
+2. Reinicia la API: en la VM, `cd ~/pangestion/app/backend/deploy && docker compose up -d api`.
+
+Otros proveedores con plan gratis, como Brevo (300 al día) o Mailjet, funcionan igual: cambia `SMTP_HOST` y las credenciales.
 
 ## Seguridad
 

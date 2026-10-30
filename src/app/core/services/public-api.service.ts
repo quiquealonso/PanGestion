@@ -12,7 +12,8 @@ export interface PublicOrderRequest {
   companyId: number;
   pickupDate: string;
   pickupTime: string;
-  customer: { name: string; email: string; phone: string | null; businessName: null; taxId: null };
+  /** Telefono para este pedido (a domicilio, obligatorio); el nombre y el email salen de la cuenta del cliente */
+  phone: string | null;
   notes: string | null;
   /** RECOGER (por defecto) o DOMICILIO, que necesita la direccion */
   type: 'RECOGER' | 'DOMICILIO';

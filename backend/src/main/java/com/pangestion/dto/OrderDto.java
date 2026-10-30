@@ -51,12 +51,16 @@ public final class OrderDto {
         }
     }
 
-    /** Pedido realizado por un cliente desde la parte publica, a la panaderia (empresa) que elige. */
+    /**
+     * Pedido de un cliente con cuenta desde la parte publica, a la panaderia (empresa) que elige.
+     * El nombre y el email salen de su cuenta (token), no del formulario.
+     */
     public record PublicRequest(
             @NotNull Long companyId,
             @NotNull @FutureOrPresent LocalDate pickupDate,
             @NotNull @JsonFormat(pattern = "HH:mm") LocalTime pickupTime,
-            @NotNull @Valid CustomerDto.Request customer,
+            /** Telefono para este pedido (a domicilio es obligatorio); si no llega, el de la cuenta */
+            @Pattern(regexp = "^[0-9 +]{9,20}$", message = "Telefono no valido") String phone,
             @Size(max = 500) String notes,
             @NotEmpty @Valid List<Line> lines,
             OrderType type,

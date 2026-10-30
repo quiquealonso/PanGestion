@@ -36,6 +36,13 @@ services:
       SEED_DATA: ${SEED_DATA:-false}
       APP_CORS_ALLOWED_ORIGINS: ${CORS_ORIGINS:?Falta CORS_ORIGINS en .env}
       UPLOADS_DIR: /app/uploads
+      # Web publica (enlace del email de confirmacion de cuentas) y SMTP para enviarlo; sin SMTP no hay confirmacion
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-https://quiquealonso.github.io/PanGestion}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     volumes:
       - uploads:/app/uploads
 

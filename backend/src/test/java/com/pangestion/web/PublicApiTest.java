@@ -3,9 +3,11 @@ package com.pangestion.web;
 import com.pangestion.model.Category;
 import com.pangestion.model.Company;
 import com.pangestion.model.Customer;
+import com.pangestion.model.CustomerAccount;
 import com.pangestion.model.Ingredient;
 import com.pangestion.model.OrderStatus;
 import com.pangestion.model.Product;
+import com.pangestion.model.Role;
 import com.pangestion.support.ApiTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,12 +43,12 @@ class PublicApiTest extends ApiTestSupport {
                 ingredient(bar, "Queso", "Lácteos"), ingredient(bar, "Mozzarella", "Lácteos"));
     }
 
-    private String order(Long companyId, LocalDate date, String time, String email, String name, String lines) {
+    /** Pedido sin datos del cliente: el nombre y el email salen de la cuenta (token). */
+    private String order(Long companyId, LocalDate date, String time, String lines) {
         return """
-                {"companyId": %d, "pickupDate": "%s", "pickupTime": "%s",
-                 "customer": {"name": "%s", "email": "%s", "phone": "600000000", "businessName": null, "taxId": null},
+                {"companyId": %d, "pickupDate": "%s", "pickupTime": "%s", "phone": "600000000",
                  "notes": "La pizza bien hecha", "lines": [%s]}
-                """.formatted(companyId, date, time, name, email, lines);
+                """.formatted(companyId, date, time, lines);
     }
 
     private String line(Product product, int quantity, String removedIds) {
@@ -111,10 +113,11 @@ class PublicApiTest extends ApiTestSupport {
     }
 
     @Test
-    @DisplayName("hacer un pedido: 201, crea el cliente en ese negocio y guarda el 'sin cebolla'")
+    @DisplayName("hacer un pedido con cuenta: 201, crea el cliente en ese negocio con los datos de la cuenta y guarda el 'sin cebolla'")
     void createOrder() throws Exception {
+        CustomerAccount lola = account("Lola", "lola@correo.es", null);
         mvc.perform(postJson("/api/public/orders",
-                        order(bar.getId(), TOMORROW, "13:00", "Lola@Correo.es", "Lola", line(vegetal, 2, cebolla.getId().toString()))))
+                        order(bar.getId(), TOMORROW, "13:00", line(vegetal, 2, cebolla.getId().toString()))).with(asCustomer(lola)))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.matchesRegex("http://localhost/api/orders/\\d+")))
                 .andExpect(jsonPath("$.id").isNumber())
@@ -127,7 +130,10 @@ class PublicApiTest extends ApiTestSupport {
                 .andExpect(jsonPath("$.lines[0].removedIngredients[0]").value("Cebolla"));
 
         assertThat(customerRepository.findByCompanyIdAndEmailIgnoreCase(bar.getId(), "lola@correo.es"))
-                .hasValueSatisfying(c -> assertThat(c.getPhone()).isEqualTo("600000000"));
+                .hasValueSatisfying(c -> {
+                    assertThat(c.getName()).isEqualTo("Lola");
+                    assertThat(c.getPhone()).isEqualTo("600000000");
+                });
         // En la base de datos el telefono se guarda cifrado
         customerRepository.flush();
         assertThat(jdbc.queryForObject("select phone from customers where email = 'lola@correo.es'", String.class))
@@ -135,12 +141,22 @@ class PublicApiTest extends ApiTestSupport {
     }
 
     @Test
+    @DisplayName("sin cuenta no se puede pedir (401), ni con el token de un usuario de gestión (403)")
+    void requiresCustomerAccount() throws Exception {
+        String body = order(bar.getId(), TOMORROW, "13:00", line(vegetal, 1, ""));
+        mvc.perform(postJson("/api/public/orders", body)).andExpect(status().isUnauthorized());
+        mvc.perform(postJson("/api/public/orders", body).with(as(user(bar, Role.ADMIN)))).andExpect(status().isForbidden());
+        assertThat(orderRepository.count()).isZero();
+    }
+
+    @Test
     @DisplayName("un cliente que repite (mismo email) no se duplica ni se cambian sus datos: solo se completa el teléfono si no tenía")
     void returningCustomer() throws Exception {
         Customer existing = customer(bar, "Lola", "lola@correo.es");
+        CustomerAccount account = account("Lola Ferrer", "lola@correo.es", null);
 
-        mvc.perform(postJson("/api/public/orders",
-                        order(bar.getId(), TOMORROW, "13:00", "LOLA@correo.es", "Lola Ferrer", line(vegetal, 1, ""))))
+        mvc.perform(postJson("/api/public/orders", order(bar.getId(), TOMORROW, "13:00", line(vegetal, 1, "")))
+                        .with(asCustomer(account)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.customerName").value("Lola Ferrer"));
 
@@ -151,28 +167,23 @@ class PublicApiTest extends ApiTestSupport {
     }
 
     @Test
-    @DisplayName("quien conoce el email de un cliente no puede cambiar su teléfono ni leerlo en la respuesta")
-    void customerTampering() throws Exception {
-        Customer existing = customer(bar, "Lola", "lola@correo.es");
-        existing.setPhone("611111111");
-        customerRepository.save(existing);
-
-        mvc.perform(postJson("/api/public/orders",
-                        order(bar.getId(), TOMORROW, "13:00", "lola@correo.es", "Otra", line(vegetal, 1, ""))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.customerPhone").doesNotExist());
-
-        Customer reloaded = customerRepository.findById(existing.getId()).orElseThrow();
-        assertThat(reloaded.getName()).isEqualTo("Lola");
-        assertThat(reloaded.getPhone()).isEqualTo("611111111");
+    @DisplayName("a domicilio sin teléfono (ni en el pedido ni en la cuenta): 409")
+    void deliveryNeedsPhone() throws Exception {
+        bar.setDelivery(true);
+        CustomerAccount account = account("Pep", "pep@correo.es", null);
+        String body = order(bar.getId(), TOMORROW, "13:00", line(vegetal, 1, ""))
+                .replace("\"phone\": \"600000000\",", "\"type\": \"DOMICILIO\", \"deliveryAddress\": \"C/ Mayor 1\",");
+        mvc.perform(postJson("/api/public/orders", body).with(asCustomer(account)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Para llevartelo a casa necesitamos un telefono"));
     }
 
     @Test
     @DisplayName("bots: si llega relleno el campo trampa 'website', 400")
     void honeypot() throws Exception {
-        String body = order(bar.getId(), TOMORROW, "13:00", "bot@spam.es", "Bot", line(vegetal, 1, ""))
+        String body = order(bar.getId(), TOMORROW, "13:00", line(vegetal, 1, ""))
                 .replace("\"lines\"", "\"website\": \"http://spam\", \"lines\"");
-        mvc.perform(postJson("/api/public/orders", body))
+        mvc.perform(postJson("/api/public/orders", body).with(asCustomer(account("Bot", "bot@spam.es", null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.website").exists());
     }
@@ -183,8 +194,8 @@ class PublicApiTest extends ApiTestSupport {
         Company forn = company("Forn");
         Customer fornLola = customer(forn, "Lola", "lola@correo.es");
 
-        mvc.perform(postJson("/api/public/orders",
-                        order(bar.getId(), TOMORROW, "13:00", "lola@correo.es", "Lola", line(vegetal, 1, ""))))
+        mvc.perform(postJson("/api/public/orders", order(bar.getId(), TOMORROW, "13:00", line(vegetal, 1, "")))
+                        .with(asCustomer(account("Lola", "lola@correo.es", null))))
                 .andExpect(status().isCreated());
 
         assertThat(customerRepository.countByCompanyId(bar.getId())).isEqualTo(1);
@@ -194,32 +205,32 @@ class PublicApiTest extends ApiTestSupport {
     @Test
     @DisplayName("reglas: negocio cerrado, franja completa o producto de otro negocio")
     void rules() throws Exception {
+        CustomerAccount a = account("A", "a@b.es", null);
         Company closed = company("Cerrado");
         closed.setActive(false);
         Product other = product(category(closed, "X"), "X", "1.00");
-        mvc.perform(postJson("/api/public/orders", order(closed.getId(), TOMORROW, "13:00", "a@b.es", "A", line(other, 1, ""))))
+        mvc.perform(postJson("/api/public/orders", order(closed.getId(), TOMORROW, "13:00", line(other, 1, ""))).with(asCustomer(a)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Cerrado no acepta pedidos ahora mismo"));
 
         Customer lola = customer(bar, "Lola", "lola@correo.es");
         order(lola, TOMORROW, "13:00", OrderStatus.PENDIENTE, vegetal, 1);
         order(lola, TOMORROW, "13:00", OrderStatus.PENDIENTE, vegetal, 1);
-        mvc.perform(postJson("/api/public/orders", order(bar.getId(), TOMORROW, "13:00", "a@b.es", "A", line(vegetal, 1, ""))))
+        mvc.perform(postJson("/api/public/orders", order(bar.getId(), TOMORROW, "13:00", line(vegetal, 1, ""))).with(asCustomer(a)))
                 .andExpect(status().isConflict());
 
-        mvc.perform(postJson("/api/public/orders", order(bar.getId(), TOMORROW, "14:00", "a@b.es", "A", line(other, 1, ""))))
+        mvc.perform(postJson("/api/public/orders", order(bar.getId(), TOMORROW, "14:00", line(other, 1, ""))).with(asCustomer(a)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("validación: fecha pasada, email mal escrito o sin productos: 400")
+    @DisplayName("validación: fecha pasada, teléfono mal escrito o sin productos: 400")
     void validation() throws Exception {
-        mvc.perform(postJson("/api/public/orders",
-                        order(bar.getId(), LocalDate.now().minusDays(1), "13:00", "no-es-email", "", "")))
+        String body = order(bar.getId(), LocalDate.now().minusDays(1), "13:00", "").replace("600000000", "12");
+        mvc.perform(postJson("/api/public/orders", body).with(asCustomer(account("A", "a@b.es", null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.pickupDate").exists())
-                .andExpect(jsonPath("$.fieldErrors['customer.email']").exists())
-                .andExpect(jsonPath("$.fieldErrors['customer.name']").exists())
+                .andExpect(jsonPath("$.fieldErrors.phone").exists())
                 .andExpect(jsonPath("$.fieldErrors.lines").exists());
     }
 

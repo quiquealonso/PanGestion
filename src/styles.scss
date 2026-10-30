@@ -997,3 +997,35 @@ textarea.ng-invalid.ng-touched {
   overflow: hidden;
   opacity: 0;
 }
+
+/* Web publica de pedidos: cuenta con la que se hace el pedido (paso "Tus datos"); paleta --p-* de esa pagina */
+.account-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--p-border);
+  border-radius: 14px;
+  background: var(--p-card);
+  color: var(--p-text);
+}
+.account-box > div {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+}
+.account-box small {
+  color: var(--p-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-box__out {
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--p-primary-dark);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}

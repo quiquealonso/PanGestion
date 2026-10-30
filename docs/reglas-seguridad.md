@@ -49,7 +49,7 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 
 ### S05 · Autenticación forzada en el servidor
 - **Estado:** ✅
-- **Cómo:** toda la API exige un JWT válido, salvo `/api/auth/login`, `/api/public/**` y `/uploads/**`. Los permisos por rol se definen en `SecurityConfig`, no en el frontend. El token caduca a las 8 horas.
+- **Cómo:** toda la API exige un JWT válido, salvo `/api/auth/login`, `/api/public/**` y `/uploads/**`. Los permisos por rol se definen en `SecurityConfig`, no en el frontend. El token de gestión caduca a las 8 horas. Hacer un pedido en la web pública y ver la cuenta exigen el token de un cliente (rol `CLIENTE`), y ese rol no puede usar nada de la API de gestión (S21).
 - **Dónde:** `config/SecurityConfig.java`
 - **Comprobación:** `SecurityApiTest`, `AuthApiTest`
 - **Fecha:** 2026-10-30
@@ -77,21 +77,21 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 
 ### S09 · Contraseñas con hash
 - **Estado:** ✅
-- **Cómo:** se usa BCrypt y las contraseñas deben tener 8 caracteres como mínimo. Nunca se devuelven en la API.
+- **Cómo:** se usa BCrypt, tanto para usuarios de gestión como para cuentas de cliente, y las contraseñas deben tener 8 caracteres como mínimo. Nunca se devuelven en la API.
 - **Dónde:** `SecurityConfig.passwordEncoder`, `UserDto.Request`
 - **Comprobación:** `UserApiTest`
 - **Fecha:** 2026-10-30
 
 ### S10 · Limitar los intentos de login
 - **Estado:** ✅
-- **Cómo:** se permiten 20 intentos cada 5 minutos por IP y 10 cada 15 minutos por email; al pasarse, la API responde 429 con `Retry-After`. El login tarda lo mismo exista o no el email, así que no revela qué cuentas existen. La IP real llega de Caddy (`server.forward-headers-strategy=native`).
-- **Dónde:** `security/RateLimiter`, `AuthController`, `AuthService`
+- **Cómo:** se permiten 20 intentos cada 5 minutos por IP y 10 cada 15 minutos por email, tanto en el login de gestión como en el de clientes; al pasarse, la API responde 429 con `Retry-After`. El registro de clientes admite 5 por hora y por IP, y el reenvío del enlace, 3 por hora y por email. El login tarda lo mismo exista o no el email, así que no revela qué cuentas existen. La IP real llega de Caddy (`server.forward-headers-strategy=native`).
+- **Dónde:** `security/RateLimiter`, `AuthController`, `AuthService`, `CustomerAccountController`
 - **Comprobación:** `RateLimiterTest`
 - **Fecha:** 2026-10-30
 
 ### S11 · Protección contra bots
 - **Estado:** ✅
-- **Cómo:** la web pública admite 10 pedidos por hora y por IP. El formulario tiene un campo trampa oculto (`website`); si llega relleno, la API responde 400.
+- **Cómo:** para pedir hay que tener una cuenta con el email confirmado (S21). Además, la web pública admite 10 pedidos por hora y por IP, y el formulario tiene un campo trampa oculto (`website`); si llega relleno, la API responde 400.
 - **Dónde:** `PublicController`, `OrderDto.PublicRequest`, `public-order-page`
 - **Comprobación:** `PublicApiTest.honeypot`, `RateLimiterTest`
 - **Fecha:** 2026-10-30
@@ -100,7 +100,7 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 
 ### S12 · Cifrar los datos sensibles
 - **Estado:** ✅
-- **Cómo:** el teléfono y el CIF de los clientes y la dirección de entrega se guardan cifrados con AES-256-GCM (prefijo `enc:v1:`). Los datos antiguos se cifran al arrancar. La clave es `ENCRYPTION_KEY`: guarda una copia, porque sin ella esos datos no se pueden leer. Las contraseñas no se cifran, se hashean (S09).
+- **Cómo:** el teléfono y el CIF de los clientes, el teléfono de las cuentas de cliente y la dirección de entrega se guardan cifrados con AES-256-GCM (prefijo `enc:v1:`). Los datos antiguos se cifran al arrancar. La clave es `ENCRYPTION_KEY`: guarda una copia, porque sin ella esos datos no se pueden leer. Las contraseñas no se cifran, se hashean (S09).
 - **Dónde:** `security/FieldEncryptor`, `security/EncryptedString`, `config/SensitiveDataMigration`
 - **Comprobación:** `FieldEncryptorTest`, `PublicApiTest.createOrder` (comprueba que la BBDD guarda el valor cifrado)
 - **Fecha:** 2026-10-30
@@ -164,3 +164,20 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 - **Dónde:** `.github/dependabot.yml`, `.github/workflows/security.yml`
 - **Comprobación:** job `Dependencias con vulnerabilidades`
 - **Fecha:** 2026-10-30
+
+## Cuentas de cliente
+
+### S21 · Cuentas de cliente con email confirmado
+- **Estado:** ✅ (la confirmación por email necesita SMTP; sin él, la cuenta se activa al crearla)
+- **Cómo:** para pedir en la web pública hay que tener una cuenta. Al crearla se envía un enlace de un solo uso, que caduca a las 24 horas; en la BBDD solo se guarda su SHA-256. Hasta abrirlo no se puede entrar (403). El rol `CLIENTE` no tiene acceso a la API de gestión. Registrarse con un email que ya tiene cuenta responde igual que con uno nuevo (no revela qué emails existen) y avisa al dueño por email, sin cambiar su contraseña. El nombre y el email del pedido salen de la cuenta, no del formulario. La sesión del cliente dura 30 días y es independiente de la de gestión.
+- **Dónde:** `CustomerAccountService`, `CustomerAccountController`, `MailService`, `SecurityConfig`, `customer-auth.service.ts`
+- **Comprobación:** `CustomerAccountApiTest`, `CustomerAccountEmailApiTest`, `PublicApiTest.requiresCustomerAccount`
+- **Fecha:** 2026-10-30
+
+### S22 · Las apps instaladas se actualizan con cada despliegue
+- **Estado:** ✅
+- **Cómo:** cada despliegue tiene una versión (`1.0.<número de despliegue>`). El service worker la compara con la publicada al abrir la app, al volver a ella y cada 5 minutos, y muestra el botón «Actualizar», así nadie se queda con una versión con fallos ya corregidos.
+- **Dónde:** `AppUpdateService`, `pwa-banner.component.ts`, `deploy.yml` (paso «Version»)
+- **Comprobación:** prueba de humo del despliegue (`ngsw.json` publicado)
+- **Fecha:** 2026-10-30
+

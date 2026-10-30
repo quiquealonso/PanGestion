@@ -73,20 +73,22 @@ public class CustomerService {
      * Para la web publica: busca el cliente en esa panaderia por su email y actualiza su nombre y telefono,
      * o lo crea si es la primera vez que pide alli.
      */
-    Customer findOrCreate(Company company, CustomerDto.Request request) {
-        return customerRepository.findByCompanyIdAndEmailIgnoreCase(company.getId(), request.email().trim())
-                // Un pedido anonimo no cambia los datos de un cliente que ya existe (cualquiera puede escribir su email):
-                // solo se completa el telefono si no lo tenia. Los datos los corrige el negocio.
+    /**
+     * Ficha de cliente en este negocio para un pedido de la web publica (cuenta con el email confirmado).
+     * Si ya existe, no se cambian sus datos (los corrige el negocio): solo se completa el telefono si no lo tenia.
+     */
+    Customer findOrCreate(Company company, String name, String email, String phone) {
+        return customerRepository.findByCompanyIdAndEmailIgnoreCase(company.getId(), email)
                 .map(existing -> {
-                    if (existing.getPhone() == null && request.phone() != null && !request.phone().isBlank()) {
-                        existing.setPhone(request.phone().trim());
+                    if (existing.getPhone() == null && phone != null) {
+                        existing.setPhone(phone);
                     }
                     return existing;
                 })
                 .orElseGet(() -> {
                     Customer customer = new Customer();
                     customer.setCompany(company);
-                    apply(customer, request);
+                    apply(customer, new CustomerDto.Request(name, email, phone, null, null));
                     return customerRepository.save(customer);
                 });
     }

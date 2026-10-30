@@ -1,11 +1,14 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Category } from '../../core/models/category.model';
 import { BUSINESS_TYPE_LABELS, Company, TimeSlot } from '../../core/models/company.model';
 import { PublicOrder } from '../../core/models/order.model';
 import { PublicProduct } from '../../core/models/product.model';
+import { CustomerAuthService } from '../../core/services/customer-auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { PublicApiService } from '../../core/services/public-api.service';
 import { Extra } from '../../core/models/ingredient.model';
 import { apiErrorMessage } from '../../core/utils/api-error';
@@ -38,15 +41,21 @@ const STORAGE_KEY = 'pangestion.public-order';
  *   1. Donde pedir  2. Productos  3. Revisar  4. Tus datos  5. Dia y hora (y confirmar)
  */
 import { AssetUrlPipe } from '../../shared/asset-url.pipe';
+import { CustomerAuthPanelComponent } from './customer-auth-panel.component';
 
 @Component({
-  imports: [CurrencyPipe, DatePipe, FormsModule, ExtrasPickerComponent, AssetUrlPipe],
+  imports: [CurrencyPipe, DatePipe, FormsModule, ExtrasPickerComponent, AssetUrlPipe, CustomerAuthPanelComponent],
   selector: 'app-public-order-page',
   styleUrl: './public-order-page.component.scss',
   templateUrl: './public-order-page.component.html',
 })
 export class PublicOrderPageComponent implements OnInit {
   private readonly api = inject(PublicApiService);
+  /** Para pedir hace falta cuenta de cliente (con el email confirmado) */
+  protected readonly customerAuth = inject(CustomerAuthService);
+  private readonly notifications = inject(NotificationService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly stepTitle = viewChild<ElementRef<HTMLElement>>('stepTitle');
   private readonly hoursTitle = viewChild<ElementRef<HTMLElement>>('hoursTitle');
 
@@ -54,7 +63,7 @@ export class PublicOrderPageComponent implements OnInit {
     { number: 1, title: '¿Dónde quieres pedir?', help: 'Toca el establecimiento al que quieres hacer el pedido.' },
     { number: 2, title: 'Elige tus productos', help: 'Toca un producto para ver lo que lleva y añadirlo. Arriba puedes cambiar de categoría.' },
     { number: 3, title: 'Revisa tu pedido', help: 'Comprueba las cantidades. Con el lápiz quitas ingredientes y con la papelera eliminas el producto.' },
-    { number: 4, title: 'Tus datos', help: 'Los usamos solo para avisarte si hay algún problema con tu pedido.' },
+    { number: 4, title: 'Tus datos', help: 'Entra en tu cuenta (o créala) para hacer el pedido. Solo usamos tus datos para avisarte.' },
     { number: 5, title: '¿Cuándo lo recoges?', help: 'Elige el día y la hora a la que pasarás a recogerlo. Después, confirma el pedido.' },
   ];
   readonly typeLabels = BUSINESS_TYPE_LABELS;
@@ -138,8 +147,6 @@ export class PublicOrderPageComponent implements OnInit {
   readonly customerErrors = computed(() => {
     const c = this.customer();
     return {
-      name: c.name.trim().length < 2 ? 'Escribe tu nombre.' : null,
-      email: !/^\S+@\S+\.\S+$/.test(c.email.trim()) ? 'Escribe un email válido, por ejemplo: nombre@gmail.com' : null,
       phone: c.phone.trim() && !/^[0-9 +]{9,15}$/.test(c.phone.trim()) ? 'Escribe un teléfono de 9 cifras, por ejemplo: 612 345 678' : null,
       // A domicilio: el repartidor necesita la direccion y un telefono para llamar al llegar
       address: this.isDelivery() && this.address().trim().length < 5 ? 'Escribe la dirección: calle, número y piso.' : null,
@@ -157,7 +164,8 @@ export class PublicOrderPageComponent implements OnInit {
         return this.itemCount() > 0 ? null : 'Añade al menos un producto para continuar.';
       case 4: {
         const e = this.customerErrors();
-        return e.name || e.email || e.phone || e.address || e.deliveryPhone ? 'Revisa tus datos: hay algún campo sin completar.' : null;
+        if (!this.customerAuth.isLoggedIn()) return 'Entra en tu cuenta o créala para hacer el pedido.';
+        return e.phone || e.address || e.deliveryPhone ? 'Revisa tus datos: hay algún campo sin completar.' : null;
       }
       case 5:
         return this.time() ? null : `Elige una hora de ${this.isDelivery() ? 'entrega' : 'recogida'} para poder confirmar.`;
@@ -187,6 +195,8 @@ export class PublicOrderPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.verifyEmailLink();
+    this.customerAuth.refresh();
     const saved = this.readProgress();
     this.api.companies().subscribe({
       next: (companies) => {
@@ -348,6 +358,29 @@ export class PublicOrderPageComponent implements OnInit {
 
   // ----- Paso 4: datos -----
 
+  /** Al entrar en la cuenta se rellena el telefono con el suyo (se puede cambiar para este pedido). */
+  onLoggedIn(): void {
+    const account = this.customerAuth.account();
+    if (account?.phone && !this.customer().phone.trim()) this.updateCustomer('phone', account.phone);
+    this.notifications.success(`Hola, ${account?.name ?? ''}`.trim());
+  }
+
+  logoutCustomer(): void {
+    this.customerAuth.logout();
+    this.updateCustomer('phone', '');
+  }
+
+  /** Enlace del email de confirmacion: /pedido/?verificar=<token>. Activa la cuenta y deja la sesion iniciada. */
+  private verifyEmailLink(): void {
+    const token = this.route.snapshot.queryParamMap.get('verificar');
+    if (!token) return;
+    this.router.navigate([], { queryParams: { verificar: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    this.customerAuth.verify(token).subscribe({
+      next: (session) => this.notifications.success(`Cuenta confirmada. ¡Bienvenido, ${session.account.name}!`),
+      error: (err) => this.notifications.error(apiErrorMessage(err)),
+    });
+  }
+
   updateCustomer(field: 'name' | 'phone' | 'email', value: string): void {
     this.customer.update((c) => ({ ...c, [field]: value }));
   }
@@ -432,7 +465,7 @@ export class PublicOrderPageComponent implements OnInit {
         companyId: this.companyId()!,
         pickupDate: this.date(),
         pickupTime: this.time()!,
-        customer: { name: c.name.trim(), email: c.email.trim(), phone: c.phone.trim() || null, businessName: null, taxId: null },
+        phone: c.phone.trim() || null,
         notes: this.notes.trim() || null,
         type: this.isDelivery() ? 'DOMICILIO' : 'RECOGER',
         deliveryAddress: this.isDelivery() ? this.address().trim() : null,

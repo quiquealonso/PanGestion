@@ -191,6 +191,9 @@
 
         <!-- ===== 4. Datos ===== -->
         @case (4) {
+          @if (!customerAuth.isLoggedIn()) {
+            <app-customer-auth-panel (loggedIn)="onLoggedIn()" />
+          } @else {
           <form class="form" (ngSubmit)="next()" novalidate>
             @if (company()?.delivery) {
               <div class="field">
@@ -214,14 +217,13 @@
               }
             }
 
-            <label class="field" [class.has-error]="showErrors() && customerErrors().name">
-              <span>Nombre y apellido</span>
-              <input name="name" autocomplete="name" placeholder="Por ejemplo: María García"
-                     [ngModel]="customer().name" (ngModelChange)="updateCustomer('name', $event)" />
-              @if (showErrors() && customerErrors().name) {
-                <small class="field__error">{{ customerErrors().name }}</small>
-              }
-            </label>
+            @if (customerAuth.account(); as account) {
+              <div class="account-box">
+                <span aria-hidden="true">👤</span>
+                <div><strong>{{ account.name }}</strong><small>{{ account.email }}</small></div>
+                <button type="button" class="account-box__out" (click)="logoutCustomer()">No soy yo</button>
+              </div>
+            }
 
             <!-- Trampa para bots: invisible y fuera del tabulador; si llega relleno, la API rechaza el pedido -->
             <input class="hp-field" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"
@@ -236,18 +238,10 @@
               }
             </label>
 
-            <label class="field" [class.has-error]="showErrors() && customerErrors().email">
-              <span>Email</span>
-              <input name="email" type="email" inputmode="email" autocomplete="email" placeholder="Por ejemplo: maria@gmail.com"
-                     [ngModel]="customer().email" (ngModelChange)="updateCustomer('email', $event)" />
-              @if (showErrors() && customerErrors().email) {
-                <small class="field__error">{{ customerErrors().email }}</small>
-              }
-            </label>
-
-            <p class="po__hint">🔒 Solo usamos estos datos para este pedido.</p>
+            <p class="po__hint">🔒 Solo usamos estos datos para tus pedidos.</p>
             <button type="submit" hidden></button>
           </form>
+          }
         }
 
         <!-- ===== 5. Dia y hora ===== -->
