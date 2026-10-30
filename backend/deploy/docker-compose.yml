@@ -1,6 +1,9 @@
 # Despliegue en la VM: PostgreSQL + API + Caddy (HTTPS con Let's Encrypt).
 # Lee las variables del fichero .env de esta carpeta (ver .env.example).
-# Arranque: docker compose up -d --build
+# Arranque: docker compose up -d --build (en la VM lo hace deploy.sh)
+# Nombre fijo del proyecto: los volumenes (BBDD, imagenes, certificados) se llaman deploy_*
+name: deploy
+
 services:
   db:
     image: postgres:17

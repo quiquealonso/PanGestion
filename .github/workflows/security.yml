@@ -3,7 +3,9 @@ name: Seguridad
 on:
   pull_request:
   push:
-    branches: [main, dev]
+    branches: [dev]
+  # Al fusionar en main lo llama deploy.yml antes de desplegar
+  workflow_call:
   schedule:
     # Cada lunes: avisa de vulnerabilidades nuevas aunque no se toque el codigo
     - cron: "0 6 * * 1"

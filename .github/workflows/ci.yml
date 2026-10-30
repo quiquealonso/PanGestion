@@ -1,17 +1,26 @@
 name: CI
 
+# Push a cualquier rama (menos main): tests rapidos.
+# Pull request: todos los tests (los que tambien se pasan al fusionar en main, ver deploy.yml).
 on:
-  pull_request:
   push:
-    branches: [main]
+    branches-ignore: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: Compilar y probar
+  backend-fast:
+    name: Backend (tests rápidos)
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     defaults:
       run:
-        # El backend esta en backend/ (el repo tiene tambien el frontend en la raiz)
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +30,23 @@ jobs:
           java-version: "21"
           cache: maven
           cache-dependency-path: backend/pom.xml
-      # Compila todo (tambien los demas tests), pero solo EJECUTA los de la sesion 17:
-      # los marcados con @Tag("reglas-negocio"). El resto se lanza en local con ./mvnw verify.
-      - run: bash ./mvnw -B verify -Dgroups=reglas-negocio
+      # Unidad y reglas de negocio (modelo, servicios, seguridad, almacenamiento); sin los tests HTTP de web/
+      - run: bash ./mvnw -B verify "-Dtest=!com.pangestion.web.**" -Dsurefire.failIfNoSpecifiedTests=false
+
+  backend-full:
+    name: Backend (todos los tests)
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/backend-tests.yml
+
+  frontend:
+    name: Frontend (tests y build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx ng test --watch=false
+      - run: npx ng build

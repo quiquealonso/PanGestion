@@ -149,7 +149,35 @@ cd backend && ./mvnw test        # test del backend (BD en memoria)
 cd backend && ./mvnw package     # backend (jar en backend/target)
 ```
 
+## Integración y despliegue continuos
+
+| Cuándo | Qué se ejecuta | Workflow |
+|---|---|---|
+| Push a cualquier rama (menos `main`) | Tests rápidos del backend (unidad y reglas de negocio) y tests y build del frontend | `ci.yml` |
+| Pull request | Todos los tests del backend, frontend y seguridad (gitleaks, `npm audit`, OSV) | `ci.yml`, `security.yml` |
+| Fusionar en `main` | Otra vez todos los tests y la seguridad; después se despliega la API en la VM y el frontend en Pages, y se pasan pruebas de humo contra producción | `deploy.yml` |
+
+- **Rama `main` protegida:** solo se llega por PR, con los checks en verde.
+- **Despliegue de la API:** Actions entra por SSH con una clave que solo puede ejecutar `~/pangestion/deploy.sh` en la VM (copia de `backend/deploy/deploy.sh`). El script hace lo siguiente:
+  1. Comprueba que el commit está en `main`.
+  2. Hace una copia de la BBDD en `~/pangestion/backups`, donde guarda las últimas 14.
+  3. Construye la imagen y arranca los contenedores.
+  4. Espera a que la API responda; si no responde, vuelve al commit anterior.
+- **Secretos del repositorio:** `VM_SSH_KEY` (clave privada de despliegue) y `VM_KNOWN_HOSTS` (huella de la VM).
+- **Desplegar a mano, en la VM:** `~/pangestion/deploy.sh <sha de main>`.
+
+## App instalable (PWA)
+
+La web se puede instalar en el móvil o en el ordenador desde el navegador: en Chrome, con «Instalar app»; en el iPhone, con Compartir → «Añadir a pantalla de inicio». Son dos apps distintas:
+
+- **PanGestión** (`/PanGestion/`): la de gestión.
+- **Pedir** (`/PanGestion/pedido`): la de pedidos de clientes.
+
+El service worker guarda la app para que abra rápido. Cada versión nueva se descarga sola y se aplica al cambiar de pantalla. Los datos siempre se piden a la API: nada se guarda sin conexión.
+
 ## Seguridad
+
+Las reglas de seguridad, con su estado y su comprobación, están en [docs/reglas-seguridad.md](docs/reglas-seguridad.md). Añade allí las nuevas.
 
 - **Autenticación en el servidor:** JWT HS256 en la cabecera `Authorization` (sin cookies, porque el frontend y la API están en dominios distintos). Las reglas de acceso por rol están en `SecurityConfig`, y cada servicio filtra por el `companyId` del token. Pedir datos de otra empresa devuelve 404.
 - **Contraseñas:** se guardan con BCrypt y deben tener 8 caracteres como mínimo. El login tarda lo mismo exista o no el email, así que el tiempo de respuesta no revela qué cuentas existen.
