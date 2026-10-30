@@ -29,9 +29,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.scss"
-            ]
+            "styles": ["src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -65,7 +63,8 @@
                   "inlineCritical": false
                 },
                 "fonts": true
-              }
+              },
+              "serviceWorker": "ngsw-config.json"
             },
             "development": {
               "optimization": false,

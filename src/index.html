@@ -1,16 +1,25 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>PanGestión</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#09111f">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <!-- Fuera de linea (no inline) para que la CSP de produccion no tenga que permitir scripts inline -->
-  <script src="theme-init.js"></script>
-</head>
-<body>
-  <app-root></app-root>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>PanGestión</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#09111f" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- App instalable (PWA). pwa-init.js cambia manifiesto, icono y titulo en la web de pedidos (/pedido) -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PanGestión" />
+    <!-- Scripts en fichero (no inline) para que la CSP de produccion no tenga que permitir scripts inline -->
+    <script src="pwa-init.js"></script>
+    <script src="theme-init.js"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+    <noscript>PanGestión necesita JavaScript.</noscript>
+  </body>
 </html>
