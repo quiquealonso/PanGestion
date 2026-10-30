@@ -121,7 +121,7 @@
               <button type="button" class="product" [class.is-in-cart]="qty > 0" (click)="openDetail(p)"
                       [attr.aria-label]="p.name + ', ' + (p.price | currency: 'EUR') + (qty ? ', tienes ' + qty + ' en tu pedido' : '')">
                 @if (p.imageUrl) {
-                  <img [src]="p.imageUrl" alt="" loading="lazy" />
+                  <img [src]="p.imageUrl | assetUrl" alt="" loading="lazy" />
                 } @else {
                   <span class="product__noimg" [style.background]="p.color" aria-hidden="true">{{ p.name.charAt(0) }}</span>
                 }
@@ -380,7 +380,7 @@
       <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title" (click)="$event.stopPropagation()">
         <button type="button" class="sheet__close" aria-label="Cerrar" (click)="detail.set(null)">✕</button>
         @if (d.product.imageUrl) {
-          <img class="sheet__img" [src]="d.product.imageUrl" alt="" />
+          <img class="sheet__img" [src]="d.product.imageUrl | assetUrl" alt="" />
         }
         <h2 id="detail-title">{{ d.product.name }}</h2>
         <p class="sheet__price">{{ d.product.price | currency: 'EUR' }}</p>

@@ -19,9 +19,10 @@ interface Tab {
   route: string;
   exact?: boolean;
 }
+import { AssetUrlPipe } from '../../shared/asset-url.pipe';
 
 @Component({
-  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, RouterOutlet, ReadyAlertsComponent],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, RouterOutlet, ReadyAlertsComponent, AssetUrlPipe],
   selector: 'app-shell',
   styleUrl: './shell.component.scss',
   templateUrl: './shell.component.html',

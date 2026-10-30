@@ -33,7 +33,7 @@
               <article class="product" [class.in-cart]="quantityOf(product.id) > 0">
                 <div class="product__img" [style.background]="product.displayColor">
                   @if (product.imageUrl) {
-                    <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                    <img [src]="product.imageUrl | assetUrl" [alt]="product.name" loading="lazy" />
                   } @else {
                     {{ product.abbreviation || product.name.charAt(0) }}
                   }

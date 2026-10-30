@@ -37,8 +37,10 @@ const STORAGE_KEY = 'pangestion.public-order';
  * un paso cada vez, con instrucciones claras y botones grandes.
  *   1. Donde pedir  2. Productos  3. Revisar  4. Tus datos  5. Dia y hora (y confirmar)
  */
+import { AssetUrlPipe } from '../../shared/asset-url.pipe';
+
 @Component({
-  imports: [CurrencyPipe, DatePipe, FormsModule, ExtrasPickerComponent],
+  imports: [CurrencyPipe, DatePipe, FormsModule, ExtrasPickerComponent, AssetUrlPipe],
   selector: 'app-public-order-page',
   styleUrl: './public-order-page.component.scss',
   templateUrl: './public-order-page.component.html',

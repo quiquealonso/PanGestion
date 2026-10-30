@@ -44,7 +44,7 @@
               <div class="card" [class.card--muted]="!product.active" (click)="select(product)">
                 <div class="card__top">
                   @if (product.imageUrl) {
-                    <img class="thumb" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                    <img class="thumb" [src]="product.imageUrl | assetUrl" [alt]="product.name" loading="lazy" />
                   }
                   <div class="card__main">
                     <p class="card__title"><span class="color-dot" [style.background]="product.displayColor"></span>{{ product.name }}</p>
@@ -122,7 +122,7 @@
           <div class="photo">
             <div class="photo__preview" [style.background]="form.controls.ownColor.value ? form.controls.color.value : (selected()?.categoryColor ?? '#475569')">
               @if (imagePreview(); as src) {
-                <img [src]="src" alt="Foto del producto" />
+                <img [src]="src | assetUrl" alt="Foto del producto" />
               } @else {
                 <span>{{ form.controls.abbreviation.value || form.controls.name.value.charAt(0) || '?' }}</span>
               }
