@@ -4,8 +4,16 @@
 # Nombre fijo del proyecto: los volumenes (BBDD, imagenes, certificados) se llaman deploy_*
 name: deploy
 
+# Logs de Docker con rotacion: como mucho 5 ficheros de 10 MB por contenedor (ver docs/despliegue.md)
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
+    logging: *logging
     image: postgres:17
     restart: unless-stopped
     environment:
@@ -21,6 +29,7 @@ services:
       retries: 10
 
   api:
+    logging: *logging
     build: ..
     restart: unless-stopped
     depends_on:
@@ -49,6 +58,7 @@ services:
       - uploads:/app/uploads
 
   caddy:
+    logging: *logging
     image: caddy:2
     restart: unless-stopped
     depends_on:

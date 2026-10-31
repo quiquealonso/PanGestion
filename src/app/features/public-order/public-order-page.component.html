@@ -40,7 +40,7 @@
       <section class="po__welcome">
         <h1>Haz tu pedido</h1>
         <p>Entra en tu cuenta o créala en un minuto. Así guardamos tus datos y tus pedidos.</p>
-        <app-customer-auth-panel (loggedIn)="onLoggedIn()" />
+        <app-customer-auth-panel [resetToken]="resetToken()" (loggedIn)="onLoggedIn(); resetToken.set(null)" />
       </section>
     } @else if (confirmed(); as order) {
       <!-- ===== Pedido hecho ===== -->
@@ -266,7 +266,7 @@
               }
             </label>
 
-            <p class="po__hint">🔒 Solo usamos estos datos para tus pedidos.</p>
+            <p class="po__hint">🔒 Solo usamos estos datos para tus pedidos. <a href="../privacidad.html" target="_blank" rel="noopener">Política de privacidad</a></p>
             <button type="submit" hidden></button>
           </form>
         }

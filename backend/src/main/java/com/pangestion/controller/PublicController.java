@@ -95,7 +95,7 @@ public class PublicController {
                                                                @AuthenticationPrincipal Jwt jwt, HttpServletRequest http) {
         rateLimiter.check("public-order-ip:" + http.getRemoteAddr(), 10, Duration.ofHours(1));
         OrderDto.PublicResponse created = orderService.createPublic(request,
-                customerAccountsEnabled ? accountService.getVerified(jwt.getSubject()) : null);
+                customerAccountsEnabled ? accountService.getVerified(jwt) : null);
         return ResponseEntity.created(Locations.of("/api/orders/{id}", created.id())).body(created);
     }
 }

@@ -10,4 +10,6 @@ public interface CustomerAccountRepository extends JpaRepository<CustomerAccount
     Optional<CustomerAccount> findByEmailIgnoreCase(String email);
 
     Optional<CustomerAccount> findByVerificationTokenHash(String verificationTokenHash);
+
+    Optional<CustomerAccount> findByResetTokenHash(String resetTokenHash);
 }

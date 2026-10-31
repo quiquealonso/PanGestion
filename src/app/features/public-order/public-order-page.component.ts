@@ -116,6 +116,8 @@ export class PublicOrderPageComponent implements OnInit {
   readonly accountsRequired = signal(false);
   /** Hay que entrar en la cuenta antes de empezar el pedido */
   readonly needsLogin = computed(() => this.accountsRequired() && !this.customerAuth.isLoggedIn());
+  /** Enlace del email para poner otra contrasena (?restablecer=...) */
+  readonly resetToken = signal<string | null>(null);
   /** Cuenta con la que se pide (solo con cuentas de cliente activas) */
   readonly orderAccount = computed(() => (this.accountsRequired() ? this.customerAuth.account() : null));
   readonly sending = signal(false);
@@ -211,6 +213,7 @@ export class PublicOrderPageComponent implements OnInit {
       next: ({ companies, settings }) => {
         this.accountsRequired.set(settings.customerAccounts);
         if (settings.customerAccounts) {
+          this.readResetLink();
           this.verifyEmailLink();
           this.customerAuth.refresh();
         }
@@ -382,6 +385,15 @@ export class PublicOrderPageComponent implements OnInit {
   logoutCustomer(): void {
     this.customerAuth.logout();
     this.updateCustomer('phone', '');
+  }
+
+  /** Enlace del email para restablecer la contrasena: /pedido/?restablecer=<token>. Se cierra la sesion actual. */
+  private readResetLink(): void {
+    const token = this.route.snapshot.queryParamMap.get('restablecer');
+    if (!token) return;
+    this.router.navigate([], { queryParams: { restablecer: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    this.customerAuth.logout();
+    this.resetToken.set(token);
   }
 
   /** Enlace del email de confirmacion: /pedido/?verificar=<token>. Activa la cuenta y deja la sesion iniciada. */

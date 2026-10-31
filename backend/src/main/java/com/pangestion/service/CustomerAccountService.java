@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
@@ -34,6 +36,8 @@ public class CustomerAccountService {
 
     /** El enlace de confirmacion caduca a las 24 horas */
     private static final long VERIFICATION_HOURS = 24;
+    /** El enlace para restablecer la contrasena caduca a los 60 minutos */
+    private static final long RESET_MINUTES = 60;
     private static final String CHECK_EMAIL = "Te hemos enviado un email. Abre el enlace que contiene para activar tu cuenta.";
 
     private final CustomerAccountRepository accountRepository;
@@ -113,17 +117,61 @@ public class CustomerAccountService {
         return new AccountDto.MessageResponse("Si la cuenta existe y no esta confirmada, te hemos enviado otro enlace.");
     }
 
-    @Transactional(readOnly = true)
-    public AccountDto.Response me(String email) {
-        return AccountDto.Response.from(getVerified(email));
+    /**
+     * "He olvidado mi contrasena": envia un enlace para poner otra, de un solo uso y que caduca a la hora.
+     * Siempre responde lo mismo, exista o no la cuenta (no revela que emails tienen cuenta).
+     */
+    public AccountDto.MessageResponse forgotPassword(AccountDto.EmailRequest request) {
+        accountRepository.findByEmailIgnoreCase(request.email().trim()).ifPresent(account -> {
+            String token = newToken();
+            account.setResetTokenHash(sha256(token));
+            account.setResetExpiresAt(LocalDateTime.now().plusMinutes(RESET_MINUTES));
+            mailService.send(account.getEmail(), "Restablecer tu contrasena de PanGestion",
+                    "Hola " + account.getName() + ",\n\n"
+                            + "Para poner una contrasena nueva, abre este enlace:\n\n"
+                            + publicWebUrl + "/pedido/?restablecer=" + token + "\n\n"
+                            + "El enlace caduca en " + RESET_MINUTES + " minutos y solo se puede usar una vez.\n"
+                            + "Si no lo has pedido tu, ignora este email: tu contrasena no cambia.");
+        });
+        return new AccountDto.MessageResponse("Si hay una cuenta con ese email, te hemos enviado un enlace para poner "
+                + "una contrasena nueva. Caduca en " + RESET_MINUTES + " minutos.");
     }
 
-    /** Cuenta confirmada del token (para hacer un pedido). */
+    /** Pone la contrasena nueva con el enlace del email y deja la sesion iniciada. Cierra las demas sesiones. */
+    public AccountDto.LoginResponse resetPassword(AccountDto.ResetPasswordRequest request) {
+        CustomerAccount account = accountRepository.findByResetTokenHash(sha256(request.token()))
+                .filter(a -> a.getResetExpiresAt() != null && a.getResetExpiresAt().isAfter(LocalDateTime.now()))
+                .orElseThrow(() -> new BusinessException("El enlace no es valido o ha caducado. Pide otro."));
+        account.setPassword(passwordEncoder.encode(request.password()));
+        account.setResetTokenHash(null);
+        account.setResetExpiresAt(null);
+        // Abrir el enlace demuestra que el email es suyo
+        account.setVerified(true);
+        account.setVerificationTokenHash(null);
+        account.setVerificationExpiresAt(null);
+        // Los tokens emitidos antes de este momento dejan de valer (precision de segundos, como el "iat" del token)
+        account.setPasswordChangedAt(LocalDateTime.now().withNano(0));
+        account.setLastLogin(LocalDateTime.now());
+        return session(account);
+    }
+
     @Transactional(readOnly = true)
-    public CustomerAccount getVerified(String email) {
-        return accountRepository.findByEmailIgnoreCase(email)
+    public AccountDto.Response me(Jwt jwt) {
+        return AccountDto.Response.from(getVerified(jwt));
+    }
+
+    /**
+     * Cuenta del token de cliente (para hacer un pedido o ver la cuenta): confirmada y con un token emitido despues
+     * del ultimo cambio de contrasena. Si no, 401 y el cliente tiene que volver a entrar.
+     */
+    @Transactional(readOnly = true)
+    public CustomerAccount getVerified(Jwt jwt) {
+        LocalDateTime issuedAt = jwt.getIssuedAt() == null ? null
+                : LocalDateTime.ofInstant(jwt.getIssuedAt(), ZoneId.systemDefault());
+        return accountRepository.findByEmailIgnoreCase(jwt.getSubject())
                 .filter(CustomerAccount::isVerified)
-                .orElseThrow(() -> new BadCredentialsException("Cuenta no valida"));
+                .filter(a -> a.getPasswordChangedAt() == null || (issuedAt != null && !issuedAt.isBefore(a.getPasswordChangedAt())))
+                .orElseThrow(() -> new BadCredentialsException("Sesion caducada: vuelve a entrar"));
     }
 
     private CustomerAccount newAccount(AccountDto.RegisterRequest request, String email, boolean verified) {
@@ -136,10 +184,15 @@ public class CustomerAccountService {
         return account;
     }
 
-    private void sendVerification(CustomerAccount account) {
+    /** Enlace aleatorio de 256 bits (en la BBDD solo se guarda su SHA-256) */
+    private String newToken() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private void sendVerification(CustomerAccount account) {
+        String token = newToken();
         account.setVerificationTokenHash(sha256(token));
         account.setVerificationExpiresAt(LocalDateTime.now().plusHours(VERIFICATION_HOURS));
         mailService.send(account.getEmail(), "Confirma tu cuenta de PanGestion",

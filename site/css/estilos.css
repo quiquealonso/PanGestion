@@ -131,7 +131,8 @@ h3 {
 
 .eyebrow {
   margin: 0 0 10px;
-  color: var(--crust);
+  /* Texto pequeno: con --crust no llega a 4,5:1 sobre el crema oscuro (WCAG AA) */
+  color: var(--crust-dark);
   font: 700 0.85rem var(--font-head);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -944,4 +945,103 @@ h3 {
   .contact .btn {
     justify-self: stretch;
   }
+}
+
+/* ---------- Formulario: errores por campo y trampa para bots ---------- */
+.field-error {
+  min-height: 1.2em;
+  color: #fda4af;
+  font-weight: 500;
+}
+.contact [aria-invalid='true'] {
+  border-color: #fb7185;
+}
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ---------- Aviso de privacidad (informativo: no hay cookies de seguimiento) ---------- */
+.privacy-notice {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--dark-text);
+  box-shadow: var(--shadow-dark);
+}
+.privacy-notice p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.privacy-notice a {
+  color: var(--amber-2);
+}
+.privacy-notice .btn {
+  flex: none;
+}
+@media (max-width: 560px) {
+  .privacy-notice {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ---------- Paginas legales ---------- */
+.legal {
+  padding: 56px 0 80px;
+}
+.legal h1 {
+  font-size: clamp(2rem, 4vw, 2.6rem);
+}
+.legal h2 {
+  margin: 36px 0 10px;
+  font-size: 1.35rem;
+}
+.legal h3 {
+  margin: 20px 0 6px;
+  font-size: 1.1rem;
+}
+.legal__date {
+  color: var(--muted);
+}
+.legal mark {
+  background: #fde68a;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+/* ---------- Pagina no encontrada ---------- */
+.notfound {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  text-align: center;
+}
+.notfound__code {
+  margin: 12px 0 0;
+  font: 700 4.5rem var(--font-head);
+  line-height: 1;
+  color: var(--crust);
+}
+.notfound h1 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+}
+.notfound .hero__cta {
+  justify-content: center;
 }

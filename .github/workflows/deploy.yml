@@ -121,6 +121,8 @@ jobs:
           }
           check 200 "$API_URL/api/public/companies"
           check 401 "$API_URL/api/auth/me"
+          # Cada respuesta lleva su id de peticion (el que aparece en el log)
+          curl -sI --max-time 10 "$API_URL/api/public/companies" | grep -qi "^x-request-id:"
           check 308 "http://${API_URL#https://}/api/public/companies"
           headers=$(curl -sI --max-time 10 "$API_URL/api/public/companies" | tr 'A-Z' 'a-z')
           for h in strict-transport-security content-security-policy x-content-type-options x-frame-options referrer-policy; do
@@ -137,7 +139,7 @@ jobs:
             curl -fsS --max-time 10 "$WEB_URL/app/ngsw.json" -o ngsw.json && grep -q '"hashTable"' ngsw.json && break
             sleep 10
           done
-          for path in "/" "/assets/logo.svg" "/app/" "/app/pedido/" "/app/manifest.webmanifest" "/app/pedido.webmanifest" "/app/ngsw-worker.js"; do
+          for path in "/" "/privacidad.html" "/terminos.html" "/no-encontrada.html" "/sitemap.xml" "/robots.txt" "/assets/logo.svg"                       "/app/" "/app/pedido/" "/app/manifest.webmanifest" "/app/pedido.webmanifest" "/app/ngsw-worker.js"; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$WEB_URL$path")
             echo "$code  $WEB_URL$path"; [ "$code" = "200" ]
           done

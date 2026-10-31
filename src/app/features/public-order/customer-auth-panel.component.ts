@@ -1,10 +1,10 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CustomerAuthService } from '../../core/services/customer-auth.service';
 import { apiErrorMessage } from '../../core/utils/api-error';
 
-type Mode = 'login' | 'register' | 'check-email';
+type Mode = 'login' | 'register' | 'check-email' | 'forgot' | 'reset';
 
 /**
  * Acceso del cliente en la web publica: "Entrar" o "Crear cuenta". Para hacer un pedido hace falta cuenta.
@@ -15,7 +15,34 @@ type Mode = 'login' | 'register' | 'check-email';
   imports: [FormsModule],
   template: `
     <section class="cap" aria-labelledby="cap-title">
-      @if (mode() === 'check-email') {
+      @if (mode() === 'forgot') {
+        <h3 id="cap-title">¿Olvidaste tu contraseña?</h3>
+        <p class="cap__muted">Escribe tu email y te enviamos un enlace para poner otra. Caduca en una hora.</p>
+        <form class="cap__form" (ngSubmit)="forgot()" novalidate>
+          <label class="cap__field">
+            <span>Email</span>
+            <input name="email" type="email" inputmode="email" autocomplete="email" [(ngModel)]="email" required />
+          </label>
+          @if (error()) {
+            <p class="cap__error" role="alert">{{ error() }}</p>
+          }
+          <button type="submit" class="cap__primary" [disabled]="busy()">{{ busy() ? 'Un momento…' : 'Enviarme el enlace' }}</button>
+          <button type="button" class="cap__link" (click)="switchTo('login')">← Volver a entrar</button>
+        </form>
+      } @else if (mode() === 'reset') {
+        <h3 id="cap-title">Pon una contraseña nueva</h3>
+        <form class="cap__form" (ngSubmit)="reset()" novalidate>
+          <label class="cap__field">
+            <span>Contraseña nueva <small>(mínimo 8 caracteres)</small></span>
+            <input name="password" type="password" autocomplete="new-password" [(ngModel)]="password" required />
+          </label>
+          @if (error()) {
+            <p class="cap__error" role="alert">{{ error() }}</p>
+          }
+          <button type="submit" class="cap__primary" [disabled]="busy()">{{ busy() ? 'Un momento…' : 'Guardar y entrar' }}</button>
+          <button type="button" class="cap__link" (click)="switchTo('forgot')">Pedir otro enlace</button>
+        </form>
+      } @else if (mode() === 'check-email') {
         <h3 id="cap-title">📧 Revisa tu correo</h3>
         <p>{{ info() }}</p>
         <p class="cap__muted">Te lo hemos enviado a <b>{{ email }}</b>. Si no aparece, mira en «Spam» o «Promociones».</p>
@@ -66,6 +93,9 @@ type Mode = 'login' | 'register' | 'check-email';
           <button type="submit" class="cap__primary" [disabled]="busy()">
             {{ busy() ? 'Un momento…' : mode() === 'login' ? 'Entrar' : 'Crear cuenta' }}
           </button>
+          @if (mode() === 'login') {
+            <button type="button" class="cap__link" (click)="switchTo('forgot')">¿Olvidaste tu contraseña?</button>
+          }
         </form>
       }
     </section>
@@ -94,8 +124,10 @@ type Mode = 'login' | 'register' | 'check-email';
     button:disabled { opacity: 0.6; cursor: progress; }
   `,
 })
-export class CustomerAuthPanelComponent {
+export class CustomerAuthPanelComponent implements OnInit {
   private readonly auth = inject(CustomerAuthService);
+  /** Enlace del email "restablecer contrasena" (?restablecer=...): abre el panel en "pon una contrasena nueva" */
+  readonly resetToken = input<string | null>(null);
   /** Sesion iniciada (al entrar, o al crear la cuenta si el servidor no pide confirmar el email) */
   readonly loggedIn = output<void>();
 
@@ -110,6 +142,46 @@ export class CustomerAuthPanelComponent {
   protected email = '';
   protected password = '';
   protected phone = '';
+
+  ngOnInit(): void {
+    if (this.resetToken()) this.mode.set('reset');
+  }
+
+  protected forgot(): void {
+    if (!/^\S+@\S+\.\S+$/.test(this.email.trim())) {
+      this.error.set('Escribe un email válido, por ejemplo: nombre@gmail.com');
+      return;
+    }
+    this.busy.set(true);
+    this.error.set(null);
+    this.auth.forgotPassword(this.email.trim()).subscribe({
+      next: (response) => {
+        this.busy.set(false);
+        this.info.set(response.message);
+        this.mode.set('check-email');
+      },
+      error: (err) => {
+        this.busy.set(false);
+        this.error.set(apiErrorMessage(err));
+      },
+    });
+  }
+
+  protected reset(): void {
+    if (this.password.length < 8) {
+      this.error.set('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    this.busy.set(true);
+    this.error.set(null);
+    this.auth.resetPassword(this.resetToken() ?? '', this.password).subscribe({
+      next: () => this.done(),
+      error: (err) => {
+        this.busy.set(false);
+        this.error.set(apiErrorMessage(err));
+      },
+    });
+  }
 
   protected switchTo(mode: Mode): void {
     this.mode.set(mode);

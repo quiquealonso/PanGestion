@@ -60,8 +60,23 @@ public class CustomerAccountController {
         return accountService.resend(request);
     }
 
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public AccountDto.MessageResponse forgotPassword(@Valid @RequestBody AccountDto.EmailRequest request, HttpServletRequest http) {
+        rateLimiter.check("account-forgot-ip:" + http.getRemoteAddr(), 10, Duration.ofHours(1));
+        rateLimiter.check("account-forgot-email:" + request.email().trim().toLowerCase(), 3, Duration.ofHours(1));
+        return accountService.forgotPassword(request);
+    }
+
+    @PostMapping("/reset-password")
+    public AccountDto.LoginResponse resetPassword(@Valid @RequestBody AccountDto.ResetPasswordRequest request,
+                                                  HttpServletRequest http) {
+        rateLimiter.check("account-reset-ip:" + http.getRemoteAddr(), 20, Duration.ofMinutes(10));
+        return accountService.resetPassword(request);
+    }
+
     @GetMapping("/me")
     public AccountDto.Response me(@AuthenticationPrincipal Jwt jwt) {
-        return accountService.me(jwt.getSubject());
+        return accountService.me(jwt);
     }
 }

@@ -38,13 +38,14 @@ Hay dos cosas que conviene saber:
 - [ ] **Correo de contacto:** el formulario «Pide una demo» abre el correo del visitante con el mensaje ya escrito. Pon tu dirección en `data-email` del `<form id="contact-form">` en `site/index.html`; mientras esté vacío, el formulario avisa de que estará disponible pronto.
 - [ ] **Precios:** cada plan tiene `data-price` en `site/index.html` (por ejemplo `data-price="39 €/mes"`); vacío muestra «Pide presupuesto». Revisa también qué incluye cada plan.
 - [ ] **Textos comerciales:** repasa las promesas («te ayudamos a cargar la carta», «videollamada»...) y ajústalas a lo que vayas a ofrecer.
-- [ ] **Textos legales (RGPD):** aviso legal, política de privacidad y de cookies, con enlace en el pie. Son obligatorios si la web recoge datos o se usa para vender. La web no usa cookies ni analítica, así que no necesita banner de cookies.
+- [ ] **Datos del titular en los textos legales:** `site/privacidad.html` y `site/terminos.html` tienen marcados en amarillo el nombre o la razón social, el NIF, la dirección y el email. Rellénalos y revisa los textos con un profesional antes de vender.
 - [ ] **Dominio propio** (por ejemplo `pangestion.es`): da más confianza que `github.io`, permite un correo `hola@...` y GitHub Pages lo admite gratis. La API pasaría a `api.pangestion.es` (cambiar `API_DOMAIN`, CORS y la CSP de `src/index.prod.html`).
 - [ ] **Demo para enseñar:** una empresa de prueba con datos inventados y un usuario de solo lectura, para enlazarla desde la web («Pruébala tú mismo»). Ahora no hay demo pública: la app de producción tiene datos reales.
 - [ ] **Vídeo corto** (30-60 s) del flujo: pedido en el móvil → cocina → listo → cobro. Es lo que más convence; va en la sección «Pantalla a pantalla».
 - [ ] **Testimonios reales:** cuando haya negocios usándola, una frase y su nombre (con su permiso). No poner testimonios inventados.
 - [ ] **Cartel con código QR** para el mostrador, que lleve a la web de pedidos de cada negocio. La app aún no lo genera: sería un botón en «Mi empresa».
-- [ ] **Analítica sin cookies** (Plausible o GoatCounter) para saber cuántas visitas hay y de dónde vienen; habría que añadirla a la CSP.
+- [ ] **Activar la analítica:** crea una cuenta gratis en https://www.goatcounter.com (sin cookies, no necesita banner). Elige un código (por ejemplo `pangestion`) y ponlo en `data-goatcounter` del `<body>` de las páginas de `site/`. La CSP ya lo permite.
+- [ ] **PageSpeed Insights:** pasa https://pagespeed.web.dev con la web publicada, en móvil y en ordenador, y apunta el resultado en la regla W12.
 - [ ] **Google:** dar de alta la web en Google Search Console (el `sitemap.xml` ya está) y crear la ficha de Google Business.
 
 ## Producción

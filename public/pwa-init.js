@@ -1,12 +1,17 @@
-// Enlaces de cuando la app estaba en la raiz del sitio (/PanGestion/pedido...): ahora esta en /PanGestion/app/.
-// GitHub Pages los sirve con 404.html (esta app), y aqui se llevan a su sitio nuevo.
+// GitHub Pages sirve 404.html (esta app) en cualquier ruta que no existe. Fuera de /PanGestion/app/:
+// - enlaces de cuando la app estaba en la raiz (/PanGestion/pedido, /PanGestion/auth/login...): a su sitio nuevo
+// - cualquier otra ruta: a la pagina "no encontrada" de la web
 (function () {
   var base = new URL(document.baseURI).pathname; // /PanGestion/app/ en produccion, / en local
   var parent = base.replace(/[^/]+\/$/, ''); // /PanGestion/
   var path = location.pathname;
-  if (parent !== base && path + '/' !== base && path.indexOf(base) !== 0 && path.indexOf(parent) === 0) {
-    location.replace(base + path.slice(parent.length) + location.search + location.hash);
-  }
+  if (parent === base || path + '/' === base || path.indexOf(base) === 0 || path.indexOf(parent) !== 0) return;
+  var first = path.slice(parent.length).split('/')[0];
+  var appRoutes = ['pedido', 'auth', 'dashboard', 'orders', 'production', 'customers', 'catalog', 'service', 'bar',
+    'dining-report', 'delivery', 'kitchen', 'dining', 'company', 'companies', 'users'];
+  location.replace(appRoutes.indexOf(first) >= 0
+    ? base + path.slice(parent.length) + location.search + location.hash
+    : parent + 'no-encontrada.html');
 })();
 
 // Dos apps instalables en el mismo sitio: la de gestion y la de pedidos de clientes (/pedido).

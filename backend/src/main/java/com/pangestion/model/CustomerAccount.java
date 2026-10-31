@@ -50,6 +50,17 @@ public class CustomerAccount {
     @Column(name = "verification_expires_at")
     private LocalDateTime verificationExpiresAt;
 
+    /** SHA-256 del enlace para restablecer la contrasena (de un solo uso; caduca a la hora) */
+    @Column(name = "reset_token_hash", length = 64)
+    private String resetTokenHash;
+
+    @Column(name = "reset_expires_at")
+    private LocalDateTime resetExpiresAt;
+
+    /** Ultimo cambio de contrasena: los tokens emitidos antes dejan de valer (se cierran las sesiones abiertas) */
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
