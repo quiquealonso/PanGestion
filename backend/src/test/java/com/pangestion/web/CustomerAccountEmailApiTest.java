@@ -23,7 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Cuentas de cliente con SMTP: hay que confirmar el email con el enlace que se envia (el SMTP es un doble de prueba). */
 @DisplayName("API · Cuentas de cliente (confirmación por email)")
-@TestPropertySource(properties = {"spring.mail.host=smtp.test", "app.public-web-url=https://web.test/PanGestion"})
+@TestPropertySource(properties = {"app.customer-accounts.enabled=true", "spring.mail.host=smtp.test",
+        "app.public-web-url=https://web.test/PanGestion"})
 class CustomerAccountEmailApiTest extends ApiTestSupport {
 
     private static final Pattern LINK = Pattern.compile("https://web\\.test/PanGestion/pedido/\\?verificar=([A-Za-z0-9_-]+)");

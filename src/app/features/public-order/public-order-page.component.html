@@ -7,7 +7,7 @@
       @if (company(); as c) {
         <small>· {{ c.address }}</small>
       }
-      @if (customerAuth.account(); as account) {
+      @if (orderAccount(); as account) {
         <span class="po__account">
           <span aria-hidden="true">👤</span> {{ account.name }}
           <button type="button" (click)="logoutCustomer()">Salir</button>
@@ -15,7 +15,7 @@
       }
     </div>
 
-    @if (!confirmed() && !loading() && customerAuth.isLoggedIn()) {
+    @if (!confirmed() && !loading() && !needsLogin()) {
       <nav class="po__progress" aria-label="Pasos del pedido">
         <ol>
           @for (s of steps; track s.number) {
@@ -35,7 +35,7 @@
   <main class="po__main">
     @if (loading()) {
       <p class="po__status">Cargando…</p>
-    } @else if (!customerAuth.isLoggedIn()) {
+    } @else if (needsLogin()) {
       <!-- ===== 0. Cuenta: para pedir hay que entrar (o crearla) antes de empezar ===== -->
       <section class="po__welcome">
         <h1>Haz tu pedido</h1>
@@ -227,12 +227,30 @@
               }
             }
 
-            @if (customerAuth.account(); as account) {
+            @if (orderAccount(); as account) {
               <div class="account-box">
                 <span aria-hidden="true">👤</span>
                 <div><strong>{{ account.name }}</strong><small>{{ account.email }}</small></div>
                 <button type="button" class="account-box__out" (click)="logoutCustomer()">No soy yo</button>
               </div>
+            } @else {
+              <!-- Sin cuentas de cliente: nombre y email en el formulario -->
+              <label class="field" [class.has-error]="showErrors() && customerErrors().name">
+                <span>Nombre y apellido</span>
+                <input name="name" autocomplete="name" placeholder="Por ejemplo: María García"
+                       [ngModel]="customer().name" (ngModelChange)="updateCustomer('name', $event)" />
+                @if (showErrors() && customerErrors().name) {
+                  <small class="field__error">{{ customerErrors().name }}</small>
+                }
+              </label>
+              <label class="field" [class.has-error]="showErrors() && customerErrors().email">
+                <span>Email</span>
+                <input name="email" type="email" inputmode="email" autocomplete="email" placeholder="Por ejemplo: maria@gmail.com"
+                       [ngModel]="customer().email" (ngModelChange)="updateCustomer('email', $event)" />
+                @if (showErrors() && customerErrors().email) {
+                  <small class="field__error">{{ customerErrors().email }}</small>
+                }
+              </label>
             }
 
             <!-- Trampa para bots: invisible y fuera del tabulador; si llega relleno, la API rechaza el pedido -->
@@ -295,7 +313,7 @@
   </main>
 
   <!-- Barra inferior fija: carrito y botones Atras / Continuar -->
-  @if (!loading() && !confirmed() && customerAuth.isLoggedIn() && step() > 1) {
+  @if (!loading() && !confirmed() && !needsLogin() && step() > 1) {
     <footer class="po__bar">
       @if (step() === 2 && justAdded()) {
         <p class="po__bar-added" role="status">✓ Añadido: {{ justAdded() }}</p>

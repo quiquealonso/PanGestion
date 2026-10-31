@@ -168,7 +168,7 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 ## Cuentas de cliente
 
 ### S21 · Cuentas de cliente con email confirmado
-- **Estado:** ✅ (la confirmación por email necesita SMTP; sin él, la cuenta se activa al crearla)
+- **Estado:** ⏳ hecha pero **desactivada** (`CUSTOMER_ACCOUNTS_ENABLED=false`) hasta tener el correo de la app; ver [pendientes.md](pendientes.md). La confirmación por email necesita SMTP; sin él, la cuenta se activa al crearla.
 - **Cómo:** para pedir en la web pública hay que tener una cuenta. Al crearla se envía un enlace de un solo uso, que caduca a las 24 horas; en la BBDD solo se guarda su SHA-256. Hasta abrirlo no se puede entrar (403). El rol `CLIENTE` no tiene acceso a la API de gestión. Registrarse con un email que ya tiene cuenta responde igual que con uno nuevo (no revela qué emails existen) y avisa al dueño por email, sin cambiar su contraseña. El nombre y el email del pedido salen de la cuenta, no del formulario. La sesión del cliente dura 30 días y es independiente de la de gestión.
 - **Dónde:** `CustomerAccountService`, `CustomerAccountController`, `MailService`, `SecurityConfig`, `customer-auth.service.ts`
 - **Comprobación:** `CustomerAccountApiTest`, `CustomerAccountEmailApiTest`, `PublicApiTest.requiresCustomerAccount`

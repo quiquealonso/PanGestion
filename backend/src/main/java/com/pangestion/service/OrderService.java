@@ -205,17 +205,24 @@ public class OrderService {
     }
 
     /** Pedido hecho por un cliente desde la web publica a la panaderia que ha elegido. */
+    /** account: cuenta del cliente (cuentas activas) o null (pedido sin cuenta, con los datos de request.customer()). */
     public OrderDto.PublicResponse createPublic(OrderDto.PublicRequest request, CustomerAccount account) {
         Company company = companyService.getEntity(request.companyId());
         companyService.validateSlot(company, request.pickupDate(), request.pickupTime(), -1L);
 
         Order order = new Order();
         order.setCompany(company);
-        String phone = request.phone() != null && !request.phone().isBlank() ? request.phone().trim() : account.getPhone();
+        if (account == null && request.customer() == null) {
+            throw new BusinessException("Faltan tus datos: nombre y email");
+        }
+        String name = account != null ? account.getName() : request.customer().name().trim();
+        String email = account != null ? account.getEmail() : request.customer().email().trim().toLowerCase();
+        String fallbackPhone = account != null ? account.getPhone() : blankToNull(request.customer().phone());
+        String phone = request.phone() != null && !request.phone().isBlank() ? request.phone().trim() : fallbackPhone;
         if (request.type() == OrderType.DOMICILIO && phone == null) {
             throw new BusinessException("Para llevartelo a casa necesitamos un telefono");
         }
-        order.setCustomer(customerService.findOrCreate(company, account.getName(), account.getEmail(), phone));
+        order.setCustomer(customerService.findOrCreate(company, name, email, phone));
         order.setPickupDate(request.pickupDate());
         order.setPickupTime(request.pickupTime());
         order.setNotes(request.notes());
@@ -223,7 +230,7 @@ public class OrderService {
         setLines(order, request.lines(), Set.of());
         Order saved = orderRepository.save(order);
         changed(saved, null);
-        return OrderDto.PublicResponse.from(saved, account.getName());
+        return OrderDto.PublicResponse.from(saved, name);
     }
 
     /**
@@ -274,5 +281,9 @@ public class OrderService {
     Order getEntity(Long id) {
         return orderRepository.findByIdAndCompanyId(id, currentUser.companyId())
                 .orElseThrow(() -> new NotFoundException("Pedido", id));
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }
