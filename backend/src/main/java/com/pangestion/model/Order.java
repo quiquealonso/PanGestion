@@ -1,5 +1,6 @@
 package com.pangestion.model;
 
+import com.pangestion.security.EncryptedString;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,8 +49,9 @@ public class Order {
     @Column(nullable = false, columnDefinition = "varchar(10) default 'RECOGER' not null")
     private OrderType type = OrderType.RECOGER;
 
-    /** Direccion de entrega (solo a domicilio). */
-    @Column(name = "delivery_address", length = 255)
+    /** Direccion de entrega (solo a domicilio). Cifrada en la base de datos (EncryptedString). */
+    @Convert(converter = EncryptedString.class)
+    @Column(name = "delivery_address", length = 800)
     private String deliveryAddress;
 
     /** Repartidor que lo lleva (a domicilio, desde que sale). */

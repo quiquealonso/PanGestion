@@ -1,6 +1,8 @@
 package com.pangestion.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.pangestion.model.Role;
+import com.pangestion.security.TokenService;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -29,11 +31,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Seguridad de la API:
- * - /api/auth/login y /api/public/** son publicos (login y pedidos de clientes).
+ * - /api/auth/login y /api/public/** son publicos (login, catalogo y cuentas de clientes), salvo hacer un pedido
+ *   y ver la cuenta, que necesitan el token de un cliente (rol CLIENTE).
+ * - Los clientes (CLIENTE) no pueden usar nada de la API de gestion.
  * - /api/companies (alta de panaderias): solo SUPERADMIN.
  * - /api/users: SUPERADMIN (todos) y ADMIN (los de su empresa).
  * - Datos de la propia empresa (PUT /api/company): solo ADMIN.
@@ -42,6 +47,9 @@ import java.util.List;
  */
 @Configuration
 public class SecurityConfig {
+
+    /** Roles de gestion (todos menos los clientes de la web publica) */
+    private static final String[] STAFF_ROLES = Arrays.stream(Role.values()).map(Role::name).toArray(String[]::new);
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -60,6 +68,9 @@ public class SecurityConfig {
                         // Envios posteriores de una respuesta asincrona (avisos SSE): la peticion ya se autorizo al abrirla
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Clientes de la web publica: pedir y su cuenta, con su token
+                        .requestMatchers(HttpMethod.POST, "/api/public/orders").hasRole(TokenService.CUSTOMER_ROLE)
+                        .requestMatchers("/api/public/account/me").hasRole(TokenService.CUSTOMER_ROLE)
                         .requestMatchers("/api/auth/login", "/api/public/**", "/uploads/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/companies/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("SUPERADMIN", "ADMIN")
@@ -68,11 +79,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/reports/**").hasAnyRole("ADMIN", "GESTOR", "VISOR")
                         .requestMatchers("/api/kitchen/**").hasAnyRole("ADMIN", "GESTOR", "CAMARERO", "COCINA")
                         .requestMatchers("/api/delivery/**").hasAnyRole("ADMIN", "GESTOR", "REPARTIDOR")
-                        .requestMatchers("/api/events/**", "/api/auth/**").authenticated()
+                        .requestMatchers("/api/events/**", "/api/auth/**").hasAnyRole(STAFF_ROLES)
                         // Cocina y repartidor solo usan su pantalla: el resto de la API (ni siquiera para leer) no es para ellos
                         .requestMatchers(HttpMethod.GET, "/api/**").access(AuthorizationManagers.allOf(
                                 AuthenticatedAuthorizationManager.authenticated(),
-                                AuthorizationManagers.not(AuthorityAuthorizationManager.hasAnyRole("COCINA", "REPARTIDOR"))))
+                                AuthorizationManagers.not(AuthorityAuthorizationManager.hasAnyRole("COCINA", "REPARTIDOR",
+                                        TokenService.CUSTOMER_ROLE))))
                         .requestMatchers("/api/service/**").hasAnyRole("ADMIN", "GESTOR", "CAMARERO")
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "GESTOR")
                         .anyRequest().authenticated())

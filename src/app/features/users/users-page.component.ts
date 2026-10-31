@@ -64,7 +64,7 @@ export class UsersPageComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', Validators.minLength(6)],
+    password: ['', Validators.minLength(8)],
     role: ['GESTOR' as Role, Validators.required],
     active: [true],
     companyId: [null as number | null],

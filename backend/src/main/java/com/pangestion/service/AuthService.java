@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,14 +23,26 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
+    /** Hash de una contrasena cualquiera: si el email no existe se compara igual, para tardar lo mismo que con uno real. */
+    private String dummyHash;
+
     public AuthDto.LoginResponse login(AuthDto.LoginRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(request.email().trim())
-                .filter(User::isActive)
-                .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPassword()))
+        Optional<User> found = userRepository.findByEmailIgnoreCase(request.email().trim()).filter(User::isActive);
+        // Siempre se calcula un BCrypt: asi el tiempo de respuesta no revela que emails existen
+        String hash = found.map(User::getPassword).orElseGet(this::dummyHash);
+        boolean matches = passwordEncoder.matches(request.password(), hash);
+        User user = found.filter(candidate -> matches)
                 .orElseThrow(() -> new BadCredentialsException("Email o contrasena incorrectos"));
         user.setLastLogin(LocalDateTime.now());
         return new AuthDto.LoginResponse(tokenService.generateToken(user), tokenService.getExpirationMinutes(),
                 UserDto.Response.from(user));
+    }
+
+    private String dummyHash() {
+        if (dummyHash == null) {
+            dummyHash = passwordEncoder.encode("contrasena-que-no-coincide-con-ninguna");
+        }
+        return dummyHash;
     }
 
     @Transactional(readOnly = true)

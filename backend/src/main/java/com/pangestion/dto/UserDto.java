@@ -23,7 +23,7 @@ public final class UserDto {
     public record Request(
             @NotBlank @Size(max = 120) String name,
             @NotBlank @Email @Size(max = 120) String email,
-            @Size(min = 6, max = 100) String password,
+            @Size(min = 8, max = 100) String password,
             @NotNull Role role,
             boolean active,
             Long companyId) {

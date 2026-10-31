@@ -149,6 +149,70 @@ cd backend && ./mvnw test        # test del backend (BD en memoria)
 cd backend && ./mvnw package     # backend (jar en backend/target)
 ```
 
+## Integración y despliegue continuos
+
+| Cuándo | Qué se ejecuta | Workflow |
+|---|---|---|
+| Push a cualquier rama (menos `main`) | Tests rápidos del backend (unidad y reglas de negocio) y tests y build del frontend | `ci.yml` |
+| Pull request | Todos los tests del backend, frontend y seguridad (gitleaks, `npm audit`, OSV) | `ci.yml`, `security.yml` |
+| Fusionar en `main` | Otra vez todos los tests y la seguridad; después se despliega la API en la VM y el frontend en Pages, y se pasan pruebas de humo contra producción | `deploy.yml` |
+
+- **Rama `main` protegida:** solo se llega por PR, con los checks en verde.
+- **Despliegue de la API:** Actions entra por SSH con una clave que solo puede ejecutar `~/pangestion/deploy.sh` en la VM (copia de `backend/deploy/deploy.sh`). El script hace lo siguiente:
+  1. Comprueba que el commit está en `main`.
+  2. Hace una copia de la BBDD en `~/pangestion/backups`, donde guarda las últimas 14.
+  3. Construye la imagen y arranca los contenedores.
+  4. Espera a que la API responda; si no responde, vuelve al commit anterior.
+- **Secretos del repositorio:** `VM_SSH_KEY` (clave privada de despliegue) y `VM_KNOWN_HOSTS` (huella de la VM).
+- **Desplegar a mano, en la VM:** `~/pangestion/deploy.sh <sha de main>`.
+
+## App instalable (PWA)
+
+La web se puede instalar en el móvil o en el ordenador desde el navegador: en Chrome, con «Instalar app»; en el iPhone, con Compartir → «Añadir a pantalla de inicio». Son dos apps distintas:
+
+- **PanGestión** (`/PanGestion/`): la de gestión.
+- **Pedir** (`/PanGestion/pedido`): la de pedidos de clientes.
+
+- **Instalar:** en el móvil sale un aviso «Instala la app». En Android se instala con el botón; en iPhone, Apple solo permite hacerlo a mano, así que el aviso explica cómo.
+- **Versiones:** cada despliegue tiene una versión (`1.0.<número de despliegue>`), que aparece en la pantalla de acceso. Para subir la versión mayor o menor, cambia `version` en `package.json`.
+- **Actualizar:** las apps abiertas o instaladas detectan la versión nueva (al abrirlas, al volver a ellas y cada 5 minutos) y muestran el botón «Actualizar», que la activa y recarga.
+- **Datos:** siempre se piden a la API; nada se guarda sin conexión.
+
+## Cuentas de cliente y emails
+
+Para pedir en la web pública hay que tener una cuenta: es lo primero que se pide, antes de elegir el establecimiento. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
+
+Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`). Mientras no haya SMTP, las cuentas se activan sin confirmar el email.
+
+1. **Gmail** (gratis, unos 500 emails al día):
+   - Activa la verificación en 2 pasos en tu cuenta de Google.
+   - Crea una contraseña de aplicación en https://myaccount.google.com/apppasswords.
+   - Pon esto en el `.env`, con tus datos:
+     ```
+     SMTP_HOST=smtp.gmail.com
+     SMTP_PORT=587
+     SMTP_USERNAME=tu correo de Gmail
+     SMTP_PASSWORD=la contraseña de aplicación (16 letras, sin espacios)
+     MAIL_FROM="PanGestión <tu correo de Gmail>"
+     ```
+2. Reinicia la API: en la VM, `cd ~/pangestion/app/backend/deploy && docker compose up -d api`.
+
+Otros proveedores con plan gratis, como Brevo (300 al día) o Mailjet, funcionan igual: cambia `SMTP_HOST` y las credenciales.
+
+## Seguridad
+
+Las reglas de seguridad, con su estado y su comprobación, están en [docs/reglas-seguridad.md](docs/reglas-seguridad.md). Añade allí las nuevas.
+
+- **Autenticación en el servidor:** JWT HS256 en la cabecera `Authorization` (sin cookies, porque el frontend y la API están en dominios distintos). Las reglas de acceso por rol están en `SecurityConfig`, y cada servicio filtra por el `companyId` del token. Pedir datos de otra empresa devuelve 404.
+- **Contraseñas:** se guardan con BCrypt y deben tener 8 caracteres como mínimo. El login tarda lo mismo exista o no el email, así que el tiempo de respuesta no revela qué cuentas existen.
+- **Límite de intentos:** el login admite 20 intentos cada 5 minutos por IP y 10 cada 15 minutos por email. La web pública admite 10 pedidos por hora y por IP. Al superar el límite, la API responde con 429 y `Retry-After`.
+- **Bots:** el formulario público incluye un campo trampa oculto (`website`); si llega relleno, la API rechaza el pedido.
+- **Datos personales cifrados (AES-256-GCM):** el teléfono y el CIF de los clientes y la dirección de entrega se cifran con la clave `ENCRYPTION_KEY`. Guarda una copia de esa clave: si se pierde, esos datos no se pueden leer.
+- **Entradas y respuestas:** los DTO tienen Bean Validation y la API rechaza los campos que no existen. Las consultas usan JPQL con parámetros. La web pública solo recibe los datos que necesita.
+- **Subida de imágenes:** solo JPEG, PNG o WebP, comprobados por su firma, de 2 MB como máximo y con un nombre aleatorio.
+- **HTTPS y cabeceras:** Caddy redirige a HTTPS y añade HSTS, CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy` (`backend/deploy/Caddyfile`). El frontend de producción lleva su propia CSP (`src/index.prod.html`); si cambia la URL de la API, hay que cambiarla también allí.
+- **Secretos y dependencias:** el workflow "Seguridad" pasa gitleaks sobre el historial, `npm audit` y OSV-Scanner en cada PR y cada lunes. Dependabot abre PR semanales contra `dev`.
+
 ## Estructura
 
 ```

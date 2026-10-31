@@ -1,5 +1,21 @@
-# Caddy obtiene y renueva solo el certificado HTTPS del dominio
+# Caddy obtiene y renueva solo el certificado HTTPS del dominio, y redirige http:// a https://
 {$API_DOMAIN} {
 	encode gzip
+
+	header {
+		# Solo HTTPS durante un ano (el navegador ya no intenta http://)
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# La API solo devuelve JSON e imagenes: nada de scripts, ni meterla en un iframe
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# Las imagenes de /uploads se muestran desde GitHub Pages (otro origen)
+		Cross-Origin-Resource-Policy "cross-origin"
+		# No anunciar el software del servidor
+		-Server
+	}
+
 	reverse_proxy api:8080
 }

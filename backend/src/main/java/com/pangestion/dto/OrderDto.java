@@ -51,16 +51,22 @@ public final class OrderDto {
         }
     }
 
-    /** Pedido realizado por un cliente desde la parte publica, a la panaderia (empresa) que elige. */
+    /**
+     * Pedido de un cliente con cuenta desde la parte publica, a la panaderia (empresa) que elige.
+     * El nombre y el email salen de su cuenta (token), no del formulario.
+     */
     public record PublicRequest(
             @NotNull Long companyId,
             @NotNull @FutureOrPresent LocalDate pickupDate,
             @NotNull @JsonFormat(pattern = "HH:mm") LocalTime pickupTime,
-            @NotNull @Valid CustomerDto.Request customer,
+            /** Telefono para este pedido (a domicilio es obligatorio); si no llega, el de la cuenta */
+            @Pattern(regexp = "^[0-9 +]{9,20}$", message = "Telefono no valido") String phone,
             @Size(max = 500) String notes,
             @NotEmpty @Valid List<Line> lines,
             OrderType type,
-            @Size(max = 255) String deliveryAddress) {
+            @Size(max = 255) String deliveryAddress,
+            /** Trampa para bots: campo oculto en el formulario. Una persona lo deja vacio. */
+            @Size(max = 0, message = "Pedido no valido") String website) {
     }
 
     /**
@@ -114,6 +120,22 @@ public final class OrderDto {
                     order.getTotal(), order.getItemCount(), order.getCreatedAt(),
                     order.getLines().stream().map(LineResponse::from).toList(),
                     order.getType(), order.getDeliveryAddress(), order.getDriver() == null ? null : order.getDriver().getName());
+        }
+    }
+
+    /**
+     * Respuesta al cliente que hace un pedido desde la web publica: sin los datos guardados del cliente
+     * (quien conoce un email no debe poder leer el telefono de ese cliente). El nombre es el que acaba de escribir.
+     */
+    public record PublicResponse(Long id, String customerName, String companyName, LocalDate pickupDate,
+                                 @JsonFormat(pattern = "HH:mm") LocalTime pickupTime,
+                                 OrderStatus status, BigDecimal total, int itemCount, List<LineResponse> lines,
+                                 OrderType type, String deliveryAddress) {
+
+        public static PublicResponse from(Order order, String customerName) {
+            return new PublicResponse(order.getId(), customerName, order.getCompany().getName(),
+                    order.getPickupDate(), order.getPickupTime(), order.getStatus(), order.getTotal(), order.getItemCount(),
+                    order.getLines().stream().map(LineResponse::from).toList(), order.getType(), order.getDeliveryAddress());
         }
     }
 }

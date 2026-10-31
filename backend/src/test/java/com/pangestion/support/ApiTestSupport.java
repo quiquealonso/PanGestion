@@ -4,6 +4,7 @@ import com.pangestion.model.BusinessType;
 import com.pangestion.model.Category;
 import com.pangestion.model.Company;
 import com.pangestion.model.Customer;
+import com.pangestion.model.CustomerAccount;
 import com.pangestion.model.Ingredient;
 import com.pangestion.model.Order;
 import com.pangestion.model.OrderStatus;
@@ -12,6 +13,7 @@ import com.pangestion.model.Role;
 import com.pangestion.model.User;
 import com.pangestion.repository.CategoryRepository;
 import com.pangestion.repository.CompanyRepository;
+import com.pangestion.repository.CustomerAccountRepository;
 import com.pangestion.repository.CustomerRepository;
 import com.pangestion.repository.IngredientRepository;
 import com.pangestion.repository.OrderRepository;
@@ -77,6 +79,8 @@ public abstract class ApiTestSupport {
     protected CustomerRepository customerRepository;
     @Autowired
     protected OrderRepository orderRepository;
+    @Autowired
+    protected CustomerAccountRepository customerAccountRepository;
     @Autowired
     protected TokenService tokenService;
     @Autowired
@@ -166,11 +170,31 @@ public abstract class ApiTestSupport {
         return orderRepository.save(order);
     }
 
+    /** Cuenta de cliente de la web publica, con el email confirmado y la contrasena {@link #PASSWORD}. */
+    protected CustomerAccount account(String name, String email, String phone) {
+        CustomerAccount account = new CustomerAccount();
+        account.setName(name);
+        account.setEmail(email);
+        account.setPhone(phone);
+        account.setPassword(passwordEncoder.encode(PASSWORD));
+        account.setVerified(true);
+        return customerAccountRepository.save(account);
+    }
+
     // ----- Peticiones -----
 
     /** Anade la cabecera Authorization con un token valido del usuario. */
     protected RequestPostProcessor as(User user) {
         String header = "Bearer " + tokenService.generateToken(user);
+        return request -> {
+            request.addHeader("Authorization", header);
+            return request;
+        };
+    }
+
+    /** Token de un cliente de la web publica (rol CLIENTE). */
+    protected RequestPostProcessor asCustomer(CustomerAccount account) {
+        String header = "Bearer " + tokenService.generateCustomerToken(account);
         return request -> {
             request.addHeader("Authorization", header);
             return request;

@@ -125,8 +125,8 @@ public class CompanyService {
     // ----- Web publica -----
 
     @Transactional(readOnly = true)
-    public List<CompanyDto.Response> findActive() {
-        return companyRepository.findByActiveTrueOrderByNameAsc().stream().map(this::toResponse).toList();
+    public List<CompanyDto.PublicResponse> findActive() {
+        return companyRepository.findByActiveTrueOrderByNameAsc().stream().map(CompanyDto.PublicResponse::from).toList();
     }
 
     /** Franjas de recogida de un dia, indicando si quedan huecos. Las pasadas o llenas no estan disponibles. */

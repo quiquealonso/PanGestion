@@ -13,6 +13,10 @@ public final class ProductDto {
     private ProductDto() {
     }
 
+    /** Activar o desactivar un producto: {"active": true|false} */
+    public record ActiveRequest(@NotNull Boolean active) {
+    }
+
     public record Request(
             @NotBlank @Size(max = 120) String name,
             @Size(max = 20) String abbreviation,

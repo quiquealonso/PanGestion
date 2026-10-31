@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -48,8 +47,8 @@ public class ProductController {
 
     /** Body: {"active": true|false} */
     @PatchMapping("/{id}/active")
-    public ProductDto.Response setActive(@PathVariable Long id, @RequestBody Map<String, Boolean> body) {
-        return productService.setActive(id, Boolean.TRUE.equals(body.get("active")));
+    public ProductDto.Response setActive(@PathVariable Long id, @Valid @RequestBody ProductDto.ActiveRequest body) {
+        return productService.setActive(id, body.active());
     }
 
     /** Body: {"ids": [7, 5, 6]} con los productos de una categoria en el orden deseado. */

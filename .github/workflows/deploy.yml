@@ -1,0 +1,138 @@
+name: Desplegar
+
+# Al fusionar en main: se vuelven a pasar todos los tests y la seguridad; si todo esta en verde se despliega
+# la API en la VM (Google Cloud) y despues el frontend en GitHub Pages, y se prueba produccion.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Nunca dos despliegues a la vez, y sin cancelar uno a medias
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  API_URL: https://34-175-204-112.sslip.io
+  VM_HOST: 34.175.204.112
+  VM_USER: pangestion
+
+jobs:
+  backend:
+    name: Backend (todos los tests)
+    uses: ./.github/workflows/backend-tests.yml
+
+  security:
+    name: Seguridad
+    uses: ./.github/workflows/security.yml
+
+  frontend:
+    name: Frontend (tests y build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx ng test --watch=false
+      # Version = <mayor>.<menor> de package.json + numero de despliegue (1.0.57). Va en la app (version.ts)
+      # y en ngsw.json (appData): asi las apps instaladas saben que version nueva hay y muestran "Actualizar"
+      - name: Version
+        run: |
+          base=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
+          version="$base.${{ github.run_number }}"
+          echo "Version $version (${GITHUB_SHA::7})"
+          cat > src/environments/version.ts <<EOF
+          export const APP_VERSION = { version: '$version', commit: '${GITHUB_SHA::7}', date: '$(date -u +%Y-%m-%dT%H:%MZ)' };
+          EOF
+          node -e "const f='ngsw-config.json',c=require('./'+f);c.appData={version:'$version'};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          cat src/environments/version.ts
+      # El sitio se sirve en https://<usuario>.github.io/<repositorio>/
+      - run: npx ng build --base-href "/${{ github.event.repository.name }}/"
+      # GitHub Pages no conoce las rutas de Angular:
+      # - 404.html = index.html para que cualquier ruta funcione al recargar
+      # - pedido/index.html para que la web de pedidos (y su app instalable) responda 200 y no 404
+      - name: Rutas de Angular en Pages
+        working-directory: dist/gestion-pedidos/browser
+        run: |
+          cp index.html 404.html
+          mkdir -p pedido && cp index.html pedido/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/gestion-pedidos/browser
+
+  deploy-api:
+    name: Desplegar API (VM)
+    needs: [backend, security, frontend]
+    runs-on: ubuntu-latest
+    environment:
+      name: produccion
+      url: ${{ env.API_URL }}
+    steps:
+      # La clave solo puede ejecutar ~/pangestion/deploy.sh en la VM (ver backend/deploy/deploy.sh)
+      - name: Desplegar ${{ github.sha }}
+        env:
+          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy -o BatchMode=yes -o StrictHostKeyChecking=yes "$VM_USER@$VM_HOST" "$GITHUB_SHA"
+
+  deploy-web:
+    name: Desplegar frontend (Pages)
+    needs: deploy-api
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  smoke:
+    name: Pruebas de humo en producción
+    needs: deploy-web
+    runs-on: ubuntu-latest
+    env:
+      WEB_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+    steps:
+      - name: API
+        run: |
+          set -eu
+          check() { # check <codigo esperado> <url>
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$2")
+            echo "$1 == $code  $2"; [ "$code" = "$1" ]
+          }
+          check 200 "$API_URL/api/public/companies"
+          check 401 "$API_URL/api/auth/me"
+          check 308 "http://${API_URL#https://}/api/public/companies"
+          headers=$(curl -sI --max-time 10 "$API_URL/api/public/companies" | tr 'A-Z' 'a-z')
+          for h in strict-transport-security content-security-policy x-content-type-options x-frame-options referrer-policy; do
+            echo "$headers" | grep -q "^$h:" || { echo "Falta la cabecera $h"; exit 1; }
+          done
+          # CORS: el frontend publicado puede llamar a la API
+          curl -sI --max-time 10 -X OPTIONS "$API_URL/api/auth/login" -H "Origin: https://${{ github.repository_owner }}.github.io" \
+            -H "Access-Control-Request-Method: POST" | grep -qi "^access-control-allow-origin:"
+      - name: Frontend
+        run: |
+          set -eu
+          # Pages tarda un poco en publicar: se reintenta hasta que sirve esta version
+          for i in $(seq 1 30); do
+            curl -fsS --max-time 10 "$WEB_URL/ngsw.json" -o ngsw.json && grep -q '"hashTable"' ngsw.json && break
+            sleep 10
+          done
+          for path in "/" "/pedido/" "/manifest.webmanifest" "/pedido.webmanifest" "/ngsw-worker.js"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$WEB_URL$path")
+            echo "$code  $WEB_URL$path"; [ "$code" = "200" ]
+          done
+          curl -fsS "$WEB_URL/" | grep -q 'Content-Security-Policy'

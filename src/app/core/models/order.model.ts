@@ -105,3 +105,9 @@ export function productionLabel(row: { productName: string; removedIngredients: 
   ];
   return custom.length ? `${row.productName} (${custom.join(', ')})` : row.productName;
 }
+
+/** Respuesta al hacer un pedido en la web publica: sin los datos guardados del cliente. */
+export type PublicOrder = Pick<
+  Order,
+  'id' | 'customerName' | 'companyName' | 'pickupDate' | 'pickupTime' | 'status' | 'total' | 'itemCount' | 'lines' | 'type' | 'deliveryAddress'
+>;

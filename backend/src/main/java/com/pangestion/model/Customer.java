@@ -1,5 +1,6 @@
 package com.pangestion.model;
 
+import com.pangestion.security.EncryptedString;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,7 +31,9 @@ public class Customer {
     @Column(nullable = false, length = 120)
     private String email;
 
-    @Column(length = 20)
+    /** Cifrado en la base de datos (EncryptedString) */
+    @Convert(converter = EncryptedString.class)
+    @Column(length = 100)
     private String phone;
 
     /** Razon social, si el cliente es un negocio (cafeteria, hotel...). Nulo = particular. */
@@ -38,7 +41,8 @@ public class Customer {
     private String businessName;
 
     /** CIF/NIF para facturar, si lo da. */
-    @Column(name = "tax_id", length = 20)
+    @Convert(converter = EncryptedString.class)
+    @Column(name = "tax_id", length = 100)
     private String taxId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
