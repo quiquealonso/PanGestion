@@ -68,7 +68,7 @@ jobs:
           # Quien instalo la app cuando estaba en la raiz tiene alli su service worker: se cambia por el
           # "safety worker" de Angular, que lo da de baja y borra su cache (despues abre la web nueva)
           cp pages/app/safety-worker.js pages/ngsw-worker.js
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: pages
 
