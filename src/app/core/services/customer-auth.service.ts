@@ -38,6 +38,16 @@ export class CustomerAuthService {
     return this.http.post<CustomerSession>(`${this.url}/verify`, { token }).pipe(tap((s) => this.save(s)));
   }
 
+  /** Envia por email un enlace para poner otra contrasena (caduca a la hora). */
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.url}/forgot-password`, { email });
+  }
+
+  /** Enlace del email (?restablecer=...): pone la contrasena nueva y deja la sesion iniciada. */
+  resetPassword(token: string, password: string): Observable<CustomerSession> {
+    return this.http.post<CustomerSession>(`${this.url}/reset-password`, { token, password }).pipe(tap((s) => this.save(s)));
+  }
+
   resend(email: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.url}/resend`, { email });
   }

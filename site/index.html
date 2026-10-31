@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Sin scripts inline ni de terceros: solo fuentes de Google. Ver docs/reglas-seguridad.md (S18) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
+  <!-- Sin scripts inline. De terceros solo las fuentes de Google y, si se activa, GoatCounter (analitica sin cookies). Ver S18 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.goatcounter.com; connect-src 'self' https://*.goatcounter.com; object-src 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>PanGestión · Pedidos, obrador, sala y cocina de tu panadería o bar en una sola app</title>
   <meta name="description" content="PanGestión une los pedidos online, la producción del obrador, la sala, la cocina y el reparto de tu panadería o bar en una sola app. Desde el móvil, el ordenador o la tablet, sin instalar nada.">
@@ -30,11 +30,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
   <link rel="stylesheet" href="css/estilos.css">
+  <script src="js/comun.js" defer></script>
   <script src="js/main.js" defer></script>
   <!-- Datos estructurados para buscadores (los lee Google, no se ven ni se ejecutan: la CSP no los bloquea) -->
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "PanGestión", "applicationCategory": "BusinessApplication", "operatingSystem": "Web, Android, iOS, Windows, macOS", "inLanguage": "es", "url": "https://quiquealonso.github.io/PanGestion/", "image": "https://quiquealonso.github.io/PanGestion/assets/og-image.png", "description": "Gestión de pedidos online, producción del obrador, sala, cocina y reparto para panaderías, bares y restaurantes."}</script>
 </head>
-<body>
+<!-- data-goatcounter: codigo de GoatCounter para contar visitas sin cookies (vacio = sin analitica) -->
+<body data-goatcounter="">
   <a class="skip" href="#contenido">Saltar al contenido</a>
 
   <header class="nav" id="arriba">
@@ -322,8 +324,8 @@
         <!-- Se envia por email (mailto:) al correo de data-email. Vacio: se muestra el aviso de abajo. -->
         <form class="contact reveal" id="contact-form" data-email="" novalidate>
           <div class="contact__row">
-            <label>Tu nombre<input name="nombre" autocomplete="name" required></label>
-            <label>Nombre del negocio<input name="negocio" autocomplete="organization" required></label>
+            <label>Tu nombre<input name="nombre" autocomplete="name" required maxlength="80" aria-describedby="err-nombre"><small class="field-error" id="err-nombre"></small></label>
+            <label>Nombre del negocio<input name="negocio" autocomplete="organization" required maxlength="100" aria-describedby="err-negocio"><small class="field-error" id="err-negocio"></small></label>
           </div>
           <div class="contact__row">
             <label>Tipo de negocio
@@ -334,9 +336,11 @@
                 <option>Otro</option>
               </select>
             </label>
-            <label>Teléfono o email<input name="contacto" autocomplete="email" required></label>
+            <label>Teléfono o email<input name="contacto" autocomplete="email" required maxlength="120" aria-describedby="err-contacto"><small class="field-error" id="err-contacto"></small></label>
           </div>
-          <label>¿Qué te gustaría resolver? <small>(opcional)</small><textarea name="mensaje" rows="3"></textarea></label>
+          <label>¿Qué te gustaría resolver? <small>(opcional)</small><textarea name="mensaje" rows="3" maxlength="1000"></textarea></label>
+          <!-- Trampa para bots: invisible para las personas; si llega relleno, no se envia nada -->
+          <label class="hp-field" aria-hidden="true">Web<input name="web" tabindex="-1" autocomplete="off"></label>
           <button class="btn" type="submit">Quiero una demo</button>
           <p class="contact__note" id="contact-note" role="status"></p>
         </form>
@@ -352,6 +356,8 @@
         <a href="#precios">Precios</a>
         <a href="#preguntas">Preguntas</a>
         <a href="app/">Entrar en la app</a>
+        <a href="privacidad.html">Privacidad</a>
+        <a href="terminos.html">Términos y aviso legal</a>
       </nav>
       <p>© <span id="year">2026</span> PanGestión</p>
     </div>

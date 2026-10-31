@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class CustomerAccountEmailApiTest extends ApiTestSupport {
 
     private static final Pattern LINK = Pattern.compile("https://web\\.test/PanGestion/pedido/\\?verificar=([A-Za-z0-9_-]+)");
+    private static final Pattern RESET_LINK = Pattern.compile("https://web\\.test/PanGestion/pedido/\\?restablecer=([A-Za-z0-9_-]+)");
 
     @MockitoBean
     private JavaMailSender mailSender;
@@ -102,5 +103,57 @@ class CustomerAccountEmailApiTest extends ApiTestSupport {
                 .andExpect(jsonPath("$.verificationRequired").value(true));
         assertThat(lastEmail().getSubject()).isEqualTo("Ya tienes una cuenta en PanGestion");
         assertThat(customerAccountRepository.findById(existing.getId()).orElseThrow().getPassword()).isEqualTo(hash);
+    }
+
+    private String requestReset(String email) throws Exception {
+        clearInvocations(mailSender);
+        mvc.perform(postJson("/api/public/account/forgot-password", "{\"email\": \"%s\"}".formatted(email)))
+                .andExpect(status().isAccepted());
+        SimpleMailMessage mail = lastEmail();
+        assertThat(mail.getSubject()).isEqualTo("Restablecer tu contrasena de PanGestion");
+        Matcher link = RESET_LINK.matcher(mail.getText());
+        assertThat(link.find()).isTrue();
+        return link.group(1);
+    }
+
+    @Test
+    @DisplayName("contraseña olvidada: enlace por email de un solo uso; la nueva entra, la vieja no, y las sesiones anteriores se cierran")
+    void resetPassword() throws Exception {
+        CustomerAccount lola = account("Lola", "lola@correo.es", null);
+        String oldSession = tokenService.generateCustomerToken(lola);
+        mvc.perform(getJson("/api/public/account/me").header("Authorization", "Bearer " + oldSession)).andExpect(status().isOk());
+        Thread.sleep(1100); // el token lleva la hora en segundos: el cambio de contrasena tiene que ser posterior
+
+        String token = requestReset("lola@correo.es");
+        assertThat(customerAccountRepository.findById(lola.getId()).orElseThrow().getResetTokenHash()).isNotEqualTo(token).hasSize(64);
+        mvc.perform(postJson("/api/public/account/reset-password", "{\"token\": \"%s\", \"password\": \"nuevaclave123\"}".formatted(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isString());
+
+        mvc.perform(postJson("/api/public/account/login", "{\"email\": \"lola@correo.es\", \"password\": \"nuevaclave123\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(postJson("/api/public/account/login", "{\"email\": \"lola@correo.es\", \"password\": \"%s\"}".formatted(PASSWORD)))
+                .andExpect(status().isUnauthorized());
+        // El enlace ya no vale y la sesion que habia abierta tampoco
+        mvc.perform(postJson("/api/public/account/reset-password", "{\"token\": \"%s\", \"password\": \"otraclave123\"}".formatted(token)))
+                .andExpect(status().isConflict());
+        mvc.perform(getJson("/api/public/account/me").header("Authorization", "Bearer " + oldSession)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("contraseña olvidada: enlace caducado 409; email sin cuenta, misma respuesta y ningún email")
+    void resetPasswordExpiredAndUnknown() throws Exception {
+        CustomerAccount lola = account("Lola", "lola@correo.es", null);
+        String token = requestReset("lola@correo.es");
+        CustomerAccount saved = customerAccountRepository.findById(lola.getId()).orElseThrow();
+        saved.setResetExpiresAt(java.time.LocalDateTime.now().minusMinutes(1));
+        customerAccountRepository.save(saved);
+        mvc.perform(postJson("/api/public/account/reset-password", "{\"token\": \"%s\", \"password\": \"nuevaclave123\"}".formatted(token)))
+                .andExpect(status().isConflict());
+
+        clearInvocations(mailSender);
+        mvc.perform(postJson("/api/public/account/forgot-password", "{\"email\": \"nadie@correo.es\"}"))
+                .andExpect(status().isAccepted());
+        verify(mailSender, never()).send(org.mockito.ArgumentMatchers.any(SimpleMailMessage.class));
     }
 }

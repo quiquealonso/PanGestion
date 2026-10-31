@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,5 +109,28 @@ class ErrorHandlingApiTest extends ApiTestSupport {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("Ya existe un ingrediente con el nombre Sal"));
+    }
+
+    @Test
+    @DisplayName("cada respuesta de la API lleva su id de petición (X-Request-Id), el mismo que sale en el log")
+    void requestId() throws Exception {
+        mvc.perform(getJson("/api/products/{id}", 424242).with(as(gestor)))
+                .andExpect(header().string("X-Request-Id", org.hamcrest.Matchers.matchesRegex("[0-9a-f]{8}")));
+    }
+
+    @Test
+    @DisplayName("500: un fallo inesperado no enseña detalles internos, solo el código para buscarlo en el log")
+    void unexpectedError() {
+        org.slf4j.MDC.put(com.pangestion.config.RequestLogFilter.REQUEST_ID, "abcd1234");
+        try {
+            var response = new com.pangestion.exception.GlobalExceptionHandler().handleUnexpected(
+                    new IllegalStateException("detalle interno: tabla orders"), new org.springframework.mock.web.MockHttpServletRequest("GET", "/api/x"));
+            org.assertj.core.api.Assertions.assertThat(response.getStatusCode().value()).isEqualTo(500);
+            org.assertj.core.api.Assertions.assertThat(response.getBody().message())
+                    .isEqualTo("Error interno del servidor (codigo abcd1234)")
+                    .doesNotContain("tabla");
+        } finally {
+            org.slf4j.MDC.clear();
+        }
     }
 }

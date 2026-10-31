@@ -64,6 +64,21 @@ Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`), jun
 
 Otros proveedores con plan gratis, como Brevo (300 al día) o Mailjet, funcionan igual: cambia `SMTP_HOST` y las credenciales.
 
+## Logs
+
+La API deja una línea por petición (método, ruta, estado, tiempo, usuario e IP). Los errores inesperados guardan la traza completa. Cada línea lleva el id de la petición: es el «código» que ve el usuario en un error 500 y la cabecera `X-Request-Id`. Docker guarda como mucho 5 ficheros de 10 MB por contenedor.
+
+En la VM (`cd ~/pangestion/app/backend/deploy`):
+
+```bash
+docker compose logs api --since 1h                         # la última hora
+docker compose logs api --since 24h | grep -E "ERROR|WARN"  # errores y avisos del último día
+docker compose logs api | grep abc123                      # todo lo de una petición (su código)
+docker compose logs -f api                                 # en directo
+```
+
+Si un despliegue falla, GitHub envía un email y el log del job «Desplegar API (VM)» muestra la salida de `deploy.sh`.
+
 ## Lo pendiente
 
 Lo que se ha dejado para más adelante (correo de la app, guardar la clave de cifrado...) está en [pendientes.md](pendientes.md).

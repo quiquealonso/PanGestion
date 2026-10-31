@@ -1,6 +1,7 @@
-# Reglas de seguridad de PanGestión
+# Reglas de seguridad y calidad de PanGestión
 
 Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. Antes de fusionar en `main`, repasa las reglas que toque tu cambio.
+Las reglas `S` son de seguridad y las `W`, de calidad de la web (legal, SEO, accesibilidad, rendimiento).
 
 **Estados:**
 - ✅ cumplida
@@ -107,7 +108,7 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 
 ### S13 · Consultas parametrizadas
 - **Estado:** ✅
-- **Cómo:** se usa JPQL con parámetros (`:nombre`) y nunca se concatena texto del usuario. El SQL dinámico de `SchemaUpgrade` y de `SensitiveDataMigration` solo usa nombres fijos del propio código.
+- **Cómo:** se usa JPQL con parámetros (`:nombre`) y nunca se concatena texto del usuario: el valor viaja aparte de la consulta, así que no hace falta «sanear» comillas ni caracteres especiales para evitar inyección SQL. Además, los textos se validan en tamaño y formato (S14) y se recortan los espacios. El SQL dinámico de `SchemaUpgrade` y de `SensitiveDataMigration` solo usa nombres fijos del propio código.
 - **Dónde:** `repository/*`
 - **Comprobación:** revisión de código (buscar `createQuery` o `nativeQuery` con `+`)
 - **Fecha:** 2026-10-30
@@ -180,4 +181,75 @@ Cada regla indica cómo se cumple, dónde está el código y qué la comprueba. 
 - **Dónde:** `AppUpdateService`, `pwa-banner.component.ts`, `deploy.yml` (paso «Version»)
 - **Comprobación:** prueba de humo del despliegue (`ngsw.json` publicado)
 - **Fecha:** 2026-10-30
+
+## Identidad, errores y logs
+
+### S23 · Cada petición del cliente lleva su identificación
+- **Estado:** ✅
+- **Cómo:** con las cuentas de cliente activas, cada petición de la web de pedidos que lo necesita lleva el token del cliente (`Authorization: Bearer`, rol `CLIENTE`), y el interceptor lo añade solo. El servidor comprueba en cada una que la cuenta existe, que está confirmada y que el token es posterior al último cambio de contraseña. Las sesiones de cliente y de gestión son independientes. Además, cada petición recibe un id (`X-Request-Id`) que aparece en el log.
+- **Dónde:** `auth.interceptor.ts`, `CustomerAccountService.getVerified`, `RequestLogFilter`
+- **Comprobación:** `PublicApiTest.requiresCustomerAccount`, `CustomerAccountEmailApiTest.resetPassword`, `ErrorHandlingApiTest.requestId`
+- **Fecha:** 2026-10-31
+
+### S24 · Enlaces para restablecer la contraseña que caducan
+- **Estado:** ✅ (cuentas de cliente; necesita SMTP para enviarse)
+- **Cómo:** «¿Olvidaste tu contraseña?» envía un enlace aleatorio de 256 bits que caduca a los 60 minutos y solo vale una vez; en la BBDD solo se guarda su SHA-256. La respuesta es la misma exista o no la cuenta. Al cambiar la contraseña se cierran todas las sesiones abiertas. Hay límite de intentos (3 por hora y email, 10 por hora e IP). Los usuarios de gestión no tienen este enlace: su contraseña la cambia el administrador de su empresa.
+- **Dónde:** `CustomerAccountService.forgotPassword` / `resetPassword`, `customer-auth-panel.component.ts`
+- **Comprobación:** `CustomerAccountEmailApiTest.resetPassword`, `CustomerAccountEmailApiTest.resetPasswordExpiredAndUnknown`
+- **Fecha:** 2026-10-31
+
+### S25 · La API solo atiende al frontend publicado
+- **Estado:** ✅
+- **Cómo:** CORS solo permite llamadas desde `https://quiquealonso.github.io` (variable `CORS_ORIGINS`), así que otra web no puede usar la API desde el navegador de sus visitantes. CORS no impide las llamadas directas (curl, scripts), por eso todo lo que no es público exige token (S05) y lo público tiene límite de intentos y trampa para bots (S10, S11). La base de datos no es accesible desde fuera (S03).
+- **Dónde:** `SecurityConfig.corsConfigurationSource`, `backend/deploy/.env` (`CORS_ORIGINS`)
+- **Comprobación:** prueba de humo del despliegue (CORS), `SecurityApiTest`
+- **Fecha:** 2026-10-31
+
+### S26 · Gestión de errores
+- **Estado:** ✅
+- **Cómo:** todos los errores de la API tienen el mismo formato (`status`, `message`, `fieldErrors`, `timestamp`) y un mensaje que se puede enseñar al usuario. Un fallo inesperado responde 500 con «Error interno del servidor (código abc123)», sin trazas ni detalles internos, y la traza completa queda en el log con ese código. El frontend convierte cada error en un mensaje claro y, en los 500, enseña el código para que el usuario lo pueda reportar.
+- **Dónde:** `GlobalExceptionHandler`, `core/utils/api-error.ts`
+- **Comprobación:** `ErrorHandlingApiTest`
+- **Fecha:** 2026-10-31
+
+### S27 · Logs para saber qué falla
+- **Estado:** ✅
+- **Cómo:** cada petición a la API deja una línea con método, ruta, estado, milisegundos, usuario (email y rol) e IP. Los 5xx van en `ERROR`, los 4xx en `WARN` y el resto en `INFO`. Los errores inesperados guardan la traza completa. Todas las líneas llevan el id de la petición, así que todo lo de una petición se encuentra buscando su código. No se registran cuerpos, consultas ni cabeceras (pueden llevar datos personales o tokens). Docker rota los logs: como mucho, 5 ficheros de 10 MB por contenedor. Cómo consultarlos: [despliegue.md](despliegue.md#logs).
+- **Dónde:** `RequestLogFilter`, `UserLogFilter`, `application.properties` (`logging.pattern.level`), `docker-compose.yml` (`x-logging`)
+- **Comprobación:** `ErrorHandlingApiTest.requestId`
+- **Fecha:** 2026-10-31
+
+### S28 · Ningún secreto en el frontend
+- **Estado:** ✅
+- **Cómo:** el frontend solo conoce la URL pública de la API. Las claves (JWT, cifrado, BBDD, SMTP) solo existen en el servidor. Los usuarios de prueba con contraseña solo están en `environment.ts` (desarrollo); el build de producción usa `environment.production.ts`, donde la lista está vacía.
+- **Dónde:** `src/environments/`
+- **Comprobación:** buscar en `dist/` contraseñas o nombres de claves (hecho el 2026-10-31: no hay) y gitleaks (S02)
+- **Fecha:** 2026-10-31
+
+## Web pública: legal, SEO, accesibilidad y rendimiento
+
+Se aplican a la web promocional (`site/`) y, cuando corresponde, a la app (`src/`).
+
+| Regla | Estado | Cómo / dónde |
+|---|---|---|
+| **W01 · Política de privacidad** | ✅ ⏳ | `site/privacidad.html`, enlazada en el pie y en el paso de datos del pedido. Faltan los datos del titular (marcados en amarillo). |
+| **W02 · Términos y aviso legal** | ✅ ⏳ | `site/terminos.html` (LSSI y condiciones de uso). Faltan los datos del titular. |
+| **W03 · Secretos fuera del frontend** | ✅ | Ver S28. |
+| **W04 · Forzar HTTPS** | ✅ | Ver S19. GitHub Pages con «Enforce HTTPS» y CSP `upgrade-insecure-requests`. |
+| **W05 · Aviso de cookies** | ✅ | No hay cookies de publicidad ni de seguimiento, así que no hace falta pedir consentimiento. Sale un aviso informativo una vez (`site/js/comun.js`). Si algún día se añade algo con cookies, hay que cambiarlo por un banner con «Aceptar / Rechazar». |
+| **W06 · Títulos y descripciones** | ✅ | `<title>` y `meta description` en todas las páginas de la web y en la app. |
+| **W07 · Imagen para redes** | ✅ | Open Graph y Twitter Card con `site/assets/og-image.png` (1200×630). |
+| **W08 · Favicon** | ✅ | Logo en SVG y PNG en la web; `favicon.ico` e iconos de la PWA en la app. |
+| **W09 · Sitemap y robots** | ✅ | `site/sitemap.xml` y `site/robots.txt` (la app, `/app/`, no se indexa). |
+| **W10 · Texto alternativo** | ✅ | Todas las imágenes tienen `alt`; las decorativas, `alt=""` (comprobado el 2026-10-31). |
+| **W11 · Imágenes comprimidas** | ✅ | Capturas en WebP a su tamaño de uso (las del móvil a 520 px). |
+| **W12 · Velocidad de carga** | ✅ | Unos 115 KB en la carga inicial, sin librerías, con `loading="lazy"` en las imágenes de más abajo; primer pintado en unos 0,5 s (medido en local). Comprobar con PageSpeed Insights tras cada cambio grande. |
+| **W13 · Contraste de colores** | ✅ | WCAG AA (4,5:1) en todos los textos: los pequeños sobre crema usan `--crust-dark`. |
+| **W14 · Adaptada al móvil** | ✅ | Diseño responsive, sin desplazamiento horizontal, botones de al menos 44 px. |
+| **W15 · Página 404 propia** | ✅ | `site/no-encontrada.html`. Las rutas antiguas de la app se redirigen a `/app/` (`public/pwa-init.js`). |
+| **W16 · Enlaces rotos** | ✅ | Revisados todos los enlaces e imágenes de la web (2026-10-31). La prueba de humo comprueba las páginas principales en cada despliegue. |
+| **W17 · Validación de formularios** | ✅ | Formulario de contacto con errores por campo, accesibles (`aria-invalid`); formulario de pedidos validado en la app y en la API (S14). |
+| **W18 · Protección antispam** | ✅ | Campo trampa en el formulario de contacto y en el de pedidos, y límite de pedidos por IP (S11). |
+| **W19 · Analítica** | ⏳ | Preparada con GoatCounter (sin cookies, no necesita consentimiento). Falta crear la cuenta y poner su código en `data-goatcounter` (ver pendientes). |
+| **W20 · Una llamada a la acción clara** | ✅ ⏳ | «Pide una demo» en la cabecera, la portada, los precios y el final. Falta el correo de contacto para que el formulario envíe. |
 

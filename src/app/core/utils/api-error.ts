@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export function apiErrorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
     if (error.status === 0) {
-      return 'No se puede conectar con el servidor. ¿Está arrancado el backend?';
+      return 'No se puede conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.';
     }
     if (error.status === 403) {
       return 'No tienes permisos para realizar esta acción.';
@@ -16,6 +16,11 @@ export function apiErrorMessage(error: unknown): string {
     }
     if (body?.message) {
       return body.message;
+    }
+    if (error.status >= 500) {
+      // El codigo de la peticion (X-Request-Id) sirve para buscar el error en el log del servidor
+      const code = error.headers?.get('X-Request-Id');
+      return `Error del servidor${code ? ` (código ${code})` : ''}. Inténtalo de nuevo en un momento.`;
     }
   }
   return 'Ha ocurrido un error inesperado.';

@@ -3,8 +3,6 @@
 (function () {
   'use strict';
 
-  document.documentElement.classList.remove('no-js');
-
   // ---------- Menu movil ----------
   var toggle = document.querySelector('.nav__toggle');
   var menu = document.getElementById('menu');
@@ -118,11 +116,39 @@
 
   // ---------- Contacto: abre el correo con el mensaje escrito ----------
   var note = document.getElementById('contact-note');
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  var PHONE = /^\+?[0-9 ]{9,15}$/;
+
+  /** Marca un campo con su error (o lo limpia) y devuelve si es valido. */
+  function check(input, message) {
+    var error = document.getElementById('err-' + input.name);
+    input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    error.textContent = message || '';
+    return !message;
+  }
+
+  function validate() {
+    var f = form.elements;
+    var contact = f.contacto.value.trim();
+    var ok = check(f.nombre, f.nombre.value.trim().length < 2 ? 'Escribe tu nombre.' : '');
+    ok = check(f.negocio, f.negocio.value.trim().length < 2 ? 'Escribe el nombre de tu negocio.' : '') && ok;
+    ok = check(f.contacto, !contact ? 'Dinos cómo contactarte.' : !EMAIL.test(contact) && !PHONE.test(contact)
+      ? 'Escribe un email (nombre@correo.es) o un teléfono de 9 cifras.' : '') && ok;
+    return ok;
+  }
+  ['nombre', 'negocio', 'contacto'].forEach(function (name) {
+    form.elements[name].addEventListener('blur', function () {
+      if (form.elements[name].value) validate();
+    });
+  });
+
   form.addEventListener('submit', function (event) {
     event.preventDefault();
     var f = form.elements;
-    if (!f.nombre.value.trim() || !f.negocio.value.trim() || !f.contacto.value.trim()) {
-      note.textContent = 'Rellena tu nombre, el del negocio y cómo contactarte.';
+    if (f.web.value) return; // trampa para bots
+    if (!validate()) {
+      note.textContent = 'Revisa los campos marcados.';
+      form.querySelector('[aria-invalid="true"]').focus();
       return;
     }
     var email = form.dataset.email;
@@ -143,5 +169,6 @@
     note.textContent = 'Se ha abierto tu correo con el mensaje. Envíalo y te responderemos lo antes posible.';
   });
 
-  document.getElementById('year').textContent = String(new Date().getFullYear());
+  var year = document.getElementById('year');
+  if (year) year.textContent = String(new Date().getFullYear());
 })();

@@ -25,6 +25,11 @@ public final class AccountDto {
     public record VerifyRequest(@NotBlank @Size(max = 100) String token) {
     }
 
+    /** Nueva contrasena con el enlace del email "restablecer contrasena" */
+    public record ResetPasswordRequest(@NotBlank @Size(max = 100) String token,
+                                       @NotBlank @Size(min = 8, max = 100) String password) {
+    }
+
     public record EmailRequest(@NotBlank @Email @Size(max = 120) String email) {
     }
 

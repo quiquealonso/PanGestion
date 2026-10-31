@@ -1,6 +1,10 @@
 package com.pangestion.exception;
 
+import com.pangestion.config.RequestLogFilter;
 import com.pangestion.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +28,7 @@ import java.util.Map;
  * Convierte las excepciones en respuestas JSON con un formato comun (ErrorResponse): status, message,
  * fieldErrors y timestamp. Nunca se devuelven trazas internas.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -111,5 +116,17 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(ErrorResponse.of(status.value(), message));
+    }
+
+    /**
+     * Cualquier otro error (un fallo del programa): se registra con la traza completa y al usuario solo se le da
+     * el codigo de la peticion (X-Request-Id), para poder buscarlo en el log sin ensenarle detalles internos.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
+        String requestId = MDC.get(RequestLogFilter.REQUEST_ID);
+        log.error("Error inesperado en {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error interno del servidor" + (requestId != null ? " (codigo " + requestId + ")" : ""));
     }
 }
