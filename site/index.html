@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="es" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Sin scripts inline ni de terceros: solo fuentes de Google. Ver docs/reglas-seguridad.md (S18) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>PanGestión · Pedidos, obrador, sala y cocina de tu panadería o bar en una sola app</title>
+  <meta name="description" content="PanGestión une los pedidos online, la producción del obrador, la sala, la cocina y el reparto de tu panadería o bar en una sola app. Desde el móvil, el ordenador o la tablet, sin instalar nada.">
+  <meta name="theme-color" content="#0B1324">
+  <link rel="canonical" href="https://quiquealonso.github.io/PanGestion/">
+  <link rel="icon" href="assets/logo-simbolo.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+  <!-- Al compartir el enlace (WhatsApp, redes, Slack...) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="PanGestión">
+  <meta property="og:title" content="PanGestión · Tu panadería o bar, en una sola app">
+  <meta property="og:description" content="Pedidos online, producción del obrador, sala y mesas, cocina en directo y reparto. Desde el móvil, sin instalar nada.">
+  <meta property="og:url" content="https://quiquealonso.github.io/PanGestion/">
+  <meta property="og:image" content="https://quiquealonso.github.io/PanGestion/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/estilos.css">
+  <script src="js/main.js" defer></script>
+  <!-- Datos estructurados para buscadores (los lee Google, no se ven ni se ejecutan: la CSP no los bloquea) -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "PanGestión", "applicationCategory": "BusinessApplication", "operatingSystem": "Web, Android, iOS, Windows, macOS", "inLanguage": "es", "url": "https://quiquealonso.github.io/PanGestion/", "image": "https://quiquealonso.github.io/PanGestion/assets/og-image.png", "description": "Gestión de pedidos online, producción del obrador, sala, cocina y reparto para panaderías, bares y restaurantes."}</script>
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+
+  <header class="nav" id="arriba">
+    <div class="wrap nav__inner">
+      <a class="nav__logo" href="#arriba" aria-label="PanGestión, inicio">
+        <img src="assets/logo-simbolo.svg" alt="" width="36" height="36">
+        <span><b>Pan</b>Gestión</span>
+      </a>
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="menu" aria-label="Abrir menú">
+        <span></span><span></span>
+      </button>
+      <nav class="nav__menu" id="menu" aria-label="Secciones">
+        <a href="#para-quien">Para quién</a>
+        <a href="#funciones">Funciones</a>
+        <a href="#recorrido">Pantallas</a>
+        <a href="#seguridad">Seguridad</a>
+        <a href="#precios">Precios</a>
+        <a href="#preguntas">Preguntas</a>
+        <a class="btn btn--small" href="#contacto">Pide una demo</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <div class="wrap hero__grid">
+        <div class="hero__text">
+          <p class="eyebrow reveal">Para panaderías, obradores, bares y restaurantes</p>
+          <h1 class="reveal">Del horno a la mesa,<br><span class="hl">sin un papel.</span></h1>
+          <p class="lead reveal">PanGestión junta en una sola app los <strong>pedidos online</strong>, la <strong>producción del obrador</strong>, la <strong>sala</strong>, la <strong>cocina</strong> y el <strong>reparto</strong>. Tus clientes piden desde el móvil y tu equipo lo ve al momento, cada uno en su pantalla.</p>
+          <div class="hero__cta reveal">
+            <a class="btn" href="#contacto">Pide una demo gratis</a>
+            <a class="btn btn--ghost" href="#recorrido">Ver las pantallas</a>
+          </div>
+          <ul class="hero__checks reveal">
+            <li>Sin instalar nada: funciona en el navegador</li>
+            <li>Se instala en el móvil como una app</li>
+            <li>Datos cifrados y servidores en Madrid</li>
+          </ul>
+        </div>
+        <div class="hero__visual reveal" aria-hidden="true">
+          <figure class="frame frame--browser">
+            <span class="frame__bar"><i></i><i></i><i></i></span>
+            <img src="assets/capturas/inicio-bar.webp" alt="" width="800" height="506">
+          </figure>
+          <figure class="frame frame--phone">
+            <img src="assets/capturas/movil-pedido.webp" alt="" width="375" height="812">
+          </figure>
+          <p class="hero__badge"><span class="dot"></span> En directo: la comanda llega a cocina al instante</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROBLEMAS ================= -->
+    <section class="section" aria-labelledby="dolor-title">
+      <div class="wrap">
+        <h2 class="section__title reveal" id="dolor-title">¿Te suena alguna de estas?</h2>
+        <div class="pains">
+          <article class="pain reveal">
+            <p class="pain__before">«Los encargos están en una libreta, en WhatsApp y en la cabeza de quien cogió el teléfono.»</p>
+            <p class="pain__after"><b>Con PanGestión:</b> todos los pedidos en un sitio, con su hora de recogida y su estado: pendiente, en proceso, listo, entregado.</p>
+          </article>
+          <article class="pain reveal">
+            <p class="pain__before">«A las 6 de la mañana nadie sabe cuántas barras, cocas o ensaimadas hay que sacar.»</p>
+            <p class="pain__after"><b>Con PanGestión:</b> la <em>producción del día</em> suma solo los encargos por producto y por franja horaria.</p>
+          </article>
+          <article class="pain reveal">
+            <p class="pain__before">«La comanda se pierde entre la barra y la cocina, y la mesa 4 lleva 20 minutos esperando.»</p>
+            <p class="pain__after"><b>Con PanGestión:</b> el camarero apunta desde el móvil y la cocina lo ve al momento; cuando está listo, al camarero le vibra el móvil.</p>
+          </article>
+          <article class="pain reveal">
+            <p class="pain__before">«El viernes por la noche el teléfono no para y se nos escapan pedidos.»</p>
+            <p class="pain__after"><b>Con PanGestión:</b> tus clientes piden online, eligen hora (o que se lo lleves a casa) y nunca se pasa del máximo de pedidos por franja.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PARA QUIEN ================= -->
+    <section class="section section--dark" id="para-quien" aria-labelledby="quien-title">
+      <div class="wrap">
+        <p class="eyebrow eyebrow--light reveal">Una app, dos formas de trabajar</p>
+        <h2 class="section__title reveal" id="quien-title">Se adapta a tu negocio</h2>
+        <div class="tabs reveal" role="tablist" aria-label="Tipo de negocio">
+          <button type="button" role="tab" id="tab-panaderia" aria-controls="panel-panaderia" aria-selected="true">🥖 Panadería y obrador</button>
+          <button type="button" role="tab" id="tab-bar" aria-controls="panel-bar" aria-selected="false" tabindex="-1">🍽️ Bar y restaurante</button>
+        </div>
+
+        <div class="audience" role="tabpanel" id="panel-panaderia" aria-labelledby="tab-panaderia">
+          <ul class="audience__list">
+            <li><b>Encargos online por franjas.</b> El cliente elige día y hora de recogida; tú decides cuántos pedidos aceptas por franja.</li>
+            <li><b>Producción del día.</b> Cuánto de cada producto, para qué hora. Se actualiza solo con cada pedido nuevo.</li>
+            <li><b>Pedidos de un vistazo.</b> Por día, por estado y por cliente; pasa a «en proceso» todos los de hoy con un clic.</li>
+            <li><b>Carta con ingredientes y alérgenos.</b> El cliente ve lo que lleva cada producto y puede pedir «sin» o «con extra».</li>
+            <li><b>Clientes y ventas.</b> Quién compra, cuánto y qué se vende más cada semana.</li>
+          </ul>
+          <figure class="frame frame--browser">
+            <span class="frame__bar"><i></i><i></i><i></i></span>
+            <img src="assets/capturas/produccion.webp" alt="Producción del día: unidades de cada producto por franja horaria" width="800" height="500" loading="lazy">
+          </figure>
+        </div>
+
+        <div class="audience" role="tabpanel" id="panel-bar" aria-labelledby="tab-bar" hidden>
+          <ul class="audience__list">
+            <li><b>Plano de tu sala.</b> Dibuja tus zonas y mesas (redondas, cuadradas, alargadas, taburetes de barra) y ve cuáles están ocupadas.</li>
+            <li><b>Camarero en el móvil.</b> Abre mesa, apunta rondas, junta mesas y cobra desde el teléfono.</li>
+            <li><b>Pantallas de cocina y barra.</b> Cada comanda va a quien la prepara, con sus «sin cebolla» y extras, en tiempo real.</li>
+            <li><b>Cobro y cuentas a medias.</b> Efectivo o tarjeta, con el cambio calculado, y la cuenta dividida por comensales.</li>
+            <li><b>Para llevar y a domicilio.</b> Pedidos online con dirección, y el repartidor ve en su móvil qué tiene que llevar.</li>
+            <li><b>Informes de sala.</b> Ventas, mesas, ticket medio y tiempos de servicio.</li>
+          </ul>
+          <figure class="frame frame--browser">
+            <span class="frame__bar"><i></i><i></i><i></i></span>
+            <img src="assets/capturas/sala-mesas.webp" alt="Plano de la sala con las mesas libres y ocupadas" width="800" height="500" loading="lazy">
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FUNCIONES ================= -->
+    <section class="section" id="funciones" aria-labelledby="funciones-title">
+      <div class="wrap">
+        <p class="eyebrow reveal">Todo lo que pasa en tu local, en un solo sitio</p>
+        <h2 class="section__title reveal" id="funciones-title">Funciones</h2>
+        <div class="features">
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">🛒</span><h3>Web de pedidos propia</h3><p>Tus clientes eligen local, productos y hora desde el móvil. Sin comisiones por pedido de plataformas de terceros.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">⏱️</span><h3>Franjas con aforo</h3><p>Recogida cada 30 o 60 minutos y un máximo de pedidos por franja: nunca te comprometes a más de lo que puedes sacar.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">👩‍🍳</span><h3>Cocina y barra en directo</h3><p>Las comandas aparecen solas en la pantalla de quien las prepara. Pendiente, preparando, listo.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">📱</span><h3>Avisos que vibran</h3><p>Cuando un plato está listo, el camarero recibe un aviso con sonido y vibración. El repartidor, cuando hay algo para llevar.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">🥐</span><h3>Producción del obrador</h3><p>Unidades de cada producto por franja horaria, sumadas de todos los encargos. Pensada para la tablet del obrador.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">🍽️</span><h3>Sala y mesas</h3><p>Plano editable por zonas, mesas que se juntan y se separan, rondas y cuenta en curso de cada mesa.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">💶</span><h3>Cobro y caja del día</h3><p>Efectivo o tarjeta, cambio calculado, cuenta a medias y resumen de caja al cerrar.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">🏍️</span><h3>Reparto a domicilio</h3><p>Pedidos con dirección y teléfono; el repartidor marca «me lo llevo» y «entregado» desde su móvil.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">🧾</span><h3>Carta con alérgenos</h3><p>Productos con foto, ingredientes, alérgenos y extras con precio. El cliente ve qué lleva lo que pide.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">📊</span><h3>Ventas e informes</h3><p>Ventas por día, productos más vendidos, ticket medio y tiempos de servicio. Comparado con la semana anterior.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">👥</span><h3>Cada uno ve lo suyo</h3><p>Administrador, encargado, solo lectura, camarero, cocina y repartidor. La cocina no ve la caja; el repartidor, solo sus repartos.</p></article>
+          <article class="feature reveal"><span class="feature__icon" aria-hidden="true">🏪</span><h3>Varios locales</h3><p>Cada local con su carta, sus horarios y su equipo, y los datos de cada uno bien separados.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RECORRIDO ================= -->
+    <section class="section section--cream" id="recorrido" aria-labelledby="recorrido-title">
+      <div class="wrap">
+        <p class="eyebrow reveal">Capturas reales de la app</p>
+        <h2 class="section__title reveal" id="recorrido-title">Pantalla a pantalla</h2>
+        <div class="tour reveal">
+          <div class="tour__tabs" role="tablist" aria-label="Pantallas de la app">
+            <button type="button" role="tab" aria-selected="true" data-shot="inicio-panaderia" data-text="Lo que importa hoy: pendientes, en proceso, listos, facturación del mes y lo que más se vende.">Inicio</button>
+            <button type="button" role="tab" aria-selected="false" tabindex="-1" data-shot="pedidos" data-text="Todos los encargos del día con su hora de recogida y su estado. Se descargan en un clic.">Pedidos</button>
+            <button type="button" role="tab" aria-selected="false" tabindex="-1" data-shot="produccion" data-text="Qué hay que hornear y para cuándo, sumado de todos los encargos, en directo.">Obrador</button>
+            <button type="button" role="tab" aria-selected="false" tabindex="-1" data-shot="sala-mesas" data-text="El plano de tu sala: las mesas ocupadas se iluminan y se abren con un toque.">Sala</button>
+            <button type="button" role="tab" aria-selected="false" tabindex="-1" data-shot="cocina" data-text="La pantalla de cocina: cada mesa con lo que pidió, en orden, y un toque para marcarlo listo.">Cocina</button>
+            <button type="button" role="tab" aria-selected="false" tabindex="-1" data-shot="inicio-bar" data-text="La sala ahora mismo: mesas ocupadas, lo que espera en cocina y en barra, y la caja del día.">Bar en directo</button>
+          </div>
+          <figure class="frame frame--browser tour__screen">
+            <span class="frame__bar"><i></i><i></i><i></i></span>
+            <img id="tour-img" src="assets/capturas/inicio-panaderia.webp" alt="Pantalla de inicio de una panadería en PanGestión" width="800" height="506" loading="lazy">
+            <figcaption id="tour-text">Lo que importa hoy: pendientes, en proceso, listos, facturación del mes y lo que más se vende.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MOVIL ================= -->
+    <section class="section" aria-labelledby="movil-title">
+      <div class="wrap split">
+        <div class="phones reveal" aria-hidden="true">
+          <figure class="frame frame--phone"><img src="assets/capturas/movil-camarero.webp" alt="" width="375" height="812" loading="lazy"></figure>
+          <figure class="frame frame--phone frame--offset"><img src="assets/capturas/movil-pedido.webp" alt="" width="375" height="812" loading="lazy"></figure>
+        </div>
+        <div>
+          <p class="eyebrow reveal">Hecha para el móvil</p>
+          <h2 class="section__title reveal" id="movil-title">Una app en el bolsillo de cada uno</h2>
+          <p class="lead reveal">No hay que pasar por ninguna tienda de aplicaciones: se abre un enlace y se añade a la pantalla de inicio. Funciona igual en el móvil del camarero, en la tablet de cocina y en el ordenador de la oficina.</p>
+          <ul class="ticks reveal">
+            <li><b>Tus clientes</b> tienen su propia app para pedir, con tu nombre.</li>
+            <li><b>Tu equipo</b> la abre y empieza a trabajar: sin manuales.</li>
+            <li><b>Siempre al día:</b> cuando hay una mejora, la app avisa y se actualiza con un toque.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= COMO EMPEZAR ================= -->
+    <section class="section section--cream" aria-labelledby="pasos-title">
+      <div class="wrap">
+        <h2 class="section__title reveal" id="pasos-title">Empezar es cuestión de una tarde</h2>
+        <ol class="steps">
+          <li class="step reveal"><span class="step__n">1</span><h3>Te damos de alta</h3><p>Creamos tu local con tus horarios, tu logo y los usuarios de tu equipo.</p></li>
+          <li class="step reveal"><span class="step__n">2</span><h3>Subes tu carta</h3><p>Productos, precios, fotos, ingredientes y alérgenos. Te ayudamos con la primera carga.</p></li>
+          <li class="step reveal"><span class="step__n">3</span><h3>Compartes tu enlace</h3><p>En Instagram, en WhatsApp, en Google o en un cartel con código QR en el mostrador. Y a recibir pedidos.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================= SEGURIDAD ================= -->
+    <section class="section section--dark" id="seguridad" aria-labelledby="seguridad-title">
+      <div class="wrap">
+        <p class="eyebrow eyebrow--light reveal">Tus datos y los de tus clientes, a salvo</p>
+        <h2 class="section__title reveal" id="seguridad-title">Seguridad de verdad, no de folleto</h2>
+        <div class="trust">
+          <article class="reveal"><h3>🔒 Datos personales cifrados</h3><p>Teléfonos, direcciones y CIF de tus clientes se guardan cifrados (AES-256). Las contraseñas, con hash: ni nosotros las vemos.</p></article>
+          <article class="reveal"><h3>🇪🇸 Servidores en Madrid</h3><p>La aplicación y la base de datos están en Google Cloud, en la región de Madrid, dentro de la Unión Europea.</p></article>
+          <article class="reveal"><h3>🛡️ Conexión siempre segura</h3><p>Todo viaja por HTTPS, con protección contra intentos de entrar por fuerza bruta y contra bots en los pedidos.</p></article>
+          <article class="reveal"><h3>💾 Copias de seguridad</h3><p>Antes de cada actualización se hace una copia de la base de datos. Si algo falla, se vuelve atrás sola.</p></article>
+          <article class="reveal"><h3>✅ Probada a fondo</h3><p>Cientos de pruebas automáticas se pasan antes de cada actualización. Si una falla, no se publica.</p></article>
+          <article class="reveal"><h3>👁️ Cada uno ve lo suyo</h3><p>Permisos por puesto de trabajo, y los datos de cada local separados de los demás.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PRECIOS ================= -->
+    <section class="section" id="precios" aria-labelledby="precios-title">
+      <div class="wrap">
+        <p class="eyebrow reveal">Sin comisiones por pedido</p>
+        <h2 class="section__title reveal" id="precios-title">Elige cómo empezar</h2>
+        <!-- PRECIOS: cambia "data-price" por el precio (por ejemplo "39 €/mes"); vacio = "Pide presupuesto" -->
+        <div class="plans">
+          <article class="plan reveal" data-price="">
+            <h3>Obrador</h3>
+            <p class="plan__for">Panaderías y pastelerías</p>
+            <p class="plan__price"></p>
+            <ul>
+              <li>Web de pedidos con franjas</li>
+              <li>Producción del día</li>
+              <li>Clientes, carta y alérgenos</li>
+              <li>Ventas y productos más vendidos</li>
+            </ul>
+            <a class="btn btn--ghost" href="#contacto" data-plan="Obrador">Me interesa</a>
+          </article>
+          <article class="plan plan--featured reveal" data-price="">
+            <p class="plan__tag">El más completo</p>
+            <h3>Completo</h3>
+            <p class="plan__for">Panadería con cafetería o bar</p>
+            <p class="plan__price"></p>
+            <ul>
+              <li>Todo lo de Obrador y Sala</li>
+              <li>Reparto a domicilio</li>
+              <li>Varios locales</li>
+              <li>Ayuda con la puesta en marcha</li>
+            </ul>
+            <a class="btn" href="#contacto" data-plan="Completo">Me interesa</a>
+          </article>
+          <article class="plan reveal" data-price="">
+            <h3>Sala</h3>
+            <p class="plan__for">Bares y restaurantes</p>
+            <p class="plan__price"></p>
+            <ul>
+              <li>Plano de sala y camarero en el móvil</li>
+              <li>Pantallas de cocina y barra</li>
+              <li>Cobro y cuentas a medias</li>
+              <li>Informes de sala</li>
+            </ul>
+            <a class="btn btn--ghost" href="#contacto" data-plan="Sala">Me interesa</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FAQ ================= -->
+    <section class="section section--cream" id="preguntas" aria-labelledby="faq-title">
+      <div class="wrap wrap--narrow">
+        <h2 class="section__title reveal" id="faq-title">Preguntas frecuentes</h2>
+        <div class="faq">
+          <details class="reveal"><summary>¿Tengo que instalar algo o comprar un ordenador nuevo?</summary><p>No. PanGestión funciona en el navegador de cualquier móvil, tablet u ordenador que ya tengas. Si quieres, se añade a la pantalla de inicio y se abre como una app.</p></details>
+          <details class="reveal"><summary>¿Mis clientes tienen que descargarse una app?</summary><p>No. Les pasas un enlace (o un código QR) y piden desde el navegador. Si repiten a menudo, pueden añadirla a su pantalla de inicio.</p></details>
+          <details class="reveal"><summary>¿Cobráis comisión por cada pedido?</summary><p>No. A diferencia de las plataformas de reparto, los pedidos llegan directamente a ti y el cliente es tuyo.</p></details>
+          <details class="reveal"><summary>¿Cobra la app con tarjeta?</summary><p>La app registra cada cobro (efectivo o tarjeta, con el cambio y la cuenta dividida), pero el pago con tarjeta lo hace tu datáfono de siempre. Los pedidos online se pagan al recoger o al recibirlos.</p></details>
+          <details class="reveal"><summary>¿Y si se va internet?</summary><p>PanGestión necesita conexión para que cocina, sala y pedidos estén sincronizados en tiempo real. Con los datos del móvil es suficiente para seguir trabajando.</p></details>
+          <details class="reveal"><summary>¿Puedo tener varios locales?</summary><p>Sí. Cada local tiene su carta, sus horarios, su equipo y sus datos, separados de los demás.</p></details>
+          <details class="reveal"><summary>¿Quién ve los datos de mis clientes?</summary><p>Solo tu equipo, y cada persona según su puesto. Los datos personales se guardan cifrados en servidores de la Unión Europea.</p></details>
+          <details class="reveal"><summary>¿Me ayudáis a empezar?</summary><p>Sí. Te damos de alta, te ayudamos a cargar la carta y te enseñamos a usarla en una videollamada corta.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CONTACTO ================= -->
+    <section class="section section--dark cta" id="contacto" aria-labelledby="contacto-title">
+      <div class="wrap wrap--narrow">
+        <img class="cta__logo reveal" src="assets/logo-simbolo.svg" alt="" width="72" height="72">
+        <h2 class="section__title reveal" id="contacto-title">¿Lo vemos funcionando en tu local?</h2>
+        <p class="lead reveal">Cuéntanos qué negocio tienes y te enseñamos PanGestión con tu propia carta. Sin compromiso.</p>
+        <!-- Se envia por email (mailto:) al correo de data-email. Vacio: se muestra el aviso de abajo. -->
+        <form class="contact reveal" id="contact-form" data-email="" novalidate>
+          <div class="contact__row">
+            <label>Tu nombre<input name="nombre" autocomplete="name" required></label>
+            <label>Nombre del negocio<input name="negocio" autocomplete="organization" required></label>
+          </div>
+          <div class="contact__row">
+            <label>Tipo de negocio
+              <select name="tipo">
+                <option>Panadería / obrador</option>
+                <option>Bar / restaurante</option>
+                <option>Panadería con cafetería</option>
+                <option>Otro</option>
+              </select>
+            </label>
+            <label>Teléfono o email<input name="contacto" autocomplete="email" required></label>
+          </div>
+          <label>¿Qué te gustaría resolver? <small>(opcional)</small><textarea name="mensaje" rows="3"></textarea></label>
+          <button class="btn" type="submit">Quiero una demo</button>
+          <p class="contact__note" id="contact-note" role="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <a class="nav__logo" href="#arriba"><img src="assets/logo-simbolo.svg" alt="" width="28" height="28"><span><b>Pan</b>Gestión</span></a>
+      <nav aria-label="Pie de página">
+        <a href="#funciones">Funciones</a>
+        <a href="#precios">Precios</a>
+        <a href="#preguntas">Preguntas</a>
+        <a href="app/">Entrar en la app</a>
+      </nav>
+      <p>© <span id="year">2026</span> PanGestión</p>
+    </div>
+  </footer>
+</body>
+</html>

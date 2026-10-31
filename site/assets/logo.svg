@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="PanGestión">
+  <defs>
+    <linearGradient id="pg-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FBBF24"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#pg-bg)"/>
+  <path d="M10 41c0-13.3 9.9-23 22-23s22 9.7 22 23c0 3.3-2.2 5-5 5H15c-2.8 0-5-1.7-5-5z" fill="#FFF7E6"/>
+  <rect x="20" y="34" width="5" height="7" rx="2.5" fill="#B45309"/>
+  <rect x="29.5" y="29" width="5" height="12" rx="2.5" fill="#B45309"/>
+  <rect x="39" y="24" width="5" height="17" rx="2.5" fill="#B45309"/>
+  <rect x="10" y="49" width="44" height="3.5" rx="1.75" fill="#0B1324" opacity=".85"/>
+  <text x="78" y="43" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5">
+    <tspan fill="#B45309">Pan</tspan><tspan fill="currentColor">Gestión</tspan>
+  </text>
+</svg>

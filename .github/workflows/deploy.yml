@@ -1,7 +1,8 @@
 name: Desplegar
 
 # Al fusionar en main: se vuelven a pasar todos los tests y la seguridad; si todo esta en verde se despliega
-# la API en la VM (Google Cloud) y despues el frontend en GitHub Pages, y se prueba produccion.
+# la API en la VM (Google Cloud) y despues GitHub Pages (web promocional en la raiz y la app en /app/),
+# y se prueba produccion.
 on:
   push:
     branches: [main]
@@ -52,19 +53,24 @@ jobs:
           EOF
           node -e "const f='ngsw-config.json',c=require('./'+f);c.appData={version:'$version'};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           cat src/environments/version.ts
-      # El sitio se sirve en https://<usuario>.github.io/<repositorio>/
-      - run: npx ng build --base-href "/${{ github.event.repository.name }}/"
-      # GitHub Pages no conoce las rutas de Angular:
-      # - 404.html = index.html para que cualquier ruta funcione al recargar
-      # - pedido/index.html para que la web de pedidos (y su app instalable) responda 200 y no 404
-      - name: Rutas de Angular en Pages
-        working-directory: dist/gestion-pedidos/browser
+      # Pages: https://<usuario>.github.io/<repositorio>/ es la web promocional (site/) y /app/ es la app
+      - run: npx ng build --base-href "/${{ github.event.repository.name }}/app/"
+      - name: Montar la web y la app
         run: |
-          cp index.html 404.html
-          mkdir -p pedido && cp index.html pedido/index.html
+          mkdir -p pages
+          cp -r site/. pages/
+          cp -r dist/gestion-pedidos/browser pages/app
+          # GitHub Pages no conoce las rutas de Angular: pedido/index.html para que la web de pedidos (y su app
+          # instalable) responda 200, y 404.html = la app, para que cualquier ruta funcione al recargar.
+          # Los enlaces de antes de mover la app a /app/ (/pedido, /auth/login...) los redirige pwa-init.js.
+          mkdir -p pages/app/pedido && cp pages/app/index.html pages/app/pedido/index.html
+          cp pages/app/index.html pages/404.html
+          # Quien instalo la app cuando estaba en la raiz tiene alli su service worker: se cambia por el
+          # "safety worker" de Angular, que lo da de baja y borra su cache (despues abre la web nueva)
+          cp pages/app/safety-worker.js pages/ngsw-worker.js
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/gestion-pedidos/browser
+          path: pages
 
   deploy-api:
     name: Desplegar API (VM)
@@ -128,11 +134,14 @@ jobs:
           set -eu
           # Pages tarda un poco en publicar: se reintenta hasta que sirve esta version
           for i in $(seq 1 30); do
-            curl -fsS --max-time 10 "$WEB_URL/ngsw.json" -o ngsw.json && grep -q '"hashTable"' ngsw.json && break
+            curl -fsS --max-time 10 "$WEB_URL/app/ngsw.json" -o ngsw.json && grep -q '"hashTable"' ngsw.json && break
             sleep 10
           done
-          for path in "/" "/pedido/" "/manifest.webmanifest" "/pedido.webmanifest" "/ngsw-worker.js"; do
+          for path in "/" "/assets/logo.svg" "/app/" "/app/pedido/" "/app/manifest.webmanifest" "/app/pedido.webmanifest" "/app/ngsw-worker.js"; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$WEB_URL$path")
             echo "$code  $WEB_URL$path"; [ "$code" = "200" ]
           done
+          # Web promocional y app con su CSP
+          curl -fsS "$WEB_URL/" | grep -q 'Del horno a la mesa'
           curl -fsS "$WEB_URL/" | grep -q 'Content-Security-Policy'
+          curl -fsS "$WEB_URL/app/" | grep -q 'Content-Security-Policy'

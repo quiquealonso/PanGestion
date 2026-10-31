@@ -1,250 +1,97 @@
-# PanGestión
+<p align="center">
+  <img src="site/assets/logo-512.png" alt="PanGestión" width="120">
+</p>
 
-Plataforma de **pedidos y gestión para panaderías, bares y restaurantes**. Cada negocio tiene su propio panel
-(catálogo, clientes, pedidos, producción y usuarios) y sus clientes piden desde una web pública eligiendo
-día y hora de recogida.
+<h1 align="center">PanGestión</h1>
 
-| Parte | Carpeta | Tecnología |
-|---|---|---|
-| Frontend | raíz (`src/`) | Angular 22 · panel de gestión + web pública de pedidos |
-| Backend | [`backend/`](backend/README.md) | Java 21 · Spring Boot 4 · Spring Data JPA / Hibernate · Spring Security (JWT) |
-| Base de datos | — | H2 en fichero (desarrollo) o PostgreSQL |
+<p align="center">
+  <b>Pedidos online, obrador, sala, cocina y reparto de una panadería o un bar, en una sola app.</b><br>
+  <a href="https://quiquealonso.github.io/PanGestion/">Web del producto</a> ·
+  <a href="https://quiquealonso.github.io/PanGestion/app/">App</a> ·
+  <a href="docs/desarrollo.md">Desarrollo</a> ·
+  <a href="docs/despliegue.md">Despliegue</a>
+</p>
 
-El modelo de datos, las reglas de negocio y todos los endpoints están documentados en [`backend/README.md`](backend/README.md).
-El contexto del proyecto y las decisiones tomadas, en [`context.md`](context.md).
+---
 
-## Funcionalidades
+## Qué es
 
-**Panel de gestión** (requiere login):
+PanGestión es una aplicación web para gestionar el día a día de **panaderías, obradores, bares y restaurantes**.
+Sustituye la libreta de encargos, el WhatsApp, las comandas en papel y las cuentas en la calculadora:
 
-- **Inicio:** pedidos pendientes, en proceso y listos, recogidas de hoy, facturación del mes, clientes, gráfica de
-  unidades vendidas por día comparando semanas y ranking de productos más vendidos.
-- **Pedidos:** vista por día (hoy por defecto), detalle, cambio de estado, edición y borrado. Botones para
-  **descargar** lo que hay que preparar el día (`producto: cantidad`) y **pasar a "en proceso"** todos los pendientes del día.
-- **Producción del día:** tabla producto × franja horaria que se actualiza sola, pensada para la pantalla del obrador o la cocina.
-- **Nuevo pedido:** productos por categorías con carrito flotante → resumen (quitar ingredientes: "pizza sin cebolla") → cliente → día y franja.
-- **Catálogo:** productos (foto, precio, descripción, abreviatura, color, ingredientes, orden), categorías e ingredientes con alérgenos.
-- **Clientes:** estadísticas (nuevos por semana, activos, gasto medio…), filtros por pedidos y gasto, tarjetas con pedidos y total gastado.
-- **Mi empresa** (datos y horario de recogida) y **Usuarios** con roles.
-- **Superadministrador:** alta de empresas (panadería, bar o restaurante) y de sus usuarios.
-- **Modo claro y oscuro** del panel (botón en el menú; por defecto, el del sistema).
+- **Los clientes** piden desde el móvil, eligen hora de recogida o entrega a domicilio y ven qué lleva cada producto.
+- **El obrador** sabe cuánto tiene que hacer de cada producto y para qué hora.
+- **La sala** trabaja con el plano de mesas en el móvil del camarero.
+- **La cocina y la barra** reciben cada comanda al instante en su pantalla.
+- **El repartidor** ve en su móvil qué tiene que llevar y adónde.
+- **El dueño** ve ventas, productos más vendidos y la caja del día.
 
-**Sala** (solo bares y restaurantes):
+Todo funciona en el navegador (móvil, tablet u ordenador) y se puede instalar como una app sin pasar por ninguna tienda de aplicaciones.
 
-- **Sala y mesas:** editor visual del plano por zonas (terraza, interior…): crear, mover, redimensionar y borrar mesas.
-- **Servicio de mesas** (camarero, en el móvil): plano en vivo, abrir mesa juntando otras, comanda por rondas.
-- **Cocina y barra:** pantalla táctil con el estado de cada producto (pendiente → preparando → listo); mesas y pedidos para llevar diferenciados.
-- **Avisos en tiempo real:** cocina recibe las rondas al instante y el camarero un aviso con sonido cuando algo está listo.
-- **Barra y cobros:** cobrar todo, entre comensales o a partes iguales (efectivo con cambio o tarjeta), precuenta de 80 mm y caja del día.
-- **Pedidos a domicilio y reparto:** el cliente elige recoger o a domicilio; el repartidor, desde el móvil, se lleva los pedidos listos (Transportando) y los marca entregados; recibe un aviso cuando cocina termina uno.
-- **Informes de sala:** facturación, ticket medio, horas punta, más vendidos, camareros, mesas y tiempos de cocina.
+<p align="center">
+  <img src="site/assets/capturas/inicio-panaderia.webp" alt="Inicio de una panadería: pedidos pendientes, en proceso y listos, facturación y más vendidos" width="49%">
+  <img src="site/assets/capturas/cocina.webp" alt="Pantalla de cocina con las comandas de cada mesa" width="49%">
+</p>
 
-**Web pública** (`/pedido`, sin login, pensada para el móvil y para cualquier edad): asistente de 5 pasos —
-negocio → productos → revisar (quitar ingredientes) → datos → día y hora + confirmar— con botones grandes,
-instrucciones en cada paso y número de pedido al terminar.
+## Qué hace
 
-## Requisitos
+### Para panaderías y obradores
 
-- **Java 21** o superior. Maven no hace falta: se descarga solo con `mvnw`.
-- **Node.js 24.15** o superior (lo exige Angular CLI 22).
-- PostgreSQL solo si se quiere usar en lugar de H2 (hay un `backend/docker-compose.yml`).
+| | |
+|---|---|
+| **Web de pedidos propia** | El cliente elige local, productos y hora de recogida. Puede quitar ingredientes («sin cebolla») o añadir extras con precio. |
+| **Franjas con aforo** | Recogida por franjas (cada 30 o 60 min) con un máximo de pedidos por franja: no se aceptan más de los que se pueden preparar. |
+| **Producción del día** | Tabla de producto × franja horaria que se actualiza sola con cada pedido; pensada para la pantalla del obrador. |
+| **Pedidos** | Por día y por estado (pendiente → en proceso → listo → entregado), con descarga de lo que hay que preparar. |
+| **Carta** | Productos con foto, precio, ingredientes, alérgenos, extras y orden de preparación. |
+| **Clientes y ventas** | Ficha de cada cliente con sus pedidos y su gasto, ventas por día comparadas con la semana anterior y ranking de productos. |
 
-## Empezar en otro ordenador (por ejemplo, en clase)
+### Para bares y restaurantes
 
-Requisitos: Git, Java 21+ y Node 24.15+ (ver [Requisitos](#requisitos)).
+| | |
+|---|---|
+| **Plano de la sala** | Editor visual por zonas (interior, terraza…) con mesas redondas, cuadradas, alargadas y taburetes. |
+| **Camarero en el móvil** | Abre mesas (y las junta), apunta rondas y ve en vivo qué mesas están ocupadas. |
+| **Cocina y barra en directo** | Pantallas táctiles con cada comanda: pendiente → preparando → listo. Cada producto va a quien lo prepara. |
+| **Avisos** | Cuando algo está listo, al camarero le suena y le vibra el móvil; el repartidor recibe aviso de lo que hay que llevar. |
+| **Cobro** | Efectivo (con el cambio) o tarjeta, cuenta a medias o por comensal, precuenta y caja del día. |
+| **Reparto a domicilio** | Pedidos con dirección; el repartidor marca «me lo llevo» y «entregado» desde su móvil. |
+| **Informes de sala** | Facturación, ticket medio, horas punta, más vendidos, camareros, mesas y tiempos de cocina. |
 
-**1. Clonar e instalar**
+### Para todos
 
-```bash
-git clone https://github.com/quiquealonso/PanGestion.git
-cd PanGestion
-npm ci
-```
-
-**2. Restaurar la base de datos de pruebas** (opcional pero recomendado: trae los ~310 pedidos de ejemplo, la
-panadería con fotos y el bar El Mosset). Sin este paso, el backend crea los datos de ejemplo básicos al arrancar.
-La copia no está en el repositorio (es público): copia el zip desde el SSD
-(`D:\2DAW\DesarrolloServidor\PanGestion-backups\`) a una carpeta `backups/` en la raíz del proyecto, que Git ignora.
-
-```bash
-# Linux / macOS
-unzip backups/pangestion-backup-2026-10-18.zip -x LEEME.txt -d backend
-```
-
-```powershell
-# Windows (PowerShell)
-Expand-Archive backups\pangestion-backup-2026-10-18.zip -DestinationPath backend\restore-tmp
-Move-Item backend\restore-tmp\data, backend\restore-tmp\uploads backend\
-Remove-Item -Recurse backend\restore-tmp
-```
-
-Debe quedar `backend/data/pangestion.mv.db` y `backend/uploads/1/products/...`.
-
-**3. Arrancar** (dos terminales):
-
-```bash
-cd backend && ./mvnw spring-boot:run      # Windows: mvnw.cmd spring-boot:run   (puerto 8080)
-npm start                                 # en la raíz (puerto 4200)
-```
-
-Abre http://localhost:4200 y entra con un usuario de prueba (botón **Usar** en el login).
-
-## Arrancar en local
-
-1. **Backend** (puerto 8080). La primera vez crea la base de datos H2 en `backend/data/` con datos de ejemplo:
-
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
-   ```
-
-2. **Frontend** (puerto 4200). `npm start` usa `proxy.conf.json`, que manda `/api` y `/uploads` al backend:
-
-   ```bash
-   npm ci
-   npm start                     # otro puerto: npm start -- --port 4201
-   ```
-
-3. Abre http://localhost:4200. En el login aparecen los usuarios de prueba (solo en desarrollo) con un botón
-   **Usar** que rellena el formulario. La web pública está en http://localhost:4200/pedido.
-
-### Usuarios de prueba
-
-| Usuario | Contraseña | Qué ve |
-|---|---|---|
-| `superadmin@admin.es` | `admin1234` | Empresas y usuarios de todas |
-| `admin@admin.es` | `admin1234` | Panadería (catálogo real con fotos) |
-| `admin2@admin.es` | `admin1234` | Bar El Mosset (carta completa) |
-| `gestor@pangestion.local` | `gestor123` | Panadería, sin usuarios ni datos de empresa |
-| `visor@pangestion.local` | `visor123` | Panadería, solo lectura |
-| `camarero@pangestion.local` | `camarero123` | Bar El Mosset: servicio de mesas y cobros |
-| `cocina@pangestion.local` | `cocina123` | Bar El Mosset: pantalla de cocina y barra |
-
-Se crean en `backend/src/main/java/com/pangestion/config/DataInitializer.java` y se listan en el login desde
-`src/environments/environment.ts`. El build de producción no los incluye. **Hay que quitarlos antes de publicar.**
-
-### Empezar con la base de datos limpia
-
-Para el backend, borra `backend/data/` (base de datos) y `backend/uploads/` (imágenes subidas) y vuelve a arrancarlo:
-se cargan de nuevo los datos de ejemplo, incluidas las fotos de `backend/src/main/resources/seed-images/` y la carta
-de `backend/src/main/resources/seed/el-mosset.json`.
-
-### Con PostgreSQL
-
-```bash
-cd backend
-cp .env.example .env          # y rellena DB_USER, DB_PASSWORD y JWT_SECRET
-docker compose up -d
-./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres
-```
-
-Las credenciales van en `backend/.env`, que **no se sube a Git**. Con PostgreSQL no se crean usuarios de prueba
-salvo que se ponga `SEED_DATA=true`.
-
-## Compilar y probar
-
-```bash
-npm run build                    # frontend (dist/gestion-pedidos)
-cd backend && ./mvnw test        # test del backend (BD en memoria)
-cd backend && ./mvnw package     # backend (jar en backend/target)
-```
-
-## Integración y despliegue continuos
-
-| Cuándo | Qué se ejecuta | Workflow |
-|---|---|---|
-| Push a cualquier rama (menos `main`) | Tests rápidos del backend (unidad y reglas de negocio) y tests y build del frontend | `ci.yml` |
-| Pull request | Todos los tests del backend, frontend y seguridad (gitleaks, `npm audit`, OSV) | `ci.yml`, `security.yml` |
-| Fusionar en `main` | Otra vez todos los tests y la seguridad; después se despliega la API en la VM y el frontend en Pages, y se pasan pruebas de humo contra producción | `deploy.yml` |
-
-- **Rama `main` protegida:** solo se llega por PR, con los checks en verde.
-- **Despliegue de la API:** Actions entra por SSH con una clave que solo puede ejecutar `~/pangestion/deploy.sh` en la VM (copia de `backend/deploy/deploy.sh`). El script hace lo siguiente:
-  1. Comprueba que el commit está en `main`.
-  2. Hace una copia de la BBDD en `~/pangestion/backups`, donde guarda las últimas 14.
-  3. Construye la imagen y arranca los contenedores.
-  4. Espera a que la API responda; si no responde, vuelve al commit anterior.
-- **Secretos del repositorio:** `VM_SSH_KEY` (clave privada de despliegue) y `VM_KNOWN_HOSTS` (huella de la VM).
-- **Desplegar a mano, en la VM:** `~/pangestion/deploy.sh <sha de main>`.
-
-## App instalable (PWA)
-
-La web se puede instalar en el móvil o en el ordenador desde el navegador: en Chrome, con «Instalar app»; en el iPhone, con Compartir → «Añadir a pantalla de inicio». Son dos apps distintas:
-
-- **PanGestión** (`/PanGestion/`): la de gestión.
-- **Pedir** (`/PanGestion/pedido`): la de pedidos de clientes.
-
-- **Instalar:** en el móvil sale un aviso «Instala la app». En Android se instala con el botón; en iPhone, Apple solo permite hacerlo a mano, así que el aviso explica cómo.
-- **Versiones:** cada despliegue tiene una versión (`1.0.<número de despliegue>`), que aparece en la pantalla de acceso. Para subir la versión mayor o menor, cambia `version` en `package.json`.
-- **Actualizar:** las apps abiertas o instaladas detectan la versión nueva (al abrirlas, al volver a ellas y cada 5 minutos) y muestran el botón «Actualizar», que la activa y recarga.
-- **Datos:** siempre se piden a la API; nada se guarda sin conexión.
-
-## Cuentas de cliente y emails
-
-> **Ahora mismo están desactivadas** (`CUSTOMER_ACCOUNTS_ENABLED=false`): se pide sin cuenta, como antes. Lo que falta para activarlas está en [docs/pendientes.md](docs/pendientes.md).
-
-Con las cuentas activas, para pedir en la web pública hay que tener una cuenta: es lo primero que se pide, antes de elegir el establecimiento. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
-
-Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`), junto con `CUSTOMER_ACCOUNTS_ENABLED=true`. Si las cuentas están activas y no hay SMTP, se activan sin confirmar el email.
-
-1. **Gmail** (gratis, unos 500 emails al día):
-   - Activa la verificación en 2 pasos en tu cuenta de Google.
-   - Crea una contraseña de aplicación en https://myaccount.google.com/apppasswords.
-   - Pon esto en el `.env`, con tus datos:
-     ```
-     SMTP_HOST=smtp.gmail.com
-     SMTP_PORT=587
-     SMTP_USERNAME=tu correo de Gmail
-     SMTP_PASSWORD=la contraseña de aplicación (16 letras, sin espacios)
-     MAIL_FROM="PanGestión <tu correo de Gmail>"
-     ```
-2. Reinicia la API: en la VM, `cd ~/pangestion/app/backend/deploy && docker compose up -d api`.
-
-Otros proveedores con plan gratis, como Brevo (300 al día) o Mailjet, funcionan igual: cambia `SMTP_HOST` y las credenciales.
+- **Roles:** administrador, encargado, solo lectura, camarero, cocina y repartidor. Cada uno ve solo lo que necesita.
+- **Varios negocios:** cada local tiene su carta, sus horarios, su logo, su equipo y sus datos, separados de los demás.
+- **App instalable (PWA):** se avisa en el móvil para instalarla, y cada actualización llega con un botón «Actualizar».
+- **Modo claro y oscuro.**
 
 ## Seguridad
 
-Las reglas de seguridad, con su estado y su comprobación, están en [docs/reglas-seguridad.md](docs/reglas-seguridad.md). Añade allí las nuevas.
+- Los datos personales de los clientes (teléfono, CIF y dirección) se guardan **cifrados con AES-256**, y las contraseñas, con BCrypt.
+- Todo viaja por **HTTPS**, con cabeceras de seguridad, límite de intentos de login y protección contra bots.
+- Los servidores están en **Google Cloud, en Madrid**. Antes de cada actualización se hace una copia de la base de datos.
+- Cada cambio pasa **cientos de tests automáticos** y escaneos de secretos y dependencias antes de publicarse.
 
-- **Autenticación en el servidor:** JWT HS256 en la cabecera `Authorization` (sin cookies, porque el frontend y la API están en dominios distintos). Las reglas de acceso por rol están en `SecurityConfig`, y cada servicio filtra por el `companyId` del token. Pedir datos de otra empresa devuelve 404.
-- **Contraseñas:** se guardan con BCrypt y deben tener 8 caracteres como mínimo. El login tarda lo mismo exista o no el email, así que el tiempo de respuesta no revela qué cuentas existen.
-- **Límite de intentos:** el login admite 20 intentos cada 5 minutos por IP y 10 cada 15 minutos por email. La web pública admite 10 pedidos por hora y por IP. Al superar el límite, la API responde con 429 y `Retry-After`.
-- **Bots:** el formulario público incluye un campo trampa oculto (`website`); si llega relleno, la API rechaza el pedido.
-- **Datos personales cifrados (AES-256-GCM):** el teléfono y el CIF de los clientes y la dirección de entrega se cifran con la clave `ENCRYPTION_KEY`. Guarda una copia de esa clave: si se pierde, esos datos no se pueden leer.
-- **Entradas y respuestas:** los DTO tienen Bean Validation y la API rechaza los campos que no existen. Las consultas usan JPQL con parámetros. La web pública solo recibe los datos que necesita.
-- **Subida de imágenes:** solo JPEG, PNG o WebP, comprobados por su firma, de 2 MB como máximo y con un nombre aleatorio.
-- **HTTPS y cabeceras:** Caddy redirige a HTTPS y añade HSTS, CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy` (`backend/deploy/Caddyfile`). El frontend de producción lleva su propia CSP (`src/index.prod.html`); si cambia la URL de la API, hay que cambiarla también allí.
-- **Secretos y dependencias:** el workflow "Seguridad" pasa gitleaks sobre el historial, `npm audit` y OSV-Scanner en cada PR y cada lunes. Dependabot abre PR semanales contra `dev`.
+Las reglas de seguridad, con cómo se cumple cada una y qué la comprueba, están en [docs/reglas-seguridad.md](docs/reglas-seguridad.md).
 
-## Estructura
+## Cómo está hecho
 
-```
-PanGestion/
-├── src/app/                  Frontend Angular
-│   ├── core/                 modelos, servicios HTTP, guards, interceptor, utilidades
-│   ├── shared/               diálogo, confirmación, formulario de empresa, pipes, mesa, avisos, gráfico de barras
-│   ├── layout/shell/         menú lateral según rol y tipo de negocio
-│   └── features/             una carpeta por pantalla (dashboard, orders, production, catalog, customers,
-│                             dining, service, kitchen, bar, dining-report…)
-├── backend/                  API Spring Boot (ver backend/README.md)
-│   ├── src/main/java/com/pangestion/   config, controller, dto, events, exception, model, repository, security, service, storage
-│   └── src/main/resources/             application*.properties, seed/ (cartas), seed-images/ (fotos de ejemplo)
-├── proxy.conf.json           /api y /uploads → localhost:8080 en desarrollo
-└── context.md                contexto y decisiones del proyecto
-```
+| Parte | Tecnología |
+|---|---|
+| Frontend | Angular 22 (PWA), publicado en GitHub Pages |
+| Backend | Java 21, Spring Boot 4, Spring Security (JWT), Spring Data JPA |
+| Base de datos | PostgreSQL 17 (H2 en desarrollo) |
+| Servidor | VM de Google Cloud con Docker y Caddy (HTTPS automático) |
+| Tiempo real | Server-Sent Events (cocina, sala y avisos) |
+| CI/CD | GitHub Actions: tests en cada push, despliegue automático al fusionar en `main` |
 
-## Cambiar de sistema operativo (Windows ⇄ Linux)
+## Documentación
 
-`node_modules`, `.angular/`, `dist/`, `backend/target/`, `backend/data/` y `backend/uploads/` son **locales de cada
-máquina**: no se copian ni se suben a Git. Lo normal es clonar el repositorio en cada sistema e instalar allí:
-
-```bash
-git clone https://github.com/quiquealonso/PanGestion.git
-cd PanGestion
-npm ci                      # en un disco exFAT/FAT: npm ci --no-bin-links
-```
-
-- **Binarios nativos:** esbuild y otros paquetes instalan un ejecutable distinto en Windows y en Linux; un `node_modules` instalado en un sistema no sirve en el otro.
-- **Discos exFAT** (SSD portátil): no admiten enlaces simbólicos ni permisos de ejecución. Se instala con `--no-bin-links` (los scripts de `package.json` llaman al CLI de Angular con `node` directamente) y `mvnw` se lanza con `sh mvnw ...`. Git además pedirá `git config --global --add safe.directory <ruta>`.
-- **`mvnw` en Linux:** está marcado como ejecutable en Git; si aun así falla, `chmod +x backend/mvnw`.
-- **Finales de línea:** `.gitattributes` y `.editorconfig` fuerzan LF (CRLF solo para `.cmd`).
-- **Datos e imágenes:** la base de datos H2 y las fotos subidas no se sincronizan solas. Para llevarlas a otra máquina hay una copia en el SSD que se coloca en `backups/` (no se sube a Git) (ver [Empezar en otro ordenador](#empezar-en-otro-ordenador-por-ejemplo-en-clase)); si no se restaura, se generan los datos de ejemplo básicos.
+| Documento | Contenido |
+|---|---|
+| [docs/desarrollo.md](docs/desarrollo.md) | Ponerlo en marcha en local, usuarios de prueba, compilar y probar, estructura |
+| [docs/despliegue.md](docs/despliegue.md) | Producción, CI/CD, app instalable, cuentas de cliente y correo |
+| [docs/reglas-seguridad.md](docs/reglas-seguridad.md) | Reglas de seguridad y cómo se comprueban |
+| [docs/pendientes.md](docs/pendientes.md) | Lo que queda por hacer |
+| [backend/README.md](backend/README.md) | Modelo de datos, reglas de negocio y endpoints de la API |
+| [context.md](context.md) | Contexto del proyecto y decisiones tomadas |

@@ -1,3 +1,14 @@
+// Enlaces de cuando la app estaba en la raiz del sitio (/PanGestion/pedido...): ahora esta en /PanGestion/app/.
+// GitHub Pages los sirve con 404.html (esta app), y aqui se llevan a su sitio nuevo.
+(function () {
+  var base = new URL(document.baseURI).pathname; // /PanGestion/app/ en produccion, / en local
+  var parent = base.replace(/[^/]+\/$/, ''); // /PanGestion/
+  var path = location.pathname;
+  if (parent !== base && path + '/' !== base && path.indexOf(base) !== 0 && path.indexOf(parent) === 0) {
+    location.replace(base + path.slice(parent.length) + location.search + location.hash);
+  }
+})();
+
 // Dos apps instalables en el mismo sitio: la de gestion y la de pedidos de clientes (/pedido).
 // Antes de que arranque Angular se elige el manifiesto (nombre, icono y pantalla de inicio) segun la ruta.
 try {

@@ -39,7 +39,7 @@ services:
       # Cuentas de cliente (pedir solo con cuenta); desactivadas por ahora, ver docs/pendientes.md
       CUSTOMER_ACCOUNTS_ENABLED: ${CUSTOMER_ACCOUNTS_ENABLED:-false}
       # Web publica (enlace del email de confirmacion de cuentas) y SMTP para enviarlo; sin SMTP no hay confirmacion
-      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-https://quiquealonso.github.io/PanGestion}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-https://quiquealonso.github.io/PanGestion/app}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
