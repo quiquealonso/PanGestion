@@ -15,6 +15,7 @@ import com.pangestion.service.ProductService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,6 +42,18 @@ public class PublicController {
     private final IngredientService ingredientService;
     private final RateLimiter rateLimiter;
     private final CustomerAccountService accountService;
+
+    @Value("${app.customer-accounts.enabled:false}")
+    private boolean customerAccountsEnabled;
+
+    /** Configuracion de la web publica: si para pedir hace falta cuenta de cliente. */
+    @GetMapping("/settings")
+    public PublicSettings settings() {
+        return new PublicSettings(customerAccountsEnabled);
+    }
+
+    public record PublicSettings(boolean customerAccounts) {
+    }
 
     /** Panaderias que aceptan pedidos. */
     @GetMapping("/companies")
@@ -74,14 +87,15 @@ public class PublicController {
 
     /**
      * 201 con Location al detalle canonico del pedido (/api/orders/{id}, que consulta el negocio).
-     * Solo con cuenta de cliente (token con rol CLIENTE, ver SecurityConfig).
+     * Con cuentas de cliente activas, solo con su token (rol CLIENTE, ver SecurityConfig); si no, con los datos de customer.
      * Contra bots: como mucho 10 pedidos por hora desde una IP, y el campo trampa "website" debe llegar vacio.
      */
     @PostMapping("/orders")
     public ResponseEntity<OrderDto.PublicResponse> createOrder(@Valid @RequestBody OrderDto.PublicRequest request,
                                                                @AuthenticationPrincipal Jwt jwt, HttpServletRequest http) {
         rateLimiter.check("public-order-ip:" + http.getRemoteAddr(), 10, Duration.ofHours(1));
-        OrderDto.PublicResponse created = orderService.createPublic(request, accountService.getVerified(jwt.getSubject()));
+        OrderDto.PublicResponse created = orderService.createPublic(request,
+                customerAccountsEnabled ? accountService.getVerified(jwt.getSubject()) : null);
         return ResponseEntity.created(Locations.of("/api/orders/{id}", created.id())).body(created);
     }
 }

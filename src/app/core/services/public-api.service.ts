@@ -12,7 +12,9 @@ export interface PublicOrderRequest {
   companyId: number;
   pickupDate: string;
   pickupTime: string;
-  /** Telefono para este pedido (a domicilio, obligatorio); el nombre y el email salen de la cuenta del cliente */
+  /** Datos del cliente: solo sin cuentas de cliente (con cuentas, salen de la cuenta) */
+  customer: { name: string; email: string; phone: string | null; businessName: null; taxId: null } | null;
+  /** Telefono para este pedido (a domicilio, obligatorio) */
   phone: string | null;
   notes: string | null;
   /** RECOGER (por defecto) o DOMICILIO, que necesita la direccion */
@@ -31,6 +33,11 @@ export class PublicApiService {
   private readonly url = `${environment.apiBaseUrl}/public`;
 
   /** Panaderias que aceptan pedidos. */
+  /** customerAccounts: para pedir hace falta cuenta de cliente (se activa en el servidor, CUSTOMER_ACCOUNTS_ENABLED). */
+  settings(): Observable<{ customerAccounts: boolean }> {
+    return this.http.get<{ customerAccounts: boolean }>(`${this.url}/settings`);
+  }
+
   companies(): Observable<Company[]> {
     return this.http.get<Company[]>(`${this.url}/companies`);
   }

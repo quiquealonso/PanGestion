@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
 import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,8 +37,8 @@ import java.util.List;
 
 /**
  * Seguridad de la API:
- * - /api/auth/login y /api/public/** son publicos (login, catalogo y cuentas de clientes), salvo hacer un pedido
- *   y ver la cuenta, que necesitan el token de un cliente (rol CLIENTE).
+ * - /api/auth/login y /api/public/** son publicos (login, catalogo y cuentas de clientes). Con las cuentas de cliente
+ *   activas (app.customer-accounts.enabled), hacer un pedido y ver la cuenta necesitan el token de un cliente (CLIENTE).
  * - Los clientes (CLIENTE) no pueden usar nada de la API de gestion.
  * - /api/companies (alta de panaderias): solo SUPERADMIN.
  * - /api/users: SUPERADMIN (todos) y ADMIN (los de su empresa).
@@ -54,6 +55,9 @@ public class SecurityConfig {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
+    @Value("${app.customer-accounts.enabled:false}")
+    private boolean customerAccountsEnabled;
+
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
@@ -68,8 +72,10 @@ public class SecurityConfig {
                         // Envios posteriores de una respuesta asincrona (avisos SSE): la peticion ya se autorizo al abrirla
                         .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Clientes de la web publica: pedir y su cuenta, con su token
-                        .requestMatchers(HttpMethod.POST, "/api/public/orders").hasRole(TokenService.CUSTOMER_ROLE)
+                        // Clientes de la web publica: con cuentas activas, pedir y su cuenta solo con su token
+                        .requestMatchers(HttpMethod.POST, "/api/public/orders").access(customerAccountsEnabled
+                                ? AuthorityAuthorizationManager.hasRole(TokenService.CUSTOMER_ROLE)
+                                : (authentication, context) -> new AuthorizationDecision(true))
                         .requestMatchers("/api/public/account/me").hasRole(TokenService.CUSTOMER_ROLE)
                         .requestMatchers("/api/auth/login", "/api/public/**", "/uploads/**", "/h2-console/**", "/error").permitAll()
                         .requestMatchers("/api/companies/**").hasRole("SUPERADMIN")

@@ -180,9 +180,11 @@ La web se puede instalar en el móvil o en el ordenador desde el navegador: en C
 
 ## Cuentas de cliente y emails
 
-Para pedir en la web pública hay que tener una cuenta: es lo primero que se pide, antes de elegir el establecimiento. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
+> **Ahora mismo están desactivadas** (`CUSTOMER_ACCOUNTS_ENABLED=false`): se pide sin cuenta, como antes. Lo que falta para activarlas está en [docs/pendientes.md](docs/pendientes.md).
 
-Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`). Mientras no haya SMTP, las cuentas se activan sin confirmar el email.
+Con las cuentas activas, para pedir en la web pública hay que tener una cuenta: es lo primero que se pide, antes de elegir el establecimiento. Al crearla se envía un email con un enlace para confirmarla (caduca a las 24 horas). Los emails salen del backend por SMTP: GitHub no ofrece SMTP.
+
+Configúralo en el `.env` de la VM (`~/pangestion/app/backend/deploy/.env`), junto con `CUSTOMER_ACCOUNTS_ENABLED=true`. Si las cuentas están activas y no hay SMTP, se activan sin confirmar el email.
 
 1. **Gmail** (gratis, unos 500 emails al día):
    - Activa la verificación en 2 pasos en tu cuenta de Google.

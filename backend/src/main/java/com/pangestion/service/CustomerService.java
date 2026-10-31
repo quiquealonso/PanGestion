@@ -74,8 +74,8 @@ public class CustomerService {
      * o lo crea si es la primera vez que pide alli.
      */
     /**
-     * Ficha de cliente en este negocio para un pedido de la web publica (cuenta con el email confirmado).
-     * Si ya existe, no se cambian sus datos (los corrige el negocio): solo se completa el telefono si no lo tenia.
+     * Ficha de cliente en este negocio para un pedido de la web publica. Si ya existe, no se cambian sus datos (sin cuenta,
+     * cualquiera puede escribir su email; los corrige el negocio): solo se completa el telefono si no lo tenia.
      */
     Customer findOrCreate(Company company, String name, String email, String phone) {
         return customerRepository.findByCompanyIdAndEmailIgnoreCase(company.getId(), email)

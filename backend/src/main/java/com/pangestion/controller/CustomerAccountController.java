@@ -6,6 +6,7 @@ import com.pangestion.service.CustomerAccountService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,7 +18,9 @@ import java.time.Duration;
 /**
  * Cuentas de cliente de la web publica: para hacer un pedido hay que tener cuenta (con el email confirmado).
  * Todo es publico salvo /me, que necesita el token de cliente. Con limite de intentos contra fuerza bruta y spam.
+ * Solo existe con app.customer-accounts.enabled=true (desactivado: 404).
  */
+@ConditionalOnProperty(name = "app.customer-accounts.enabled", havingValue = "true")
 @RestController
 @RequestMapping("/api/public/account")
 @RequiredArgsConstructor

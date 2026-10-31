@@ -6,6 +6,7 @@ import com.pangestion.model.Role;
 import com.pangestion.support.ApiTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.TestPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Cuentas de cliente de la web publica, en un servidor sin SMTP (la cuenta se activa al registrarse). */
 @DisplayName("API · Cuentas de cliente")
+@TestPropertySource(properties = "app.customer-accounts.enabled=true")
 class CustomerAccountApiTest extends ApiTestSupport {
 
     private static final String REGISTER = """

@@ -2,7 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { Category } from '../../core/models/category.model';
 import { BUSINESS_TYPE_LABELS, Company, TimeSlot } from '../../core/models/company.model';
 import { PublicOrder } from '../../core/models/order.model';
@@ -112,6 +112,12 @@ export class PublicOrderPageComponent implements OnInit {
   readonly loadingSlots = signal(false);
 
   readonly loading = signal(true);
+  /** Para pedir hace falta cuenta de cliente (lo decide el servidor: GET /api/public/settings) */
+  readonly accountsRequired = signal(false);
+  /** Hay que entrar en la cuenta antes de empezar el pedido */
+  readonly needsLogin = computed(() => this.accountsRequired() && !this.customerAuth.isLoggedIn());
+  /** Cuenta con la que se pide (solo con cuentas de cliente activas) */
+  readonly orderAccount = computed(() => (this.accountsRequired() ? this.customerAuth.account() : null));
   readonly sending = signal(false);
   readonly error = signal<string | null>(null);
   readonly confirmed = signal<PublicOrder | null>(null);
@@ -147,6 +153,9 @@ export class PublicOrderPageComponent implements OnInit {
   readonly customerErrors = computed(() => {
     const c = this.customer();
     return {
+      // Sin cuentas de cliente el nombre y el email se escriben en el formulario
+      name: !this.accountsRequired() && c.name.trim().length < 2 ? 'Escribe tu nombre.' : null,
+      email: !this.accountsRequired() && !/^\S+@\S+\.\S+$/.test(c.email.trim()) ? 'Escribe un email válido, por ejemplo: nombre@gmail.com' : null,
       phone: c.phone.trim() && !/^[0-9 +]{9,15}$/.test(c.phone.trim()) ? 'Escribe un teléfono de 9 cifras, por ejemplo: 612 345 678' : null,
       // A domicilio: el repartidor necesita la direccion y un telefono para llamar al llegar
       address: this.isDelivery() && this.address().trim().length < 5 ? 'Escribe la dirección: calle, número y piso.' : null,
@@ -164,8 +173,8 @@ export class PublicOrderPageComponent implements OnInit {
         return this.itemCount() > 0 ? null : 'Añade al menos un producto para continuar.';
       case 4: {
         const e = this.customerErrors();
-        if (!this.customerAuth.isLoggedIn()) return 'Entra en tu cuenta o créala para hacer el pedido.';
-        return e.phone || e.address || e.deliveryPhone ? 'Revisa tus datos: hay algún campo sin completar.' : null;
+        if (this.needsLogin()) return 'Entra en tu cuenta o créala para hacer el pedido.';
+        return e.name || e.email || e.phone || e.address || e.deliveryPhone ? 'Revisa tus datos: hay algún campo sin completar.' : null;
       }
       case 5:
         return this.time() ? null : `Elige una hora de ${this.isDelivery() ? 'entrega' : 'recogida'} para poder confirmar.`;
@@ -195,11 +204,16 @@ export class PublicOrderPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.verifyEmailLink();
-    this.customerAuth.refresh();
     const saved = this.readProgress();
-    this.api.companies().subscribe({
-      next: (companies) => {
+    // Si el servidor no responde a /settings se pide sin cuenta (como antes de existir las cuentas)
+    const settings = this.api.settings().pipe(catchError(() => of({ customerAccounts: false })));
+    forkJoin({ companies: this.api.companies(), settings }).subscribe({
+      next: ({ companies, settings }) => {
+        this.accountsRequired.set(settings.customerAccounts);
+        if (settings.customerAccounts) {
+          this.verifyEmailLink();
+          this.customerAuth.refresh();
+        }
         this.companies.set(companies);
         this.loading.set(false);
         const restore = saved && companies.some((c) => c.id === saved.companyId) ? saved : null;
@@ -465,6 +479,9 @@ export class PublicOrderPageComponent implements OnInit {
         companyId: this.companyId()!,
         pickupDate: this.date(),
         pickupTime: this.time()!,
+        customer: this.accountsRequired()
+          ? null
+          : { name: c.name.trim(), email: c.email.trim(), phone: c.phone.trim() || null, businessName: null, taxId: null },
         phone: c.phone.trim() || null,
         notes: this.notes.trim() || null,
         type: this.isDelivery() ? 'DOMICILIO' : 'RECOGER',

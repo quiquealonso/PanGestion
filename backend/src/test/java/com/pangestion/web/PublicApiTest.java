@@ -12,6 +12,7 @@ import com.pangestion.support.ApiTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -22,8 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Web publica de pedidos, sin login: /api/public/**. */
+/** Web publica de pedidos (/api/public/**) con las cuentas de cliente activas: pedir exige cuenta. */
 @DisplayName("API · Web pública")
+@TestPropertySource(properties = "app.customer-accounts.enabled=true")
 class PublicApiTest extends ApiTestSupport {
 
     private Company bar;
