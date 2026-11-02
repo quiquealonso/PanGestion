@@ -113,6 +113,18 @@ export class PublicOrderPageComponent implements OnInit {
   /** Campo trampa para bots: esta oculto, asi que una persona nunca lo rellena. */
   website = '';
 
+  /**
+   * Lo que se envia del campo trampa. Si lleva uno de los datos del propio cliente, lo ha puesto el autorrelleno
+   * del navegador (no un bot): no se envia.
+   */
+  private honeypot(): string | null {
+    const value = this.website.trim();
+    if (!value) return null;
+    const c = this.customer();
+    const own = [c.name, c.email, c.phone, this.address()].map((v) => (v ?? '').trim().toLowerCase());
+    return own.includes(value.toLowerCase()) ? null : value;
+  }
+
   /** Proximos 7 dias. */
   readonly days = Array.from({ length: 7 }, (_, i) => addDays(i));
   readonly today = toIsoDate();
@@ -569,7 +581,7 @@ export class PublicOrderPageComponent implements OnInit {
           removedIngredientIds: l.removed,
           addedIngredientIds: l.added,
         })),
-        website: this.website || null,
+        website: this.honeypot(),
       })
       .subscribe({
         next: (order) => {
