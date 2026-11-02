@@ -145,7 +145,7 @@
   form.addEventListener('submit', function (event) {
     event.preventDefault();
     var f = form.elements;
-    if (f.web.value) return; // trampa para bots
+    if (f.elements['pg-hp-x7'].value) return; // trampa para bots
     if (!validate()) {
       note.textContent = 'Revisa los campos marcados.';
       form.querySelector('[aria-invalid="true"]').focus();
