@@ -128,22 +128,39 @@
             }
           </div>
 
+          <!-- Tocar = añadir uno normal. Tocar uno ya añadido = cambiarle ingredientes; si el cambio es solo para
+               algunas unidades, esas pasan a su propia tarjeta, al lado de la normal -->
           <div class="products">
-            @for (p of visibleProducts(); track p.id) {
-              @let qty = quantityOf(p.id);
-              <button type="button" class="product" [class.is-in-cart]="qty > 0" (click)="openDetail(p)"
-                      [attr.aria-label]="p.name + ', ' + (p.price | currency: 'EUR') + (qty ? ', tienes ' + qty + ' en tu pedido' : '')">
-                @if (p.imageUrl) {
-                  <img [src]="p.imageUrl | assetUrl" alt="" loading="lazy" />
-                } @else {
-                  <span class="product__noimg" [style.background]="p.color" aria-hidden="true">{{ p.name.charAt(0) }}</span>
+            @for (t of tiles(); track t.id) {
+              @let p = t.product;
+              @let custom = t.line ? removedLabel(t.line) : '';
+              <article class="product" [class.is-in-cart]="!!t.line" [class.is-variant]="!!custom">
+                <button type="button" class="product__main" (click)="tapTile(t)" [attr.aria-label]="tileLabel(t)">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl | assetUrl" alt="" loading="lazy" />
+                  } @else {
+                    <span class="product__noimg" [style.background]="p.color" aria-hidden="true">{{ p.name.charAt(0) }}</span>
+                  }
+                  <span class="product__name">{{ p.name }}</span>
+                  @if (custom) {
+                    <span class="product__custom">{{ custom }}</span>
+                  }
+                  <span class="product__price">{{ (t.line ? unitPrice(t.line) : p.price) | currency: 'EUR' }}</span>
+                  @if (t.line && canCustomize(p)) {
+                    <span class="product__edit" aria-hidden="true">✎ Ingredientes</span>
+                  }
+                </button>
+                @if (!custom && (p.description || p.allergens.length)) {
+                  <button type="button" class="product__info" (click)="openDetail(p)" [attr.aria-label]="'Información y alérgenos de ' + p.name">i</button>
                 }
-                @if (qty > 0) {
-                  <span class="product__badge" aria-hidden="true">{{ qty }}</span>
+                @if (t.line; as line) {
+                  <div class="qty product__qty" role="group" [attr.aria-label]="'Cantidad de ' + p.name + (custom ? ' ' + custom : '')">
+                    <button type="button" (click)="changeLine(line, -1)" [attr.aria-label]="'Quitar uno de ' + p.name">−</button>
+                    <output aria-live="polite">{{ line.quantity }}</output>
+                    <button type="button" (click)="changeLine(line, 1)" [attr.aria-label]="'Añadir otro ' + p.name">+</button>
+                  </div>
                 }
-                <span class="product__name">{{ p.name }}</span>
-                <span class="product__price">{{ p.price | currency: 'EUR' }}</span>
-              </button>
+              </article>
             } @empty {
               <p class="po__status">No hay productos en esta categoría.</p>
             }
@@ -399,22 +416,44 @@
     </div>
   }
 
-  <!-- Panel del producto: informacion, ingredientes que se pueden quitar, cantidad y "Añadir al pedido" -->
+  <!-- Panel del producto: informacion, ingredientes que se pueden quitar, cantidad y "Añadir al pedido".
+       La cabecera (nombre, alergenos y "Añadir") se queda fija arriba aunque se desplace el panel -->
   @if (detail(); as d) {
     <div class="sheet-backdrop" (click)="detail.set(null)">
       <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="detail-title" (click)="$event.stopPropagation()">
-        <button type="button" class="sheet__close" aria-label="Cerrar" (click)="detail.set(null)">✕</button>
+        <header class="sheet__head">
+          <div class="sheet__title">
+            <h2 id="detail-title">{{ d.product.name }}</h2>
+            <p class="sheet__price">{{ d.product.price | currency: 'EUR' }}</p>
+            @if (d.product.allergens.length) {
+              <p class="product__allergens">⚠️ Alérgenos: {{ d.product.allergens.join(', ') }}</p>
+            }
+          </div>
+          <div class="sheet__head-actions">
+            <button type="button" class="pbtn pbtn--primary" (click)="addFromDetail()">
+              Añadir · {{ unitPrice(d) * d.quantity | currency: 'EUR' }}
+            </button>
+            <button type="button" class="sheet__x" aria-label="Cerrar" (click)="detail.set(null)">✕</button>
+          </div>
+        </header>
+
         @if (d.product.imageUrl) {
           <img class="sheet__img" [src]="d.product.imageUrl | assetUrl" alt="" />
         }
-        <h2 id="detail-title">{{ d.product.name }}</h2>
-        <p class="sheet__price">{{ d.product.price | currency: 'EUR' }}</p>
         @if (d.product.description) {
           <p>{{ d.product.description }}</p>
         }
-        @if (d.product.allergens.length) {
-          <p class="product__allergens">⚠️ Alérgenos: {{ d.product.allergens.join(', ') }}</p>
-        }
+        <div class="sheet__units">
+          <span>Cantidad</span>
+          <div class="qty" role="group" aria-label="Cantidad">
+            <button type="button" (click)="changeDetailQuantity(-1)" [disabled]="d.quantity <= 1" aria-label="Uno menos">−</button>
+            <output aria-live="polite">{{ d.quantity }}</output>
+            <button type="button" (click)="changeDetailQuantity(1)" aria-label="Uno más">+</button>
+          </div>
+          @if (quantityOf(d.product.id) > 0) {
+            <small>Ya tienes {{ quantityOf(d.product.id) }} en tu pedido</small>
+          }
+        </div>
 
         @if (d.product.ingredients.length) {
           <h3 class="sheet__label">Ingredientes</h3>
@@ -436,45 +475,26 @@
           <h3 class="sheet__label">¿Algo más?</h3>
           <app-extras-picker [extras]="extras()" [selected]="d.added" (toggled)="toggleDetailExtra($event)" />
         }
-
-        @if (quantityOf(d.product.id) > 0) {
-          <p class="sheet__incart">🛒 Ya tienes {{ quantityOf(d.product.id) }} en tu pedido.</p>
-        }
-
-        <div class="sheet__buttons sheet__buttons--sticky">
-          <div class="qty" role="group" aria-label="Cantidad">
-            <button type="button" (click)="changeDetailQuantity(-1)" [disabled]="d.quantity <= 1" aria-label="Uno menos">−</button>
-            <output aria-live="polite">{{ d.quantity }}</output>
-            <button type="button" (click)="changeDetailQuantity(1)" aria-label="Uno más">+</button>
-          </div>
-          <button type="button" class="pbtn pbtn--primary pbtn--grow" (click)="addFromDetail()">
-            Añadir · {{ unitPrice(d) * d.quantity | currency: 'EUR' }}
-          </button>
-        </div>
       </section>
     </div>
   }
 
-  <!-- Panel para quitar ingredientes -->
+  <!-- Panel para quitar ingredientes y añadir extras (con "Guardar" fijo arriba) -->
   @if (customizing(); as c) {
     <div class="sheet-backdrop" (click)="customizing.set(null)">
       <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" (click)="$event.stopPropagation()">
-        <h2 id="sheet-title">{{ c.product.name }}</h2>
-        <p>Desmarca lo que <b>no</b> quieres y marca lo que quieras añadir.</p>
-        <div class="checks">
-          @for (ing of c.product.ingredients; track ing.id) {
-            <label class="check" [class.is-off]="c.removed.includes(ing.id)">
-              <input type="checkbox" [checked]="!c.removed.includes(ing.id)" (change)="toggleIngredient(ing.id)" />
-              <span>{{ ing.name }}</span>
-              @if (c.removed.includes(ing.id)) {
-                <small>Sin {{ ing.name.toLowerCase() }}</small>
-              }
-            </label>
-          }
-        </div>
-        @if (extras().length) {
-          <app-extras-picker [extras]="extras()" [selected]="c.added" (toggled)="toggleExtra($event)" />
-        }
+        <header class="sheet__head">
+          <div class="sheet__title">
+            <h2 id="sheet-title">{{ c.product.name }}</h2>
+            @if (c.product.allergens.length) {
+              <p class="product__allergens">⚠️ Alérgenos: {{ c.product.allergens.join(', ') }}</p>
+            }
+          </div>
+          <div class="sheet__head-actions">
+            <button type="button" class="pbtn pbtn--primary" (click)="applyCustomize()">Guardar</button>
+            <button type="button" class="sheet__x" aria-label="Cancelar" (click)="customizing.set(null)">✕</button>
+          </div>
+        </header>
         @if (c.max > 1) {
           <div class="sheet__units">
             <span>¿A cuántos se lo cambias?</span>
@@ -489,10 +509,22 @@
             <p class="sheet__note">Se {{ c.units === 1 ? 'guardará' : 'guardarán' }} aparte en tu pedido. {{ c.max - c.units === 1 ? 'El otro se queda igual.' : 'Los otros ' + (c.max - c.units) + ' se quedan igual.' }}</p>
           }
         }
-        <div class="sheet__buttons">
-          <button type="button" class="pbtn pbtn--ghost" (click)="customizing.set(null)">Cancelar</button>
-          <button type="button" class="pbtn pbtn--primary pbtn--grow" (click)="applyCustomize()">Guardar</button>
+        <p>Desmarca lo que <b>no</b> quieres y marca lo que quieras añadir.</p>
+        <div class="checks">
+          @for (ing of c.product.ingredients; track ing.id) {
+            <label class="check" [class.is-off]="c.removed.includes(ing.id)">
+              <input type="checkbox" [checked]="!c.removed.includes(ing.id)" (change)="toggleIngredient(ing.id)" />
+              <span>{{ ing.name }}</span>
+              @if (c.removed.includes(ing.id)) {
+                <small>Sin {{ ing.name.toLowerCase() }}</small>
+              }
+            </label>
+          }
         </div>
+        @if (extras().length) {
+          <h3 class="sheet__label">¿Algo más?</h3>
+          <app-extras-picker [extras]="extras()" [selected]="c.added" (toggled)="toggleExtra($event)" />
+        }
       </section>
     </div>
   }

@@ -45,32 +45,42 @@
   }
 }
 
-/* Como mucho 3 tickets por fila (cada uno al menos 200px o un tercio de la columna) */
+/* Columna de un estado, en su recuadro: el titulo arriba (fijo) y debajo los tickets, que hacen scroll por dentro */
 .column {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - 1rem) / 3)), 1fr));
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.4rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.6rem 0.4rem 0;
+  border: 1px solid var(--border);
+  border-radius: 1.1rem;
+  background: rgba(var(--tint-rgb), 0.03);
+}
+
+/*
+ * Como mucho 3 tickets por fila (cada uno al menos 200px o un tercio de la columna). auto-fit: si hay sitio de sobra
+ * (menos tickets que huecos), los tickets se ensanchan hasta llenar la fila.
+ */
+.column__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(200px, calc((100% - 1rem) / 3)), 1fr));
   gap: 0.5rem;
   align-items: start;
+  align-content: start;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 0.6rem;
-  border-radius: 1.1rem;
-  border: 1px solid var(--border);
-  background: rgba(var(--tint-rgb), 0.02);
-  align-content: start;
+  /* Hueco para la sombra de los tickets */
+  padding: 0.15rem 0.2rem 0.6rem;
 }
 
 .column__title {
-  grid-column: 1 / -1;
-  position: sticky;
-  top: -0.6rem;
-  z-index: 1;
-  padding: 0.3rem 0;
-  background: var(--bg);
   display: flex;
   justify-content: space-between;
-  margin: 0 0 0.2rem;
+  margin: 0;
+  padding: 0 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--border);
   font-size: 1.05rem;
 
   span {
@@ -83,7 +93,7 @@
 }
 
 /* Listo para servir: una sola columna de tickets hacia abajo */
-.column--listo {
+.column--listo .column__body {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -93,13 +103,17 @@
 }
 
 .column__empty {
+  grid-column: 1 / -1;
   margin: 1rem 0;
   color: var(--muted);
   text-align: center;
 }
 
+/* Una sola columna que nunca pasa del ancho del ticket: las lineas largas («sin Aceitunas»...) bajan de linea */
 .ticket {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: 0.35rem;
   padding: 0.45rem;
   border-radius: 0.8rem;
@@ -175,12 +189,14 @@
 .item {
   display: flex;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 /* Cada fila lleva el color de su categoria (--cat) y su inicial al final */
 .item__main {
   display: flex;
   flex: 1;
+  min-width: 0;
   align-items: center;
   border-left: 4px solid var(--cat) !important;
   gap: 0.45rem;
@@ -212,10 +228,13 @@
 
 .item__name {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.15rem 0.45rem;
+  min-width: 0;
   font-weight: 600;
+  overflow-wrap: break-word;
 
   em {
     color: var(--tone-amber);
@@ -234,6 +253,7 @@
 }
 
 .mod {
+  max-width: 100%;
   padding: 0.05rem 0.4rem;
   border-radius: 0.4rem;
   font-size: 0.8rem;
@@ -266,6 +286,7 @@
 }
 
 .item__back {
+  flex-shrink: 0;
   width: 2.3rem;
   border: 1px solid var(--border);
   border-radius: 0.6rem;

@@ -368,20 +368,18 @@ textarea {
   gap: 0.75rem;
 }
 
-// Tarjeta compacta: foto, nombre y precio. Al tocarla se abre el panel del producto.
+// Tarjeta compacta: foto, nombre y precio. Al tocarla se añade; si ya esta añadida, se cambian sus ingredientes.
 .product {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0;
   overflow: hidden;
   border: 2px solid transparent;
   border-radius: 14px;
   background: var(--p-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   color: var(--p-text);
-  text-align: left;
-  cursor: pointer;
+  animation: product-in 0.2s ease-out;
 
   &:hover {
     border-color: var(--p-border);
@@ -389,6 +387,12 @@ textarea {
 
   &.is-in-cart {
     border-color: var(--p-primary);
+  }
+
+  // Version cambiada ("sin cebolla"): borde discontinuo para distinguirla de la normal
+  &.is-variant {
+    border-style: dashed;
+    background: var(--p-primary-soft);
   }
 
   img,
@@ -413,20 +417,84 @@ textarea {
   font-weight: 700;
 }
 
-.product__badge {
+@keyframes product-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product {
+    animation: none;
+  }
+}
+
+// Toda la tarjeta menos la cantidad es un boton
+.product__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+// Informacion y alergenos: esquina de la foto, sin tapar el nombre
+.product__info {
   position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
+  top: 0.35rem;
+  right: 0.35rem;
   display: grid;
   place-items: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.4rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border: 2px solid #fff;
   border-radius: 999px;
-  background: var(--p-primary);
+  background: rgba(0, 0, 0, 0.55);
   color: #fff;
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
+  font-style: italic;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.product__custom {
+  padding: 0.15rem 0.65rem 0;
+  color: #9a3412;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.product__edit {
+  padding: 0 0.65rem 0.5rem;
+  color: var(--p-primary-dark);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+// − 2 + dentro de la tarjeta, a todo lo ancho
+.qty.product__qty {
+  display: flex;
+  margin: 0 0.5rem 0.5rem;
+
+  button {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 40px;
+  }
+
+  output {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .product__name {
@@ -949,6 +1017,8 @@ textarea {
   align-items: flex-end;
   justify-content: center;
   background: rgba(28, 25, 23, 0.55);
+  // El fondo oscuro no desplaza nada al arrastrar el dedo
+  touch-action: none;
 }
 
 .sheet {
@@ -956,9 +1026,22 @@ textarea {
   max-width: 560px;
   max-height: 85vh;
   overflow-y: auto;
+  // Al llegar al final del panel el desplazamiento no pasa a la pagina de detras
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom));
   border-radius: 20px 20px 0 0;
   background: var(--p-card);
+  // Los extras (app-extras-picker) usan los colores de la app de gestion: aqui, los de la web de pedidos
+  --border: #a8a29e;
+  --extra-border-width: 2px;
+  --extra-min-height: 44px;
+  --text: var(--p-text);
+  --muted: var(--p-muted);
+  --tint-rgb: 28, 25, 23;
+  --primary-rgb: 180, 83, 9;
+  --success-rgb: 180, 83, 9;
+  --success-text: var(--p-primary-dark);
 
   h2 {
     font-size: 1.3rem;
@@ -1027,10 +1110,69 @@ textarea {
 
 .sheet__img {
   display: block;
-  width: calc(100% + 2rem);
-  max-height: 220px;
-  margin: -1.25rem -1rem 0.75rem;
+  width: 100%;
+  max-height: 180px;
+  margin-bottom: 0.5rem;
+  border-radius: 12px;
   object-fit: cover;
+}
+
+// Cabecera fija del panel: nombre, precio y alergenos a la izquierda; el boton principal y cerrar, a la derecha
+.sheet__head {
+  position: sticky;
+  top: -1.25rem;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: -1.25rem -1rem 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--p-border);
+  border-radius: 20px 20px 0 0;
+  background: var(--p-card);
+
+  h2 {
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .sheet__price {
+    margin: 0.1rem 0 0 !important;
+  }
+
+  .product__allergens {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+  }
+}
+
+.sheet__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet__head-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+
+  .pbtn {
+    padding-inline: 0.9rem;
+    white-space: nowrap;
+  }
+}
+
+.sheet__x {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--p-bg);
+  color: var(--p-text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .sheet__price {
@@ -1048,12 +1190,6 @@ textarea {
 .sheet__help {
   margin: 0.1rem 0 0.5rem !important;
   font-size: 0.95rem;
-}
-
-.sheet__incart {
-  margin: 0.75rem 0 0 !important;
-  color: var(--p-text) !important;
-  font-weight: 600;
 }
 
 // Cantidad + "Añadir" siempre a la vista al final del panel

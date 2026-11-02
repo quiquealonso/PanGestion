@@ -36,6 +36,12 @@ import { Extra } from '../core/models/ingredient.model';
       font-size: 0.85rem;
     }
 
+    /* Quien lo usa puede hacerlos mas visibles (la web de pedidos: borde de 2 px y mas altos para el dedo) */
+    .extra {
+      min-height: var(--extra-min-height, auto);
+      border-width: var(--extra-border-width, 1px);
+    }
+
     .extra small {
       margin-left: 0.3rem;
       color: var(--muted);

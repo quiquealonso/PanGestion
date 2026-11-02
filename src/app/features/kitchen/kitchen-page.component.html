@@ -16,6 +16,8 @@
       @for (column of columns(); track column.status) {
         <section class="column column--{{ column.status.toLowerCase() }}">
           <h3 class="column__title">{{ column.title }} <span>{{ counts()[column.status] }}</span></h3>
+          <!-- Solo los tickets hacen scroll: el titulo de la columna se queda siempre a la vista -->
+          <div class="column__body">
           @for (f of byColumn().get(column.status); track f.ticket.source + f.ticket.refId + '/' + f.ticket.round) {
             <article class="ticket ticket--{{ f.ticket.source.toLowerCase() }} {{ urgency(f.ticket) }}">
               <header class="ticket__head">
@@ -69,6 +71,7 @@
           } @empty {
             <p class="column__empty">Nada por aquí</p>
           }
+          </div>
         </section>
       }
     </div>

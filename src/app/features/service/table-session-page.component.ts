@@ -33,9 +33,21 @@ interface DraftLine {
   addedIds: number[];
 }
 
+/**
+ * Un boton de la carta. Cada producto tiene el suyo (line = lo apuntado sin cambios, o null) y, justo detras,
+ * uno por cada version cambiada apuntada ("Vegetal sin cebolla", "Chuleta poco hecha").
+ */
+interface MenuTile {
+  id: string;
+  product: Product;
+  line: DraftLine | null;
+}
+
 const DRAFT_KEY = 'pangestion.draft.';
 /** Respaldo: la mesa se refresca con los avisos en tiempo real; esto solo cubre si se corta la conexion. */
 const REFRESH_MS = 60_000;
+/** Cada cuanto se actualizan los minutos que llevan los productos pendientes o preparandose */
+const CLOCK_MS = 15_000;
 
 /**
  * Comanda de una mesa (pensada para el movil del camarero): se tocan productos de la carta y se envian
@@ -87,6 +99,17 @@ export class TableSessionPageComponent implements OnInit {
       (p) => (text ? normalize(p.name).includes(text) : category === null || p.categoryId === category),
     );
   });
+  readonly tiles = computed<MenuTile[]>(() => {
+    const draft = this.draft();
+    return this.visibleProducts().flatMap((product) => {
+      const lines = draft.filter((l) => l.productId === product.id);
+      const plain = lines.find(isPlain) ?? null;
+      return [
+        { id: `${product.id}`, product, line: plain },
+        ...lines.filter((l) => l !== plain).map((line) => ({ id: `${product.id}-${line.key}`, product, line })),
+      ];
+    });
+  });
 
   /**
    * En el movil se ve una parte cada vez: lo que tiene la mesa ('ticket') o la carta a pantalla completa ('menu').
@@ -120,13 +143,13 @@ export class TableSessionPageComponent implements OnInit {
   readonly paying = signal(false);
   /** Productos que cocina o barra ya tienen listos para llevar a la mesa */
   readonly readyLines = computed(() => (this.session()?.lines ?? []).filter((l) => l.status === 'LISTO'));
+  /** Hora actual, para los minutos de cada producto ("Preparando · 7 min") */
+  readonly now = signal(Date.now());
 
   // Editar una linea apuntada (notas e ingredientes)
   readonly editing = signal<DraftLine | null>(null);
-  /** El dialogo es de un producto recien tocado en la carta (aun no apuntado) */
-  readonly editingNew = signal(false);
-  /** Lista de extras desplegada (con el lapiz "Añadir ingredientes") */
-  readonly showExtras = signal(false);
+  /** A cuantas unidades de la linea se aplica el cambio (las demas se quedan como estaban) */
+  readonly editUnits = signal(1);
   editNotes = '';
   readonly editRemoved = signal<Set<number>>(new Set());
   readonly editAdded = signal<number[]>([]);
@@ -173,9 +196,11 @@ export class TableSessionPageComponent implements OnInit {
     this.ingredientsService.extras().subscribe((extras) => this.extrasList.set(extras));
     const changes = this.live.on('session:' + this.id()).subscribe(() => this.refresh());
     const timer = setInterval(() => this.refresh(), REFRESH_MS);
+    const clock = setInterval(() => this.now.set(Date.now()), CLOCK_MS);
     this.destroyRef.onDestroy(() => {
       changes.unsubscribe();
       clearInterval(timer);
+      clearInterval(clock);
     });
   }
 
@@ -197,18 +222,45 @@ export class TableSessionPageComponent implements OnInit {
 
   // ----- Apuntar productos -----
 
-  add(product: Product): void {
-    // Con ingredientes (pizzas, hamburguesas...): primero el dialogo para quitar o anadir extras, como en los pedidos
-    if (product.ingredients.length) {
-      this.openEdit(this.newLine(product), true);
-      return;
-    }
-    this.addPlain(product);
+  /**
+   * Como en la web de pedidos: tocar un producto que no esta apuntado apunta uno normal, sin dialogo.
+   * Tocar uno ya apuntado abre su dialogo (notas, quitar ingredientes, extras); en las bebidas suma otro.
+   */
+  tapTile(tile: MenuTile): void {
+    if (tile.line && this.editable(tile.product)) this.openEdit(tile.line);
+    else if (tile.line) this.changeQuantity(tile.line, 1);
+    else this.addPlain(tile.product);
+  }
+
+  /**
+   * Tiene algo que cambiar: ingredientes, o notas para cocina. Lo que no lleva ingredientes ni pasa por cocina
+   * (bebidas, en barra) no tiene dialogo: cada toque suma uno.
+   */
+  editable(product: Product | undefined): boolean {
+    return !!product && (product.ingredients.length > 0 || product.station === 'COCINA');
+  }
+
+  /** La linea apuntada se puede editar (para la lista "Por enviar"). */
+  editableLine(line: DraftLine): boolean {
+    return this.editable(this.products().find((p) => p.id === line.productId));
+  }
+
+  /** "Vegetal: 2. Toca para notas e ingredientes" (para lectores de pantalla). */
+  tileLabel(tile: MenuTile): string {
+    const custom = tile.line ? this.lineText(tile.line) : '';
+    const name = tile.product.name + (custom ? ' ' + custom : '');
+    if (!tile.line) return `${name}. Toca para apuntar uno`;
+    return `${name}: ${tile.line.quantity}. ${this.editable(tile.product) ? 'Toca para notas e ingredientes' : 'Toca para añadir otro'}`;
+  }
+
+  /** Lo que cambia en una linea apuntada: "con huevo · sin Cebolla · poco hecha". */
+  lineText(line: DraftLine): string {
+    return this.extras(this.removedNames(line), line.notes, this.addedNames(line));
   }
 
   /** Apunta una unidad sin cambios: si ya hay una linea igual, suma uno. */
   private addPlain(product: Product): void {
-    const same = this.draft().find((l) => l.productId === product.id && !l.notes && !l.removedIds.length && !l.addedIds.length);
+    const same = this.draft().find((l) => l.productId === product.id && isPlain(l));
     if (same) {
       this.changeQuantity(same, 1);
       return;
@@ -230,13 +282,6 @@ export class TableSessionPageComponent implements OnInit {
     };
   }
 
-  /** Unidades apuntadas de un producto (se ven sobre el boton). */
-  countFor(productId: number): number {
-    return this.draft()
-      .filter((l) => l.productId === productId)
-      .reduce((sum, l) => sum + l.quantity, 0);
-  }
-
   changeQuantity(line: DraftLine, delta: number): void {
     this.draft.update((lines) =>
       lines
@@ -245,9 +290,8 @@ export class TableSessionPageComponent implements OnInit {
     );
   }
 
-  openEdit(line: DraftLine, isNew = false): void {
-    this.editingNew.set(isNew);
-    this.showExtras.set(false);
+  openEdit(line: DraftLine): void {
+    this.editUnits.set(1);
     this.editNotes = line.notes;
     this.editRemoved.set(new Set(line.removedIds));
     this.editAdded.set([...line.addedIds]);
@@ -261,6 +305,15 @@ export class TableSessionPageComponent implements OnInit {
     this.editRemoved.set(set);
   }
 
+  changeUnits(delta: number): void {
+    const max = this.editing()?.quantity ?? 1;
+    this.editUnits.update((n) => Math.min(max, Math.max(1, n + delta)));
+  }
+
+  /**
+   * Guarda notas, ingredientes quitados y extras. Si se aplica solo a algunas unidades, esas pasan a una linea
+   * aparte (otro boton en la carta, al lado). Las lineas que quedan iguales se juntan: dos "sin cebolla" suman en una.
+   */
   saveEdit(): void {
     const line = this.editing();
     if (!line) return;
@@ -269,20 +322,21 @@ export class TableSessionPageComponent implements OnInit {
       removedIds: [...this.editRemoved()].sort((a, b) => a - b),
       addedIds: this.editAdded(),
     };
+    const units = Math.min(this.editUnits(), line.quantity);
     this.editing.set(null);
-    if (this.editingNew()) {
-      const product = this.products().find((p) => p.id === line.productId);
-      // Sin cambios: como un toque normal (se junta con la misma linea sin cambios)
-      if (product && !changes.notes && !changes.removedIds.length && !changes.addedIds.length) this.addPlain(product);
-      else this.draft.update((lines) => [...lines, { ...line, ...changes }]);
-      return;
+    const lines: DraftLine[] = [];
+    for (const l of this.draft()) {
+      if (l.key !== line.key) lines.push(l);
+      else if (units >= l.quantity) lines.push({ ...l, ...changes });
+      else lines.push({ ...l, quantity: l.quantity - units }, { ...l, ...changes, key: this.nextKey++, quantity: units });
     }
-    this.draft.update((lines) => lines.map((l) => (l.key === line.key ? { ...l, ...changes } : l)));
-  }
-
-  /** Precio de una unidad con los extras marcados en el dialogo. */
-  unitPriceWith(line: DraftLine): number {
-    return this.unitPrice({ ...line, addedIds: this.editAdded() });
+    const merged: DraftLine[] = [];
+    for (const l of lines) {
+      const same = merged.find((m) => m.productId === l.productId && sameChanges(m, l));
+      if (same) same.quantity = Math.min(99, same.quantity + l.quantity);
+      else merged.push({ ...l });
+    }
+    this.draft.set(merged);
   }
 
   removeDraft(line: DraftLine): void {
@@ -349,6 +403,18 @@ export class TableSessionPageComponent implements OnInit {
         this.notify.error(apiErrorMessage(err));
       },
     });
+  }
+
+  /** Minutos que lleva un producto en su estado (pendiente o preparandose); null si ya esta listo o servido. */
+  waitingMinutes(line: ServiceLine): number | null {
+    if (line.status !== 'PENDIENTE' && line.status !== 'PREPARANDO') return null;
+    const since = new Date(line.statusChangedAt ?? line.createdAt).getTime();
+    return Math.max(0, Math.floor((this.now() - since) / 60_000));
+  }
+
+  /** Como en cocina: a partir de 10 minutos, aviso; de 20, tarde. */
+  waitingClass(minutes: number): string {
+    return minutes >= 20 ? 'late' : minutes >= 10 ? 'warn' : '';
   }
 
   /** Se puede anular mientras cocina no lo ha empezado (o si no se prepara y aun no se ha servido). */
@@ -460,4 +526,14 @@ export class TableSessionPageComponent implements OnInit {
 
 function normalize(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+/** Sin notas, sin ingredientes quitados y sin extras: el producto tal cual. */
+function isPlain(line: DraftLine): boolean {
+  return !line.notes && !line.removedIds.length && !line.addedIds.length;
+}
+
+/** Mismas notas, mismos ingredientes quitados y mismos extras: dos lineas del mismo producto se pueden juntar. */
+function sameChanges(a: DraftLine, b: DraftLine): boolean {
+  return a.notes === b.notes && a.removedIds.join() === b.removedIds.join() && a.addedIds.join() === b.addedIds.join();
 }

@@ -49,15 +49,30 @@
               }
             </div>
           }
+          <!-- Tocar = apuntar uno normal. Tocar uno ya apuntado = notas e ingredientes; si el cambio es solo para
+               algunas unidades, esas pasan a su propio boton, al lado del normal -->
           <div class="products">
-            @for (p of visibleProducts(); track p.id) {
-              <button type="button" class="product" [style.--c]="p.displayColor" (click)="add(p)">
-                <span class="product__name">{{ p.name }}</span>
-                <span class="product__price">{{ p.price | currency: 'EUR' }}</span>
-                @if (countFor(p.id); as n) {
-                  <span class="product__count">{{ n }}</span>
+            @for (t of tiles(); track t.id) {
+              @let custom = t.line ? lineText(t.line) : '';
+              <article class="product" [style.--c]="t.product.displayColor" [class.is-in]="!!t.line" [class.is-variant]="!!custom">
+                <button type="button" class="product__main" (click)="tapTile(t)" [attr.aria-label]="tileLabel(t)">
+                  <span class="product__name">{{ t.product.name }}</span>
+                  @if (custom) {
+                    <small class="product__custom">{{ custom }}</small>
+                  }
+                  <span class="product__price">{{ (t.line ? unitPrice(t.line) : t.product.price) | currency: 'EUR' }}</span>
+                  @if (t.line && editable(t.product)) {
+                    <span class="product__edit" aria-hidden="true">✎ {{ t.product.ingredients.length ? 'Ingredientes' : 'Notas' }}</span>
+                  }
+                </button>
+                @if (t.line; as line) {
+                  <div class="product__qty" role="group" [attr.aria-label]="'Cantidad de ' + t.product.name">
+                    <button type="button" (click)="changeQuantity(line, -1)" [attr.aria-label]="'Quitar uno de ' + t.product.name">−</button>
+                    <strong aria-live="polite">{{ line.quantity }}</strong>
+                    <button type="button" (click)="changeQuantity(line, 1)" [attr.aria-label]="'Añadir otro ' + t.product.name">+</button>
+                  </div>
                 }
-              </button>
+              </article>
             } @empty {
               <p class="empty">No hay productos con esa búsqueda.</p>
             }
@@ -76,14 +91,19 @@
                 <strong>{{ line.quantity }}</strong>
                 <button type="button" (click)="changeQuantity(line, 1)" aria-label="Uno más">+</button>
               </div>
-              <button type="button" class="line__body" (click)="openEdit(line)">
-                <span>{{ line.name }}</span>
-                @if (extras(removedNames(line), line.notes, addedNames(line)); as text) {
-                  <small>{{ text }}</small>
-                } @else {
-                  <small class="muted">Notas, quitar o añadir…</small>
-                }
-              </button>
+              <!-- Las bebidas (sin ingredientes y sin cocina) no tienen notas: solo la cantidad -->
+              @if (editableLine(line)) {
+                <button type="button" class="line__body" (click)="openEdit(line)">
+                  <span>{{ line.name }}</span>
+                  @if (extras(removedNames(line), line.notes, addedNames(line)); as text) {
+                    <small>{{ text }}</small>
+                  } @else {
+                    <small class="muted">Notas, quitar o añadir…</small>
+                  }
+                </button>
+              } @else {
+                <div class="line__body"><span>{{ line.name }}</span></div>
+              }
               <span class="line__price">{{ unitPrice(line) * line.quantity | currency: 'EUR' }}</span>
             </div>
           } @empty {
@@ -115,7 +135,14 @@
                 <button type="button" class="status status--listo" (click)="serve([line])"
                         [attr.aria-label]="'Servir ' + line.productName">Servir</button>
               } @else {
-                <span class="status status--{{ line.status.toLowerCase() }}">{{ statusLabels[line.status] }}</span>
+                <!-- Pendiente y preparando: minutos que lleva asi (en amarillo desde 10, en rojo desde 20) -->
+                @let minutes = waitingMinutes(line);
+                <span class="status status--{{ line.status.toLowerCase() }}">
+                  {{ statusLabels[line.status] }}
+                  @if (minutes !== null) {
+                    <span class="status__min {{ waitingClass(minutes) }}">· {{ minutes }} min</span>
+                  }
+                </span>
               }
               @if (cancellable(line)) {
                 <button type="button" class="icon-btn" (click)="removeSent(line)" [attr.aria-label]="'Anular ' + line.productName">✕</button>
@@ -156,8 +183,25 @@
 
   @if (editing(); as line) {
     <app-modal [title]="line.name" width="440px" (closed)="editing.set(null)">
+      <!-- Guardar arriba, en la cabecera fija: no hace falta bajar a buscarlo -->
+      <button modal-actions type="button" class="btn btn--primary save-edit" (click)="saveEdit()">Guardar</button>
       <div class="edit">
-        <!-- Como en el pedido de los clientes: lista de lo que lleva (desmarcar = quitar); los extras, plegados tras el lapiz -->
+        @if (line.quantity > 1) {
+          <div class="units">
+            <span>¿A cuántos se lo cambias?</span>
+            <div class="stepper stepper--big">
+              <button type="button" (click)="changeUnits(-1)" [disabled]="editUnits() <= 1" aria-label="Uno menos">−</button>
+              <strong aria-live="polite">{{ editUnits() }}</strong>
+              <button type="button" (click)="changeUnits(1)" [disabled]="editUnits() >= line.quantity" aria-label="Uno más">+</button>
+            </div>
+            <small class="muted">de {{ line.quantity }}
+              @if (editUnits() < line.quantity) { · los otros se quedan igual }</small>
+          </div>
+        }
+        <label class="field"><span>Notas para cocina</span>
+          <input [(ngModel)]="editNotes" maxlength="120" placeholder="Poco hecha, sin sal…" />
+        </label>
+        <!-- Como en el pedido de los clientes: lista de lo que lleva (desmarcar = quitar) y, debajo, los extras -->
         @if (editingProduct()?.ingredients?.length) {
           <div class="field">
             <span>Ingredientes · desmarca lo que no quiera</span>
@@ -176,55 +220,23 @@
 
           @if (extrasList().length) {
             <div class="field">
-              <div class="extras-head">
-                <span>Extras</span>
-                <button type="button" class="link-btn" (click)="showExtras.set(!showExtras())" [attr.aria-expanded]="showExtras()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z" /><path d="M14 6l4 4" /></svg>
-                  {{ showExtras() ? 'Listo' : 'Añadir ingredientes' }}
-                </button>
+              <span>Extras · marca lo que quiera añadir</span>
+              <div class="ing-list">
+                @for (e of extrasList(); track e.id) {
+                  @let on = editAdded().includes(e.id);
+                  <label class="ing-row" [class.is-added]="on">
+                    <input type="checkbox" [checked]="on" (change)="toggleExtra(e.id)" />
+                    <span>{{ e.name }}</span>
+                    <small>{{ e.price ? '+' + (e.price | currency: 'EUR') : 'gratis' }}</small>
+                  </label>
+                }
               </div>
-              @if (showExtras()) {
-                <div class="ing-list">
-                  @for (e of extrasList(); track e.id) {
-                    @let on = editAdded().includes(e.id);
-                    <label class="ing-row" [class.is-added]="on">
-                      <input type="checkbox" [checked]="on" (change)="toggleExtra(e.id)" />
-                      <span>{{ e.name }}</span>
-                      <small>{{ e.price ? '+' + (e.price | currency: 'EUR') : 'gratis' }}</small>
-                    </label>
-                  }
-                </div>
-              } @else if (editAdded().length) {
-                <div class="ing-list">
-                  @for (e of extrasList(); track e.id) {
-                    @if (editAdded().includes(e.id)) {
-                      <div class="ing-row is-added">
-                        <span>+ {{ e.name }}</span>
-                        <small>{{ e.price ? '+' + (e.price | currency: 'EUR') : 'gratis' }}</small>
-                        <button type="button" class="icon-btn" (click)="toggleExtra(e.id)" [attr.aria-label]="'Quitar extra ' + e.name">✕</button>
-                      </div>
-                    }
-                  }
-                </div>
-              } @else {
-                <p class="muted extras-empty">Sin extras.</p>
-              }
             </div>
           }
         }
-        <label class="field"><span>Notas para cocina</span>
-          <input [(ngModel)]="editNotes" maxlength="120" placeholder="Poco hecha, sin sal…" />
-        </label>
-        <div class="form-actions">
-          @if (editingNew()) {
-            <!-- Producto recien tocado en la carta: se apunta al confirmar; si se cierra, no se apunta -->
-            <button type="button" class="btn btn--primary" (click)="saveEdit()">Añadir {{ unitPriceWith(line) | currency: 'EUR' }}</button>
-            <button type="button" class="btn" (click)="editing.set(null)">Cancelar</button>
-          } @else {
-            <button type="button" class="btn btn--primary" (click)="saveEdit()">Guardar</button>
-            <button type="button" class="btn btn--danger" (click)="removeDraft(line)">Quitar</button>
-          }
-        </div>
+        <button type="button" class="btn btn--danger remove-line" (click)="removeDraft(line)">
+          Quitar {{ line.quantity > 1 ? 'los ' + line.quantity : '' }} del pedido
+        </button>
       </div>
     </app-modal>
   }
