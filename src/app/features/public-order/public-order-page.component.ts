@@ -222,7 +222,8 @@ export class PublicOrderPageComponent implements OnInit {
   constructor() {
     // Con un panel abierto (producto, ingredientes o confirmar) la pagina de detras no se mueve: solo el panel
     effect(() => {
-      const open = !!this.detail() || !!this.customizing() || this.reviewing();
+      // El resumen solo se ve con hora elegida (al recargar las horas se quita): sin hora, la pagina no se bloquea
+      const open = !!this.detail() || !!this.customizing() || (this.reviewing() && !!this.time());
       this.document.documentElement.classList.toggle('is-scroll-locked', open);
     });
     inject(DestroyRef).onDestroy(() => this.document.documentElement.classList.remove('is-scroll-locked'));
@@ -592,10 +593,13 @@ export class PublicOrderPageComponent implements OnInit {
           window.scrollTo({ top: 0 });
         },
         error: (err) => {
-          // Lo mas habitual: la hora se ha llenado mientras tanto. Se recargan las horas.
+          // Lo mas habitual: la hora se ha llenado mientras tanto. Se cierra el resumen, se recargan las horas
+          // y se sube hasta el aviso del error
           this.error.set(apiErrorMessage(err));
           this.sending.set(false);
+          this.reviewing.set(false);
           this.loadSlots();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         },
       });
   }
