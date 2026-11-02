@@ -96,7 +96,8 @@ export class KitchenPageComponent implements OnInit {
   readonly boardColumns = computed(() => {
     if (this.station() === 'BARRA') return 'minmax(0, 1fr) var(--ready-width)';
     const slots = (status: ItemStatus) => Math.min(3, Math.max(1, this.byColumn().get(status)?.length ?? 0));
-    return `minmax(0, ${slots('PENDIENTE')}fr) minmax(0, ${slots('PREPARANDO')}fr) var(--ready-width)`;
+    // Al menos el ancho de un ticket (260px, con el recuadro): en una columna mas estrecha, las lineas con «sin ...» no caben
+    return `minmax(260px, ${slots('PENDIENTE')}fr) minmax(260px, ${slots('PREPARANDO')}fr) var(--ready-width)`;
   });
   readonly counts = computed(() => {
     const counts: Record<string, number> = {};

@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, ElementRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Component, DOCUMENT, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -22,6 +22,16 @@ interface CartLine {
   quantity: number;
   removed: number[];
   added: number[];
+}
+
+/**
+ * Una tarjeta del paso 2. Cada producto tiene su tarjeta normal (line = la linea sin cambios, o null si no hay)
+ * y, justo detras, una tarjeta por cada version cambiada que haya en el pedido ("Vegetal sin cebolla").
+ */
+interface ProductTile {
+  id: string;
+  product: PublicProduct;
+  line: CartLine | null;
 }
 
 /** Lo que se guarda en sessionStorage para no perder el pedido si se recarga la pagina. */
@@ -56,12 +66,13 @@ export class PublicOrderPageComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
   private readonly stepTitle = viewChild<ElementRef<HTMLElement>>('stepTitle');
   private readonly hoursTitle = viewChild<ElementRef<HTMLElement>>('hoursTitle');
 
   readonly steps = [
     { number: 1, title: '¿Dónde quieres pedir?', help: 'Toca el establecimiento al que quieres hacer el pedido.' },
-    { number: 2, title: 'Elige tus productos', help: 'Toca un producto para ver lo que lleva y añadirlo. Arriba puedes cambiar de categoría.' },
+    { number: 2, title: 'Elige tus productos', help: 'Toca un producto para añadirlo. Tócalo otra vez para quitarle ingredientes o añadir extras. Arriba cambias de categoría.' },
     { number: 3, title: 'Revisa tu pedido', help: 'Comprueba las cantidades. Con el lápiz quitas ingredientes y con la papelera eliminas el producto.' },
     { number: 4, title: 'Tus datos', help: 'Los usamos solo para avisarte si hay algún problema con tu pedido.' },
     { number: 5, title: '¿Cuándo lo recoges?', help: 'Elige el día y la hora a la que pasarás a recogerlo. Después, confirma el pedido.' },
@@ -134,6 +145,17 @@ export class PublicOrderPageComponent implements OnInit {
     const category = this.activeCategory() ?? this.categories()[0]?.id;
     return this.products().filter((p) => p.categoryId === category);
   });
+  readonly tiles = computed<ProductTile[]>(() => {
+    const cart = this.cart();
+    return this.visibleProducts().flatMap((product) => {
+      const lines = cart.filter((l) => l.product.id === product.id);
+      const plain = lines.find(isPlain) ?? null;
+      return [
+        { id: `${product.id}`, product, line: plain },
+        ...lines.filter((l) => l !== plain).map((line) => ({ id: `${product.id}-${line.key}`, product, line })),
+      ];
+    });
+  });
   readonly itemCount = computed(() => this.cart().reduce((sum, l) => sum + l.quantity, 0));
   readonly total = computed(() => this.cart().reduce((sum, l) => sum + this.unitPrice(l) * l.quantity, 0));
 
@@ -186,6 +208,13 @@ export class PublicOrderPageComponent implements OnInit {
   });
 
   constructor() {
+    // Con un panel abierto (producto, ingredientes o confirmar) la pagina de detras no se mueve: solo el panel
+    effect(() => {
+      const open = !!this.detail() || !!this.customizing() || this.reviewing();
+      this.document.documentElement.classList.toggle('is-scroll-locked', open);
+    });
+    inject(DestroyRef).onDestroy(() => this.document.documentElement.classList.remove('is-scroll-locked'));
+
     // Guarda el progreso para no perderlo si se recarga la pagina
     effect(() => {
       const companyId = this.companyId();
@@ -265,7 +294,45 @@ export class PublicOrderPageComponent implements OnInit {
       .reduce((sum, l) => sum + l.quantity, 0);
   }
 
-  // Panel del producto (paso 2)
+  // Tarjetas del paso 2
+
+  /** Se pueden quitar ingredientes y añadir extras (los extras solo se ofrecen en productos con ingredientes). */
+  canCustomize(product: PublicProduct): boolean {
+    return product.ingredients.length > 0;
+  }
+
+  /**
+   * Tocar una tarjeta: si no esta en el pedido, se añade uno normal, sin abrir nada. Si ya esta, se abre el panel
+   * para cambiarle los ingredientes (si no tiene ingredientes que cambiar, se añade otro).
+   */
+  tapTile(tile: ProductTile): void {
+    if (!tile.line) this.addPlain(tile.product);
+    else if (this.canCustomize(tile.product)) this.openCustomize(tile.line);
+    else this.changeLine(tile.line, 1);
+  }
+
+  tileLabel(tile: ProductTile): string {
+    const custom = tile.line ? this.removedLabel(tile.line) : '';
+    const name = tile.product.name + (custom ? ' ' + custom : '');
+    if (!tile.line) return `${name}, ${formatPrice(tile.product.price)}. Toca para añadirlo`;
+    return `${name}: tienes ${tile.line.quantity}. ${this.canCustomize(tile.product) ? 'Toca para cambiar ingredientes' : 'Toca para añadir otro'}`;
+  }
+
+  /** Uno normal (sin cambios): se suma al que ya habia o crea su linea. */
+  private addPlain(product: PublicProduct): void {
+    const plain = this.cart().find((l) => l.product.id === product.id && isPlain(l));
+    if (plain) this.changeLine(plain, 1);
+    else this.cart.update((lines) => [...lines, { key: this.nextKey++, product, quantity: 1, removed: [], added: [] }]);
+    this.showAdded(`1 × ${product.name}`);
+  }
+
+  private showAdded(text: string): void {
+    this.justAdded.set(text);
+    clearTimeout(this.justAddedTimer);
+    this.justAddedTimer = setTimeout(() => this.justAdded.set(null), 2500);
+  }
+
+  // Panel del producto (paso 2, boton de informacion)
 
   openDetail(product: PublicProduct): void {
     this.detail.set({ product, removed: [], added: [], quantity: 1 });
@@ -302,9 +369,7 @@ export class PublicOrderPageComponent implements OnInit {
     else this.cart.update((lines) => [...lines, { key: this.nextKey++, product: d.product, quantity: d.quantity, removed: d.removed, added: d.added }]);
 
     const removed = this.removedLabel(d);
-    this.justAdded.set(`${d.quantity} × ${d.product.name}${removed ? ' ' + removed : ''}`);
-    clearTimeout(this.justAddedTimer);
-    this.justAddedTimer = setTimeout(() => this.justAdded.set(null), 2500);
+    this.showAdded(`${d.quantity} × ${d.product.name}${removed ? ' ' + removed : ''}`);
     this.detail.set(null);
   }
 
@@ -574,4 +639,13 @@ function minutes(time: string): number {
 /** Mismos ingredientes quitados y mismos extras: dos lineas del mismo producto se pueden juntar. */
 function sameCustomization(a: { removed: number[]; added: number[] }, b: { removed: number[]; added: number[] }): boolean {
   return a.removed.join() === b.removed.join() && a.added.join() === b.added.join();
+}
+
+/** Sin ingredientes quitados ni extras: el producto tal cual. */
+function isPlain(line: { removed: number[]; added: number[] }): boolean {
+  return !line.removed.length && !line.added.length;
+}
+
+function formatPrice(value: number): string {
+  return value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }

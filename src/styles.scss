@@ -1064,3 +1064,10 @@ textarea.ng-invalid.ng-touched {
   margin: 0 0 4px;
   color: var(--p-muted);
 }
+
+// Panel o ventana modal abierta: la pagina de detras no se desplaza (solo el panel)
+html.is-scroll-locked,
+html.is-scroll-locked body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}

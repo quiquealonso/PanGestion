@@ -88,7 +88,7 @@
   padding: 1rem;
 }
 
-/* Dialogo del producto: lista de ingredientes (desmarcar = quitar) y extras plegados */
+/* Dialogo del producto: lista de ingredientes (desmarcar = quitar) y de extras (marcar = añadir) */
 .ing-list {
   display: grid;
   gap: 0.3rem;
@@ -141,46 +141,6 @@
       color: var(--success-text);
     }
   }
-}
-
-.extras-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.link-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.5rem;
-  border: 0;
-  border-radius: 0.5rem;
-  background: none;
-  color: var(--primary);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-
-  svg {
-    width: 1rem;
-    height: 1rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  &:hover {
-    background: rgba(var(--primary-rgb), 0.1);
-  }
-}
-
-.extras-empty {
-  margin: 0;
-  font-size: 0.82rem;
 }
 
 .chip.removed {
@@ -237,24 +197,101 @@
   gap: 0.5rem;
 }
 
+/* Boton de la carta: tocar apunta uno; si ya esta apuntado, abre notas e ingredientes. Debajo, − 2 + */
 .product {
   position: relative;
-  display: grid;
-  align-content: space-between;
-  gap: 0.4rem;
+  display: flex;
+  flex-direction: column;
   min-height: 74px;
-  padding: 0.65rem 0.7rem;
   border-radius: 0.9rem;
   border: 1px solid var(--border);
   border-left: 4px solid var(--c, var(--primary));
   background: rgba(var(--tint-rgb), 0.03);
   color: var(--text);
+  animation: product-in 0.2s ease-out;
+
+  &.is-in {
+    border-color: rgba(var(--primary-rgb), 0.6);
+    border-left-color: var(--c, var(--primary));
+    background: rgba(var(--primary-rgb), 0.08);
+  }
+
+  /* Version cambiada ("sin cebolla", "poco hecha"): borde discontinuo, al lado de la normal */
+  &.is-variant {
+    border-style: dashed;
+    border-left-style: solid;
+  }
+}
+
+@keyframes product-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product {
+    animation: none;
+  }
+}
+
+.product__main {
+  display: grid;
+  flex: 1;
+  align-content: space-between;
+  gap: 0.3rem;
+  padding: 0.65rem 0.7rem;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
 
   &:active {
     transform: scale(0.97);
+  }
+}
+
+.product__custom {
+  color: var(--tone-amber);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.product__edit {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.product__qty {
+  display: flex;
+  align-items: center;
+  margin: 0 0.4rem 0.4rem;
+  border: 1px solid rgba(var(--primary-rgb), 0.5);
+  border-radius: 0.6rem;
+  overflow: hidden;
+
+  button {
+    flex: 0 0 2.6rem;
+    height: 2.4rem;
+    border: 0;
+    background: rgba(var(--primary-rgb), 0.14);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  strong {
+    flex: 1;
+    text-align: center;
   }
 }
 
@@ -283,22 +320,6 @@
   margin-right: 0.3rem;
   white-space: nowrap;
   color: var(--tone-amber);
-}
-
-.product__count {
-  position: absolute;
-  top: -0.4rem;
-  right: -0.4rem;
-  display: grid;
-  place-items: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  padding: 0 0.3rem;
-  border-radius: 999px;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-size: 0.8rem;
-  font-weight: 700;
 }
 
 /* Ticket */
@@ -408,6 +429,21 @@ button.line__body {
     color: var(--tone-amber);
   }
 
+  /* Minutos que lleva pendiente o preparandose */
+  .status__min {
+    font-weight: 600;
+
+    &.warn {
+      color: var(--tone-amber);
+      font-weight: 800;
+    }
+
+    &.late {
+      color: var(--danger-text);
+      font-weight: 800;
+    }
+  }
+
   &--listo {
     padding: 0.4rem 0.7rem;
     background: var(--success);
@@ -445,6 +481,32 @@ button.line__body {
 
 .send-bar {
   display: none;
+}
+
+/* Dialogo del producto: a cuantas unidades se aplica el cambio (las demas se quedan igual) */
+.units {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.8rem;
+  background: rgba(var(--primary-rgb), 0.1);
+
+  > span {
+    font-weight: 600;
+  }
+}
+
+.remove-line {
+  justify-self: start;
+}
+
+/* Guardar, en la cabecera del dialogo: grande para el dedo y separado de la X */
+.save-edit {
+  min-height: 2.75rem;
+  margin-right: 0.35rem;
+  padding-inline: 1.1rem;
 }
 
 .edit {
