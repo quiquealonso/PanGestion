@@ -1,5 +1,5 @@
 # Imagen de produccion de la API: compila con Maven y ejecuta solo el .jar con un JRE
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /src
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
