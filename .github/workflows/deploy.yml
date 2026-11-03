@@ -1,6 +1,6 @@
 name: Desplegar
 
-# Al fusionar en main: se vuelven a pasar todos los tests y la seguridad; si todo esta en verde se despliega
+# Al fusionar en main: se vuelven a pasar todos los tests, los end-to-end y la seguridad; si todo esta en verde se despliega
 # la API en la VM (Google Cloud) y despues GitHub Pages (web promocional en la raiz y la app en /app/),
 # y se prueba produccion.
 on:
@@ -29,6 +29,10 @@ jobs:
   security:
     name: Seguridad
     uses: ./.github/workflows/security.yml
+
+  e2e:
+    name: End-to-end
+    uses: ./.github/workflows/e2e.yml
 
   frontend:
     name: Frontend (tests y build)
@@ -74,7 +78,7 @@ jobs:
 
   deploy-api:
     name: Desplegar API (VM)
-    needs: [backend, security, frontend]
+    needs: [backend, security, frontend, e2e]
     runs-on: ubuntu-latest
     environment:
       name: produccion
