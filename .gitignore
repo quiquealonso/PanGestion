@@ -29,10 +29,11 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
-# Pruebas end-to-end (Playwright)
+# Pruebas end-to-end (Playwright) y la web montada como GitHub Pages (scripts/montar-pages.sh)
 /playwright-report
 /test-results
 /blob-report
+/pages
 
 # Miscellaneous
 /.angular/cache

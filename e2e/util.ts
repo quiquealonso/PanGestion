@@ -8,7 +8,8 @@ export const USERS = {
 
 /** Entra en el panel de gestion con el formulario de acceso. */
 export async function login(page: Page, user: { email: string; password: string }): Promise<void> {
-  await page.goto('/auth/login');
+  // Rutas relativas a baseURL (en produccion la app esta en /PanGestion/app/)
+  await page.goto('auth/login');
   await page.locator('input[type=email]').fill(user.email);
   await page.locator('input[type=password]').fill(user.password);
   await page.locator('button[type=submit]').click();
