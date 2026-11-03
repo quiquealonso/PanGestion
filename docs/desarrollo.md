@@ -121,20 +121,37 @@ cd backend && ./mvnw package     # backend (jar en backend/target)
 
 ### Pruebas end-to-end (Playwright)
 
-Un navegador de verdad usa la app como lo haría una persona (carpeta `e2e/`):
+Un «bot» (un navegador de verdad, controlado por Playwright) usa la app como lo haría una persona: toca botones, escribe en los campos y comprueba lo que sale en pantalla. Las pruebas están en `e2e/`:
 
 - **`pedido-movil.e2e.ts`** (móvil): un cliente hace un pedido entero. Tocar para añadir, cambiar ingredientes, datos (con el autorrelleno metiéndose en el campo trampa), día, hora y confirmar. Comprueba también que la página de detrás se bloquea solo con un panel abierto.
-- **`mesa-cocina.e2e.ts`**: el camarero (móvil) abre una mesa, apunta (con una versión cambiada y bebidas) y envía a cocina; cocina (tablet) lo pasa a listo y al camarero le sale para servir.
+- **`mesa-cocina.e2e.ts`**: el camarero (móvil) abre una mesa, apunta (con una versión cambiada y bebidas) y envía; cocina (tablet) lo pasa a listo y al camarero le sale para servir.
 
-Arrancan su propia API (el jar, con H2 en memoria y los datos de demo) en el puerto 8090 y su propio `ng serve` en el 4300, así que no tocan lo que tengas abierto. Hay que compilar antes el jar:
+Cada comprobación es un paso con nombre (`test.step`). El informe los lista con ✅ o ❌ y lo que ha tardado cada uno.
+
+**En GitHub (modo producción).** Se pasan en cada pull request y antes de cada despliegue (`.github/workflows/e2e.yml`), contra PanGestion montada como en la VM (`scripts/e2e-produccion.sh`):
+
+- La API con su imagen Docker, PostgreSQL y Caddy por HTTPS, con el mismo `backend/deploy/docker-compose.yml` y el mismo `Caddyfile`.
+- El build de producción del frontend, montado como GitHub Pages (`scripts/montar-pages.sh`, el mismo que usa el despliegue) y servido por HTTPS en otro origen, así que también se prueban CORS y la CSP.
+
+Lo único que cambia respecto a producción: los dominios son `localhost` (API en `https://localhost`, web en `https://localhost:4443/PanGestion/app/`), el certificado es el propio de Caddy y la base de datos empieza con los datos de demo. El resultado de cada comprobación sale en el resumen de la ejecución (pestaña *Summary* de la acción). Si algo falla, también salen los logs de la API y queda el informe con capturas en los artefactos (`playwright-report`).
+
+Para hacer lo mismo en tu ordenador (necesita Docker):
+
+```bash
+bash scripts/e2e-produccion.sh                 # monta y arranca todo (tarda unos minutos la primera vez)
+E2E_TARGET=produccion npx playwright test
+bash scripts/e2e-produccion.sh down            # lo para y borra sus datos
+```
+
+**En tu ordenador sin Docker (modo desarrollo).** Arrancan su propia API (el jar, con H2 en memoria) en el puerto 8090 y su propio `ng serve` en el 4300, así que no tocan lo que tengas abierto:
 
 ```bash
 cd backend && ./mvnw package -DskipTests && cd ..
 npx playwright install chromium      # solo la primera vez
-npm run e2e                          # o: npx playwright test --ui (para verlas paso a paso)
+npm run e2e                          # o, para ver el bot paso a paso: npx playwright test --ui
 ```
 
-En GitHub se pasan en cada pull request y antes de cada despliegue (`.github/workflows/e2e.yml`). Si fallan, el informe con capturas y la traza queda en los artefactos de la ejecución (`playwright-report`).
+Con `npx playwright test --headed` se ve el navegador mientras el bot lo usa.
 
 ## Estructura
 

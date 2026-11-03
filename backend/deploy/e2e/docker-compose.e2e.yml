@@ -1,0 +1,14 @@
+# Pruebas end-to-end en modo produccion: se suma a ../docker-compose.yml (el mismo de la VM).
+#   docker compose -p pangestion-e2e -f docker-compose.yml -f e2e/docker-compose.e2e.yml --env-file e2e/.env up -d --build
+# Lo unico que cambia: Caddy sirve tambien la web publicada (la carpeta que se sube a GitHub Pages)
+# en https://localhost:4443/PanGestion/, como haria GitHub Pages. La API sigue en https://{$API_DOMAIN}.
+# Las rutas son relativas a backend/deploy (la carpeta del primer fichero).
+services:
+  caddy:
+    ports:
+      - "4443:4443"
+    volumes:
+      # Este Caddyfile importa el de produccion (sin tocarlo) y anade la web
+      - ./e2e/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile.api:ro
+      - ../../pages:/srv/pages/PanGestion:ro

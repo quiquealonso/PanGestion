@@ -1,0 +1,13 @@
+# Pruebas end-to-end en modo produccion (ver docker-compose.e2e.yml).
+# La API: el Caddyfile de produccion tal cual (con API_DOMAIN=localhost, Caddy usa un certificado propio).
+import /etc/caddy/Caddyfile.api
+
+# La web, como GitHub Pages: ficheros estaticos y, si no existe la ruta, 404.html (que es la app)
+localhost:4443 {
+	root * /srv/pages
+	file_server
+	handle_errors 404 {
+		rewrite * /PanGestion/404.html
+		file_server
+	}
+}

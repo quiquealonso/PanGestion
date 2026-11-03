@@ -2,7 +2,9 @@ name: Pruebas end-to-end
 
 # Reutilizable: lo llaman ci.yml (pull requests) y deploy.yml (antes de desplegar).
 # Un navegador de verdad (Playwright) usa la app: pedido desde el movil, camarero y cocina.
-# Arranca la API (jar con H2 y datos de demo) y ng serve; ver playwright.config.ts.
+# Contra PanGestion montada como en produccion (scripts/e2e-produccion.sh): la imagen Docker de la API con
+# PostgreSQL y Caddy (el mismo docker-compose.yml y Caddyfile de la VM) y el build de produccion del frontend
+# servido como GitHub Pages, por HTTPS. Cada comprobacion sale en el resumen de la ejecucion.
 on:
   workflow_call:
 
@@ -11,28 +13,29 @@ permissions:
 
 jobs:
   e2e:
-    name: End-to-end (Playwright)
+    name: End-to-end (Playwright, como en producción)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      E2E_TARGET: produccion
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-          cache-dependency-path: backend/pom.xml
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-      - name: Compilar la API (jar)
-        working-directory: backend
-        run: bash ./mvnw -B -q package -DskipTests
       - run: npm ci
+      - name: Montar PanGestion como en producción (Docker Compose, PostgreSQL, Caddy y build de producción)
+        run: bash scripts/e2e-produccion.sh
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test
-      # Si algo falla: informe con capturas, video del paso y traza (se abre con npx playwright show-trace)
+      - name: Pruebas (el bot usa la app)
+        run: npx playwright test
+      - name: Logs de la API si algo falla
+        if: failure()
+        run: |
+          docker compose -p pangestion-e2e -f backend/deploy/docker-compose.yml -f backend/deploy/e2e/docker-compose.e2e.yml \
+            --env-file backend/deploy/e2e/.env logs --tail 200 api caddy
+      # Si algo falla: informe con capturas y traza (se abre con npx playwright show-trace)
       - name: Informe si algo falla
         if: failure()
         uses: actions/upload-artifact@v4
@@ -42,3 +45,6 @@ jobs:
             playwright-report
             test-results
           retention-days: 14
+      - name: Parar el entorno
+        if: always()
+        run: bash scripts/e2e-produccion.sh down || true
