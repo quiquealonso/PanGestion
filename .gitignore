@@ -29,6 +29,11 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
+# Pruebas end-to-end (Playwright)
+/playwright-report
+/test-results
+/blob-report
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/

@@ -119,6 +119,23 @@ cd backend && ./mvnw test        # test del backend (BD en memoria)
 cd backend && ./mvnw package     # backend (jar en backend/target)
 ```
 
+### Pruebas end-to-end (Playwright)
+
+Un navegador de verdad usa la app como lo haría una persona (carpeta `e2e/`):
+
+- **`pedido-movil.e2e.ts`** (móvil): un cliente hace un pedido entero. Tocar para añadir, cambiar ingredientes, datos (con el autorrelleno metiéndose en el campo trampa), día, hora y confirmar. Comprueba también que la página de detrás se bloquea solo con un panel abierto.
+- **`mesa-cocina.e2e.ts`**: el camarero (móvil) abre una mesa, apunta (con una versión cambiada y bebidas) y envía a cocina; cocina (tablet) lo pasa a listo y al camarero le sale para servir.
+
+Arrancan su propia API (el jar, con H2 en memoria y los datos de demo) en el puerto 8090 y su propio `ng serve` en el 4300, así que no tocan lo que tengas abierto. Hay que compilar antes el jar:
+
+```bash
+cd backend && ./mvnw package -DskipTests && cd ..
+npx playwright install chromium      # solo la primera vez
+npm run e2e                          # o: npx playwright test --ui (para verlas paso a paso)
+```
+
+En GitHub se pasan en cada pull request y antes de cada despliegue (`.github/workflows/e2e.yml`). Si fallan, el informe con capturas y la traza queda en los artefactos de la ejecución (`playwright-report`).
+
 ## Estructura
 
 ```
