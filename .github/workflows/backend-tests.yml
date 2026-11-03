@@ -25,7 +25,7 @@ jobs:
       - run: bash ./mvnw -B verify
       - name: Informes si algo falla
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: surefire-reports
           path: backend/target/surefire-reports
