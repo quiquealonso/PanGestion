@@ -62,7 +62,7 @@ jobs:
       # Web promocional en la raiz y la app en app/ (el mismo montaje que usan las pruebas end-to-end)
       - name: Montar la web y la app
         run: bash scripts/montar-pages.sh dist/gestion-pedidos/browser pages
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: pages
 
