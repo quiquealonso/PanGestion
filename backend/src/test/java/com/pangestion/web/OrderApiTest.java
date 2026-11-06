@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -57,6 +58,41 @@ class OrderApiTest extends ApiTestSupport {
             ids.append(ids.isEmpty() ? "" : ",").append(ingredient.getId());
         }
         return "{\"productId\": %d, \"quantity\": %d, \"removedIngredientIds\": [%s]}".formatted(product.getId(), quantity, ids);
+    }
+
+    // ----- Listar -----
+
+    @Test
+    @DisplayName("listar con filtros opcionales: fechas, estado y texto, solos o combinados (también en PostgreSQL)")
+    void searchWithFilters() throws Exception {
+        LocalDate today = LocalDate.now();
+        Customer pep = customer(bar, "Pep Soler", "pep@correo.es");
+        Order hoy = order(lola, today, "13:00", OrderStatus.PENDIENTE, pizza, 1);
+        order(lola, today.minusDays(3), "13:00", OrderStatus.ENTREGADO, pizza, 1);
+        order(pep, TOMORROW, "20:00", OrderStatus.PENDIENTE, bravas, 2);
+        // De otra empresa: nunca sale
+        Customer otro = customer(company("Otro"), "Lola Otra", "lola@otro.es");
+        order(otro, today, "13:00", OrderStatus.PENDIENTE);
+
+        mvc.perform(getJson("/api/orders").with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(3));
+        // Lo que pide la pantalla de pedidos: el dia de hoy (daba 500 en PostgreSQL)
+        mvc.perform(getJson("/api/orders?from={d}&to={d}", today, today).with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(hoy.getId()));
+        mvc.perform(getJson("/api/orders?from={d}", today).with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        mvc.perform(getJson("/api/orders?to={d}", today.minusDays(1)).with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(getJson("/api/orders?status=PENDIENTE").with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+        mvc.perform(getJson("/api/orders?status=PENDIENTE&from={d}&to={d}", today, today).with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(getJson("/api/orders?search=pep").with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        // Por numero de pedido ("12" tambien encuentra el 112: basta con que salga)
+        mvc.perform(getJson("/api/orders?search={id}", hoy.getId()).with(as(gestor)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[*].id", hasItem(hoy.getId().intValue())));
     }
 
     // ----- Crear -----

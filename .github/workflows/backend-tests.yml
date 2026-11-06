@@ -1,6 +1,8 @@
 name: Backend (todos los tests)
 
 # Reutilizable: lo llaman ci.yml (pull requests) y deploy.yml (antes de desplegar)
+# Contra PostgreSQL 17, la misma base de datos que produccion: con H2 (la de los tests en local) hay consultas
+# que funcionan y en PostgreSQL fallan (asi llego a produccion el 500 del listado de pedidos, ver docs/despliegue.md).
 on:
   workflow_call:
 
@@ -9,8 +11,29 @@ permissions:
 
 jobs:
   test:
+    # Este nombre es un check obligatorio de la proteccion de main: si se cambia, hay que cambiarlo alli tambien
     name: Todos los tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: pangestion_test
+          POSTGRES_USER: pangestion
+          POSTGRES_PASSWORD: pangestion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pangestion -d pangestion_test"
+          --health-interval 5s
+          --health-retries 10
+    env:
+      # Las variables de entorno ganan al perfil "test" (H2): los tests HTTP y de servicios usan este PostgreSQL
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/pangestion_test
+      SPRING_DATASOURCE_USERNAME: pangestion
+      SPRING_DATASOURCE_PASSWORD: pangestion
+      # Y los de repositorio (@DataJpaTest), que por defecto cambian la base de datos por una H2
+      SPRING_TEST_DATABASE_REPLACE: NONE
     defaults:
       run:
         working-directory: backend

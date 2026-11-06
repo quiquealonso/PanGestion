@@ -1,0 +1,45 @@
+name: Comprobar producción
+
+# Comprobacion de SOLO LECTURA de produccion (scripts/comprobar-api.mjs): un usuario VISOR, que solo puede consultar,
+# recorre todas las consultas del panel (GET, con sus filtros) contra los datos reales y avisa si alguna falla.
+# - Despues de cada despliegue (la llama deploy.yml)
+# - Cada 3 horas: si falla, GitHub manda un email (fallos que dependen de los datos, de la fecha...)
+# - A mano: Actions > Comprobar producción > Run workflow
+# Necesita los secretos PROD_CHECK_EMAIL y PROD_CHECK_PASSWORD (ver docs/despliegue.md, «Comprobación de producción»).
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comprobar-produccion
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Consultas de producción (solo lectura)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API_URL: https://34-175-204-112.sslip.io
+      CHECK_EMAIL: ${{ secrets.PROD_CHECK_EMAIL }}
+      CHECK_PASSWORD: ${{ secrets.PROD_CHECK_PASSWORD }}
+      CHECK_TITLE: Consultas de producción
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Consultas de la API (solo lectura)
+        run: |
+          if [ -z "$CHECK_EMAIL" ] || [ -z "$CHECK_PASSWORD" ]; then
+            echo "::warning::Falta configurar el usuario VISOR de la comprobación (secretos PROD_CHECK_EMAIL y PROD_CHECK_PASSWORD): no se ha comprobado producción. Ver docs/despliegue.md"
+            echo "## ⚠️ Comprobación de producción sin configurar" >> "$GITHUB_STEP_SUMMARY"
+            echo "Faltan los secretos PROD_CHECK_EMAIL y PROD_CHECK_PASSWORD (ver docs/despliegue.md)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node scripts/comprobar-api.mjs
