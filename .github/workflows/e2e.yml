@@ -30,6 +30,19 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Pruebas (el bot usa la app)
         run: npx playwright test
+      # Todas las consultas del panel (GET, con sus filtros) contra PostgreSQL: la misma comprobacion que se
+      # hace despues de desplegar contra produccion (scripts/comprobar-api.mjs)
+      - name: Consultas de la API (solo lectura)
+        if: always()
+        env:
+          API_URL: https://localhost
+          CHECK_EMAIL: admin2@admin.es
+          CHECK_PASSWORD: admin1234
+          CHECK_TITLE: Consultas de la API antes de desplegar (PostgreSQL, datos de demo)
+          CHECK_LOGIN_ATTEMPTS: "10"
+          # Certificado propio de Caddy para localhost (solo en esta prueba)
+          NODE_TLS_REJECT_UNAUTHORIZED: "0"
+        run: node scripts/comprobar-api.mjs
       - name: Logs de la API si algo falla
         if: failure()
         run: |

@@ -17,8 +17,9 @@ Los enlaces de cuando la app estaba en la raíz (`/PanGestion/pedido`, `/PanGest
 | Cuándo | Qué se ejecuta | Workflow |
 |---|---|---|
 | Push a cualquier rama (menos `main`) | Tests rápidos del backend (unidad y reglas de negocio) y tests y build del frontend | `ci.yml` |
-| Pull request | Todos los tests del backend, frontend y seguridad (gitleaks, `npm audit`, OSV) | `ci.yml`, `security.yml` |
-| Fusionar en `main` | Otra vez todos los tests y la seguridad; después se despliega la API en la VM y el frontend en Pages, y se pasan pruebas de humo contra producción | `deploy.yml` |
+| Pull request | Todos los tests del backend (contra PostgreSQL 17), frontend, seguridad (gitleaks, `npm audit`, OSV) y end-to-end contra la app montada como en producción, más todas las consultas de la API | `ci.yml`, `security.yml`, `backend-tests.yml`, `e2e.yml` |
+| Fusionar en `main` | Otra vez todo lo anterior; después se despliega la API en la VM y el frontend en Pages, se pasan pruebas de humo y la comprobación de solo lectura contra producción | `deploy.yml` |
+| Cada 3 horas (y a mano) | Comprobación de solo lectura de producción | `comprobar-produccion.yml` |
 
 - **Rama `main` protegida:** solo se llega por PR, con los checks en verde.
 - **Despliegue de la API:** Actions entra por SSH con una clave que solo puede ejecutar `~/pangestion/deploy.sh` en la VM (copia de `backend/deploy/deploy.sh`). El script hace lo siguiente:
@@ -28,6 +29,26 @@ Los enlaces de cuando la app estaba en la raíz (`/PanGestion/pedido`, `/PanGest
   4. Espera a que la API responda; si no responde, vuelve al commit anterior.
 - **Secretos del repositorio:** `VM_SSH_KEY` (clave privada de despliegue) y `VM_KNOWN_HOSTS` (huella de la VM).
 - **Desplegar a mano, en la VM:** `~/pangestion/deploy.sh <sha de main>`.
+
+### Que lo que funciona en las pruebas funcione en producción
+
+El 6 de noviembre, el listado de pedidos daba 500 en producción («could not determine data type of parameter $6») aunque los 305 tests estaban en verde. La consulta usaba `:fromDate is null or …`: H2 lo acepta y PostgreSQL no. Todos los tests usaban H2 y ninguna prueba contra PostgreSQL abría ese listado. Desde entonces hay tres capas:
+
+1. **Tests del backend contra PostgreSQL 17** (`backend-tests.yml`): en PR y antes de desplegar, la misma base de datos que producción. En local siguen con H2, que no necesita instalar nada; los tests rápidos de cada push también usan H2.
+2. **Antes de desplegar, la app montada como en producción** (`e2e.yml`): las pruebas end-to-end y `scripts/comprobar-api.mjs`, que recorre todas las consultas GET del panel con sus filtros y el detalle del primer elemento de cada lista. Corre con PostgreSQL y los datos de demo.
+3. **Después de desplegar y cada 3 horas, la comprobación de producción** (`comprobar-produccion.yml`): el mismo `comprobar-api.mjs`, ahora contra producción y con los datos reales. Solo hace GET, con un usuario VISOR que no puede crear, cambiar ni borrar nada. Si falla una comprobación programada, GitHub te avisa por email. El resultado sale en el *Summary* de la ejecución.
+
+Las pruebas no se pasan contra la base de datos de producción: crean y borran datos, darían por hecho datos que no existen y llegarían tarde, con el fallo ya desplegado.
+
+#### Comprobación de producción: configurarla (una vez)
+
+1. En la app, con un usuario administrador de El Mosset, ve a **Usuarios → Nuevo** y crea un usuario con rol **Visor**, por ejemplo `comprobacion@pangestion.app`. Ponle una contraseña larga y aleatoria que no uses en ningún otro sitio.
+2. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**:
+   - `PROD_CHECK_EMAIL`: el email de ese usuario.
+   - `PROD_CHECK_PASSWORD`: su contraseña.
+3. Pruébala: **Actions → Comprobar producción → Run workflow**.
+
+Mientras falten los secretos, la comprobación avisa con un *warning* y no comprueba nada.
 
 ## App instalable (PWA)
 

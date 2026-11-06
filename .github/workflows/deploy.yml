@@ -141,3 +141,11 @@ jobs:
           curl -fsS "$WEB_URL/" | grep -q 'Del horno a la mesa'
           curl -fsS "$WEB_URL/" | grep -q 'Content-Security-Policy'
           curl -fsS "$WEB_URL/app/" | grep -q 'Content-Security-Policy'
+
+  # Ya desplegado: un usuario VISOR (solo puede consultar) recorre todas las consultas del panel contra produccion,
+  # con los datos reales. No crea, cambia ni borra nada. Ver docs/despliegue.md («Comprobación de producción»).
+  check-production:
+    name: Consultas de producción (solo lectura)
+    needs: deploy-api
+    uses: ./.github/workflows/comprobar-produccion.yml
+    secrets: inherit

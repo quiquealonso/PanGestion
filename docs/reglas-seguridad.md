@@ -226,6 +226,13 @@ Las reglas `S` son de seguridad y las `W`, de calidad de la web (legal, SEO, acc
 - **Comprobación:** buscar en `dist/` contraseñas o nombres de claves (hecho el 2026-10-31: no hay) y gitleaks (S02)
 - **Fecha:** 2026-10-31
 
+### S29 · Lo que se prueba es lo que hay en producción
+- **Estado:** ✅ (la comprobación de producción necesita sus secretos, ver despliegue)
+- **Cómo:** los tests del backend se pasan contra PostgreSQL 17, la base de datos de producción, y no solo contra H2. Antes de desplegar, las pruebas end-to-end y todas las consultas GET de la API se pasan contra la app montada como en la VM. Después de desplegar, y cada 3 horas, un usuario VISOR comprueba de solo lectura todas las consultas contra producción. Las pruebas nunca escriben en la base de datos de producción.
+- **Dónde:** `.github/workflows/backend-tests.yml`, `e2e.yml`, `comprobar-produccion.yml`, `scripts/comprobar-api.mjs`
+- **Comprobación:** `OrderApiTest.searchWithFilters` (el 500 del listado de pedidos del 2026-11-06), `e2e/gestion.e2e.ts`
+- **Fecha:** 2026-11-06
+
 ## Web pública: legal, SEO, accesibilidad y rendimiento
 
 Se aplican a la web promocional (`site/`) y, cuando corresponde, a la app (`src/`).
