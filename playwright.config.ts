@@ -40,6 +40,8 @@ export default defineConfig({
     { name: 'movil', testMatch: 'pedido-movil.e2e.ts', use: { ...devices['Pixel 7'] } },
     // Camarero (movil) y cocina (tablet/ordenador): cada prueba crea sus propios navegadores
     { name: 'sala', testMatch: 'mesa-cocina.e2e.ts', use: { ...devices['Desktop Chrome'] } },
+    // Panel de gestion (ordenador): listados con filtros, que en PostgreSQL fallaban y en H2 no
+    { name: 'gestion', testMatch: 'gestion.e2e.ts', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: PRODUCTION
     ? undefined

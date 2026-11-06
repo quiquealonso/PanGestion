@@ -16,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -112,6 +113,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleIntegrity(DataIntegrityViolationException ex) {
         return build(HttpStatus.CONFLICT, "La operacion viola una restriccion de la base de datos");
+    }
+
+    /**
+     * El cliente se ha ido a mitad de respuesta (lo normal en los avisos en directo, /api/events, al cerrar la app
+     * o perder la conexion el movil). No es un fallo: no se registra como ERROR y no hay a quien responder.
+     */
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientGone(AsyncRequestNotUsableException ex, HttpServletRequest request) {
+        log.debug("Cliente desconectado en {} {}", request.getMethod(), request.getRequestURI());
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message) {

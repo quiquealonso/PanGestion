@@ -27,15 +27,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             """)
     List<Order> findForDelivery(@Param("companyId") Long companyId, @Param("date") LocalDate date);
 
-    /** Pedidos de una empresa con filtros opcionales. El texto busca por cliente o por numero de pedido. */
+    /**
+     * Pedidos de una empresa con filtros opcionales. El texto busca por cliente o por numero de pedido.
+     * Filtros opcionales con coalesce(:x, campo), no con ":x is null or ...": PostgreSQL no sabe de que tipo es
+     * un parametro que solo aparece en "? is null" y falla ("could not determine data type of parameter").
+     */
     @EntityGraph(attributePaths = "customer")
     @Query("""
             select o from Order o
             where o.company.id = :companyId
               and (lower(o.customer.name) like :search or cast(o.id as String) like :search)
-              and (:status is null or o.status = :status)
-              and (:fromDate is null or o.pickupDate >= :fromDate)
-              and (:toDate is null or o.pickupDate <= :toDate)
+              and o.status = coalesce(:status, o.status)
+              and o.pickupDate >= coalesce(:fromDate, o.pickupDate)
+              and o.pickupDate <= coalesce(:toDate, o.pickupDate)
             order by o.pickupDate desc, o.pickupTime desc
             """)
     List<Order> search(@Param("companyId") Long companyId,

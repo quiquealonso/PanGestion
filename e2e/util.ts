@@ -2,6 +2,7 @@ import { Page, expect } from '@playwright/test';
 
 /** Usuarios de demo (los crea DataInitializer en la base de datos en memoria; no existen en produccion). */
 export const USERS = {
+  admin: { email: 'admin2@admin.es', password: 'admin1234' },
   camarero: { email: 'camarero@pangestion.local', password: 'camarero123' },
   cocina: { email: 'cocina@pangestion.local', password: 'cocina123' },
 };

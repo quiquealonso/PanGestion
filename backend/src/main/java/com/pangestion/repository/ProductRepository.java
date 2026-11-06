@@ -13,14 +13,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findAllByCategoryId(Long categoryId);
 
-    /** Productos de una empresa con filtros opcionales: texto (nombre), categoria y estado activo. */
+    /**
+     * Productos de una empresa con filtros opcionales: texto (nombre), categoria y estado activo.
+     * Con coalesce(:x, campo) y no ":x is null or ...", que en PostgreSQL falla (ver OrderRepository.search).
+     */
     @EntityGraph(attributePaths = "category")
     @Query("""
             select p from Product p
             where p.company.id = :companyId
               and lower(p.name) like :search
-              and (:categoryId is null or p.category.id = :categoryId)
-              and (:active is null or p.active = :active)
+              and p.category.id = coalesce(:categoryId, p.category.id)
+              and p.active = coalesce(:active, p.active)
             order by p.category.sortOrder, p.category.name, p.sortOrder, p.name
             """)
     List<Product> search(@Param("companyId") Long companyId,
