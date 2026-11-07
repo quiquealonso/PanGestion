@@ -6,7 +6,7 @@ RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B -q package -DskipTests
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 # Hora de Espana: las horas que guarda la API (pedido enviado, preparando desde...) son hora local, y el
 # navegador las lee como tal. En UTC, los minutos de cocina y de las mesas saldrian con 1-2 horas de mas.
 ENV TZ=Europe/Madrid
